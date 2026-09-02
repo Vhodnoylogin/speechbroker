@@ -1,17 +1,13 @@
-﻿# Продукты сборки и окружения в репозиторий не попадают.
 build/
 dist/
-.venv/
-models/
+out/
+.vs/
+.cache/
+vcpkg_installed/
+*.user
 __pycache__/
-*.pyc
 
-# Логи, токены и локальные настройки - у каждой машины свои.
+# Локальные пути этой машины и служебное - из ствола master
+build.local.json
 *.log
 *-token.txt
-build.local.json
-
-# Черновики прогонов.
-session.jsonl
-*.wav
-*.bak-*
