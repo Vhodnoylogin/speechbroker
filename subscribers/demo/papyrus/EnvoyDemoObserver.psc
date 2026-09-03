@@ -40,9 +40,12 @@ Function Register()
     Debug.MessageBox(hello + ".\n\nНаблюдатель подключён и слышит все реплики.\nСкажи что-нибудь - следующий диалог покажет распознанный текст.")
 EndFunction
 
-Event OnAny(string asEventName, string asTopic, float afId)
+; Строка события всегда пуста: событие только будит, данные читаются из моста.
+; Три параметра сохранены потому, что такова подпись обработчика в Papyrus.
+Event OnAny(string asEventName, string asEmpty, float afId)
     int id = afId as int
-    string line = "[" + id + "] тема " + asTopic + ": " + Envoy.GetText(id)
+    string topicName = Envoy.GetTopic(id)
+    string line = "[" + id + "] тема " + topicName + ": " + Envoy.GetText(id)
     Debug.Trace("[Envoy] " + line)
     Debug.Notification(line)
 
@@ -50,12 +53,13 @@ Event OnAny(string asEventName, string asTopic, float afId)
     ; от микрофона до скрипта работает целиком. Остальные - надписями.
     if !heardOnce
         heardOnce = true
-        Debug.MessageBox("Envoy слышит.\n\nТема: " + asTopic + "\nРаспознано: " + Envoy.GetText(id) + "\n\nДальше отчёт пойдёт надписями в углу.")
+        Debug.MessageBox("Envoy слышит.\n\nТема: " + topicName + "\nРаспознано: " + Envoy.GetText(id) + "\n\nДальше отчёт пойдёт надписями в углу.")
     endIf
 EndEvent
 
-Event OnSettled(string asEventName, string asOutcome, float afId)
-    string line = "[" + (afId as int) + "] итог: " + asOutcome
+Event OnSettled(string asEventName, string asEmpty, float afId)
+    int id = afId as int
+    string line = "[" + id + "] итог: " + Envoy.GetOutcome(id)
     Debug.Trace("[Envoy] " + line)
     Debug.Notification(line)
 EndEvent

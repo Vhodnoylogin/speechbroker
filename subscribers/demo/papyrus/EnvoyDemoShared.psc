@@ -48,7 +48,10 @@ Function Register()
     Debug.Trace("[Envoy] делящийся объявился, словарь из " + words.Length + " фраз")
 EndFunction
 
-Event OnHeard(string asEventName, string asText, float afId)
+; Строка события всегда пуста - событие только будит. Текст, тема и итог
+; читаются из моста по номеру: точная модель может уточнить реплику уже после
+; рассылки, и копия в событии разошлась бы с тем, что мост считает истиной.
+Event OnHeard(string asEventName, string asEmpty, float afId)
     int id = afId as int
     float mine = Envoy.GetVocabularyScore(id, NS)
     if mine <= 0.5
@@ -60,9 +63,9 @@ Event OnHeard(string asEventName, string asText, float afId)
     Envoy.Bid(id, NS, mine, 0, false)
 EndEvent
 
-Event OnAward(string asEventName, string asWinner, float afId)
-    if asWinner == NS
-        int id = afId as int
+Event OnAward(string asEventName, string asEmpty, float afId)
+    int id = afId as int
+    if Envoy.IsWinner(id, NS)
         int winners = Envoy.GetWinners(id).Length
         Debug.Trace("[Envoy] делящийся [" + id + "]: получил, победителей " + winners)
         Debug.Notification("делящийся [" + id + "]: получил, победителей " + winners)
@@ -70,10 +73,10 @@ Event OnAward(string asEventName, string asWinner, float afId)
     endIf
 EndEvent
 
-Event OnDenied(string asEventName, string asWho, float afId)
-    if asWho == NS
-        int id = afId as int
-        string why = Envoy.GetDenyReason(id, NS)
+Event OnDenied(string asEventName, string asEmpty, float afId)
+    int id = afId as int
+    string why = Envoy.GetDenyReason(id, NS)
+    if why != ""
         Debug.Trace("[Envoy] делящийся [" + id + "]: отказ - " + why)
         Debug.Notification("делящийся [" + id + "]: отказ")
         Debug.MessageBox("ДЕЛЯЩЕМУСЯ ОТКАЗАНО\n\nРеплика " + id + ": " + Envoy.GetText(id) + "\n\nПричина: " + why)
