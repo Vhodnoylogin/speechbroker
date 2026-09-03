@@ -9,14 +9,15 @@
    скажи "проверка связи" - её знают оба. Кто увереннее, тот и решает судьбу:
                             победил жадный - делящийся остаётся ни с чем,
                             победил делящийся - жадный выбывает, потому что
-                            сам просил "мне одному или никак".}
+                            сам просил "мне одному или никак".
+
+ Об отклике - то же, что у жадного: на чужие реплики на экране не отвечаем,
+ потому что надписи Skyrim выводит по одной раз в пять секунд и очередь отстаёт
+ на минуты; решающие моменты показываются диалогом.}
 
 string Property NS = "DemoShared" AutoReadOnly
 
 Event OnInit()
-    ; Подписка на событие переживает сохранение, поэтому оформляется один раз.
-    ; Всё остальное - темы, словарь - живёт только в памяти моста и гибнет вместе
-    ; с процессом игры, поэтому мост зовёт объявиться заново на каждой загрузке.
     RegisterForModEvent("Envoy_Ready", "OnEnvoyReady")
     Register()
 EndEvent
@@ -44,15 +45,17 @@ Function Register()
     RegisterForModEvent("Envoy_Speech_Dialogue", "OnHeard")
     RegisterForModEvent("Envoy_Award", "OnAward")
     RegisterForModEvent("Envoy_Denied", "OnDenied")
+    Debug.Trace("[Envoy] делящийся объявился, словарь из " + words.Length + " фраз")
 EndFunction
 
 Event OnHeard(string asEventName, string asText, float afId)
     int id = afId as int
     float mine = Envoy.GetVocabularyScore(id, NS)
     if mine <= 0.5
-        Debug.Notification("делящийся [" + id + "]: не моё (" + mine + ")")
+        Debug.Trace("[Envoy] делящийся [" + id + "]: не моё (" + mine + ")")
         return
     endIf
+    Debug.Trace("[Envoy] делящийся [" + id + "]: ставлю " + mine)
     Debug.Notification("делящийся [" + id + "]: ставлю " + mine)
     Envoy.Bid(id, NS, mine, 0, false)
 EndEvent
@@ -60,13 +63,19 @@ EndEvent
 Event OnAward(string asEventName, string asWinner, float afId)
     if asWinner == NS
         int id = afId as int
-        Debug.Notification("делящийся [" + id + "]: получил, всего победителей " + Envoy.GetWinners(id).Length)
+        int winners = Envoy.GetWinners(id).Length
+        Debug.Trace("[Envoy] делящийся [" + id + "]: получил, победителей " + winners)
+        Debug.Notification("делящийся [" + id + "]: получил, победителей " + winners)
+        Debug.MessageBox("ДЕЛЯЩИЙСЯ ПОЛУЧИЛ РЕПЛИКУ\n\nРеплика " + id + ": " + Envoy.GetText(id) + "\n\nПобедителей всего: " + winners + ".\nОн делится, поэтому жадный выбыл целиком - тот требовал исключительности.")
     endIf
 EndEvent
 
 Event OnDenied(string asEventName, string asWho, float afId)
     if asWho == NS
         int id = afId as int
-        Debug.Notification("делящийся [" + id + "]: отказ - " + Envoy.GetDenyReason(id, NS))
+        string why = Envoy.GetDenyReason(id, NS)
+        Debug.Trace("[Envoy] делящийся [" + id + "]: отказ - " + why)
+        Debug.Notification("делящийся [" + id + "]: отказ")
+        Debug.MessageBox("ДЕЛЯЩЕМУСЯ ОТКАЗАНО\n\nРеплика " + id + ": " + Envoy.GetText(id) + "\n\nПричина: " + why)
     endIf
 EndEvent
