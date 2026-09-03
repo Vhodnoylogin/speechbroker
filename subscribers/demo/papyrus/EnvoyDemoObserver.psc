@@ -34,10 +34,38 @@ Function Register()
     RegisterForModEvent("Envoy_Speech_Any", "OnAny")
     RegisterForModEvent("Envoy_Settled", "OnSettled")
 
-    string hello = "Envoy на связи, контракт " + Envoy.GetInterfaceVersion()
-    Debug.Trace("[Envoy] " + hello)
+    ; Диалог обязан сообщать неизвестное. Версия контракта была известна заранее
+    ; и сомнений не вызывала; неизвестно другое - объявился ли кто-нибудь мосту
+    ; и на какие темы. Один взгляд теперь отделяет "участников нет" от
+    ; "участники есть, но события до них не доходят".
+    string[] who = Envoy.GetNamespaces()
+    string[] mine
+    string list = ""
+    string joined = ""
+    int i = 0
+    int j = 0
+    while i < who.Length
+        mine = Envoy.GetTopicsOf(who[i])
+        joined = ""
+        j = 0
+        while j < mine.Length
+            if j > 0
+                joined = joined + ", "
+            endIf
+            joined = joined + mine[j]
+            j = j + 1
+        endWhile
+        list = list + "\n  " + who[i] + ": " + joined
+        i = i + 1
+    endWhile
+    if who.Length == 0
+        list = "\n  никого"
+    endIf
+
+    string hello = "Envoy на связи, участников " + who.Length
+    Debug.Trace("[Envoy] " + hello + list)
     Debug.Notification(hello)
-    Debug.MessageBox(hello + ".\n\nНаблюдатель подключён и слышит все реплики.\nСкажи что-нибудь - следующий диалог покажет распознанный текст.")
+    Debug.MessageBox(hello + list + "\n\nСкажи что-нибудь - следующий диалог покажет распознанный текст.")
 EndFunction
 
 ; Строка события всегда пуста: событие только будит, данные читаются из моста.
