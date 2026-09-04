@@ -50,8 +50,26 @@ if (-not $Apply) { ''; 'сухой прогон - добавь -Apply'; return }
 
 $target = Join-Path $d.modsRoot $d.modName
 New-Item -ItemType Directory -Force $target | Out-Null
-Copy-Item -LiteralPath (Join-Path $mod '*') -Destination $target -Recurse -Force
-"  разложено: $($d.modName)"
+# Copy-Item -Recurse -Force над уже существующим деревом молча не перезаписывает
+# файлы во вложенных папках, и раскладка отчитывалась об успехе, оставив в сборке
+# библиотеку прошлой сборки. Копируем пофайлово и говорим, что изменилось.
+$added = 0; $updated = 0; $same = 0
+Get-ChildItem -LiteralPath $mod -Recurse -File | ForEach-Object {
+    $rel = $_.FullName.Substring($mod.Length).TrimStart('\')
+    $dst = Join-Path $target $rel
+    $dir = Split-Path -Parent $dst
+    if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force $dir | Out-Null }
+    if (-not (Test-Path -LiteralPath $dst)) {
+        Copy-Item -LiteralPath $_.FullName -Destination $dst -Force
+        $added++
+    } elseif ((Get-FileHash -LiteralPath $_.FullName).Hash -ne (Get-FileHash -LiteralPath $dst).Hash) {
+        Copy-Item -LiteralPath $_.FullName -Destination $dst -Force
+        $updated++
+    } else {
+        $same++
+    }
+}
+'  разложено: {0} - новых {1}, обновлено {2}, без изменений {3}' -f $d.modName, $added, $updated, $same
 
 if (-not $NoIndex) {
     & $d.indexScript -Owner $d.indexOwner -Mods $d.modName -Note "Envoy Demo Subscriber deploy $($d.version)"
