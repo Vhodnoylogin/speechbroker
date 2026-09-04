@@ -9,6 +9,8 @@ $root = Split-Path -Parent $PSScriptRoot
 $cfg  = Get-Content -LiteralPath (Join-Path $root 'config\build.json') -Raw | ConvertFrom-Json
 $d    = $cfg.deploy
 $enc  = New-Object Text.UTF8Encoding($false)
+function Expand-Path([string]$p) { $p.Replace('{root}', $root) }
+$bridgeToken = Expand-Path $d.bridgeToken
 
 $game = @(Get-Process -Name SkyrimVR,SkyrimSE -ErrorAction SilentlyContinue)
 if ($game.Count) { throw "Игра запущена ($($game.Name -join ', ')) - состав сборки менять нельзя" }
@@ -63,22 +65,23 @@ foreach ($p in $plan) {
     [IO.File]::WriteAllLines("$($p.Archive).meta", $meta, $enc)
     '  архив: {0} ({1:N0} b)' -f (Split-Path -Leaf $p.Archive), (Get-Item $p.Archive).Length
 
-    # установка из архива - той же распаковкой, что делает установщик MO2,
-    # но без его диалогов: при открытой MO2 их нельзя пройти автоматически.
-    if (Test-Path -LiteralPath $p.Target) { Remove-Item -LiteralPath $p.Target -Recurse -Force }
-    New-Item -ItemType Directory -Force $p.Target | Out-Null
-    & $d.sevenZip x $p.Archive "-o$($p.Target)" -y -bso0 -bsp0 | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "распаковка вернула $LASTEXITCODE" }
-
-    $modMeta = Get-Content -LiteralPath (Join-Path $p.Source 'meta.ini') -Raw
-    $modMeta = $modMeta -replace 'installationFile=', ("installationFile=" + (Split-Path -Leaf $p.Archive))
-    [IO.File]::WriteAllText((Join-Path $p.Target 'meta.ini'), $modMeta, $enc)
-    '  установлен: {0}' -f $p.Name
+    # Ставит MO2, а не мы. Маршрут /install плагина-моста заводит мод через
+    # createMod и распаковывает архив сам - без единого диалога. Своя распаковка
+    # мимо MO2 давала мод, которого она не заводила: без архива-источника
+    # и без записи в своей базе.
+    $body = @{ archive = $p.Archive; name = $p.Name; paths = @(''); mode = 'replace' } |
+            ConvertTo-Json -Compress
+    $token = (Get-Content -LiteralPath $bridgeToken -Raw).Trim()
+    $res = Invoke-RestMethod "$($d.bridgeUrl)/install" -Method Post `
+               -Body ([Text.Encoding]::UTF8.GetBytes($body)) `
+               -ContentType 'application/json; charset=utf-8' `
+               -Headers @{ 'X-Token' = $token } -TimeoutSec 600
+    '  установлен через MO2: {0}' -f $p.Name
 }
 
 # мост попросим перечитать список модов - иначе открытая MO2 их не увидит
 try {
-    $token = (Get-Content -LiteralPath $d.bridgeToken -Raw).Trim()
+    $token = (Get-Content -LiteralPath $bridgeToken -Raw).Trim()
     Invoke-RestMethod "$($d.bridgeUrl)/refresh" -Method Post -Headers @{ 'X-Token' = $token } -TimeoutSec 20 | Out-Null
     '  MO2 обновила список модов'
 } catch {
