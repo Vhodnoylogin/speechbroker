@@ -22,7 +22,7 @@ Event OnInit()
     Register()
 EndEvent
 
-Event OnEnvoyReady(string asEventName, string asUnused, float afContract)
+Event OnEnvoyReady(string asEventName, string asUnused, float afContract, Form akSender)
     Register()
 EndEvent
 
@@ -51,7 +51,7 @@ EndFunction
 ; Строка события всегда пуста - событие только будит. Текст, тема и итог
 ; читаются из моста по номеру: точная модель может уточнить реплику уже после
 ; рассылки, и копия в событии разошлась бы с тем, что мост считает истиной.
-Event OnHeard(string asEventName, string asEmpty, float afId)
+Event OnHeard(string asEventName, string asEmpty, float afId, Form akSender)
     int id = afId as int
     float mine = Envoy.GetVocabularyScore(id, NS)
     if mine <= 0.5
@@ -63,7 +63,7 @@ Event OnHeard(string asEventName, string asEmpty, float afId)
     Envoy.Bid(id, NS, mine, 0, false)
 EndEvent
 
-Event OnAward(string asEventName, string asEmpty, float afId)
+Event OnAward(string asEventName, string asEmpty, float afId, Form akSender)
     int id = afId as int
     if Envoy.IsWinner(id, NS)
         int winners = Envoy.GetWinners(id).Length
@@ -73,7 +73,7 @@ Event OnAward(string asEventName, string asEmpty, float afId)
     endIf
 EndEvent
 
-Event OnDenied(string asEventName, string asEmpty, float afId)
+Event OnDenied(string asEventName, string asEmpty, float afId, Form akSender)
     int id = afId as int
     string why = Envoy.GetDenyReason(id, NS)
     if why != ""

@@ -20,7 +20,7 @@ Event OnInit()
     Register()
 EndEvent
 
-Event OnEnvoyReady(string asEventName, string asUnused, float afContract)
+Event OnEnvoyReady(string asEventName, string asUnused, float afContract, Form akSender)
     Register()
 EndEvent
 
@@ -70,7 +70,7 @@ EndFunction
 
 ; Строка события всегда пуста: событие только будит, данные читаются из моста.
 ; Три параметра сохранены потому, что такова подпись обработчика в Papyrus.
-Event OnAny(string asEventName, string asEmpty, float afId)
+Event OnAny(string asEventName, string asEmpty, float afId, Form akSender)
     int id = afId as int
     string topicName = Envoy.GetTopic(id)
     string line = "[" + id + "] тема " + topicName + ": " + Envoy.GetText(id)
@@ -85,7 +85,7 @@ Event OnAny(string asEventName, string asEmpty, float afId)
     endIf
 EndEvent
 
-Event OnSettled(string asEventName, string asEmpty, float afId)
+Event OnSettled(string asEventName, string asEmpty, float afId, Form akSender)
     int id = afId as int
     string line = "[" + id + "] итог: " + Envoy.GetOutcome(id)
     Debug.Trace("[Envoy] " + line)
