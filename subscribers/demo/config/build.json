@@ -21,8 +21,12 @@
     "downloadsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/downloads",
     "sevenZip": "C:/Program Files/7-Zip/7z.exe",
     "bridgeUrl": "http://127.0.0.1:8930",
-    "bridgeToken": "D:/Skyrim VR Modding/Claude Code/Skyrim VR/dev/mo2ailink/mo2ailink-token.txt",
-    "scripts": ["EnvoyDemoObserver", "EnvoyDemoGreedy", "EnvoyDemoShared"],
+    "bridgeToken": "{root}/../../../mo2aibridge/mo2aibridge-token.txt",
+    "scripts": [
+      "EnvoyDemoObserver",
+      "EnvoyDemoGreedy",
+      "EnvoyDemoShared"
+    ],
     "esp": "EnvoyDemo.esp"
   }
 }
