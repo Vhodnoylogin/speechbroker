@@ -11,3 +11,6 @@ __pycache__/
 build.local.json
 *.log
 *-token.txt
+
+# Сценарий из живого звука - производное: собирается engine-scenario.py
+tests/scenarios/live.json
