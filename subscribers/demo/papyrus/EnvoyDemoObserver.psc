@@ -33,6 +33,10 @@ Function Register()
     endIf
     RegisterForModEvent("Envoy_Speech_Any", "OnAny")
     RegisterForModEvent("Envoy_Settled", "OnSettled")
+    ; Наблюдатель ничего не делает и потому объявляет себя отзывчивым: отменять
+    ; ему нечего. Вызов здесь ради самой проверки - что новая функция контракта
+    ; доходит до скрипта и не роняет его.
+    Envoy.Declare("DemoObserver", 0, true)
 
     ; Диалог обязан сообщать неизвестное. Версия контракта была известна заранее
     ; и сомнений не вызывала; неизвестно другое - объявился ли кто-нибудь мосту
@@ -73,7 +77,11 @@ EndFunction
 Event OnAny(string asEventName, string asEmpty, float afId, Form akSender)
     int id = afId as int
     string topicName = Envoy.GetTopic(id)
-    string line = "[" + id + "] тема " + topicName + ": " + Envoy.GetText(id)
+    ; Завершённость - новая величина контракта: насколько мост уверен, что
+    ; на этой реплике фраза кончилась. Пока её никто не присылает, она равна
+    ; единице у всех, и это тоже наблюдение: значит придержание не работает
+    ; не потому, что сломано, а потому, что ему нечем питаться.
+    string line = "[" + id + "] тема " + topicName + ", завершённость " + Envoy.GetComplete(id) + ": " + Envoy.GetText(id)
     Debug.Trace("[Envoy] " + line)
     Debug.Notification(line)
 
