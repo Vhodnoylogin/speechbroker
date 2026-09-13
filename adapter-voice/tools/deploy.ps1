@@ -27,20 +27,30 @@ $mod = Join-Path $dist $d.modName
 New-Item -ItemType Directory -Force (Join-Path $mod $d.settingsTargetRel) | Out-Null
 Copy-Item -LiteralPath (Expand-Path $d.settings) -Destination (Join-Path $mod $d.settingsTargetRel) -Force
 
-# Свой контракт адаптер выкладывает так же, как мост выкладывает свой: автор
-# мод-модели должен найти его в установленном моде, а не в чужом репозитории.
+# Контракт мод-модели - для авторов, а не для игры: она его не читает. Поэтому
+# он едет ОТДЕЛЬНОЙ поставкой, как и SDK моста, а не папкой внутри мода.
+# На Nexus это необязательный файл на той же странице.
 if ($d.publish) {
-    $sdk = Join-Path $mod $d.sdkOut
-    New-Item -ItemType Directory -Force $sdk | Out-Null
-    foreach ($f in $d.publish) { Copy-Item -LiteralPath (Expand-Path $f) -Destination $sdk -Force }
-}
-
-$dll = Expand-Path $d.dll
-if (Test-Path -LiteralPath $dll) {
-    New-Item -ItemType Directory -Force (Join-Path $mod 'SKSE\Plugins') | Out-Null
-    Copy-Item -LiteralPath $dll -Destination (Join-Path $mod 'SKSE\Plugins') -Force
-} else {
-    Write-Warning "библиотека адаптера не собрана: $dll"
+    $sdkMod = Join-Path $dist $d.sdkName
+    New-Item -ItemType Directory -Force $sdkMod | Out-Null
+    foreach ($f in $d.publish) { Copy-Item -LiteralPath (Expand-Path $f) -Destination $sdkMod -Force }
+    if ($d.docs) {
+        foreach ($f in $d.docs) { Copy-Item -LiteralPath (Expand-Path $f) -Destination $sdkMod -Force }
+    }
+    $sdkMeta = @(
+        '[General]'
+        'gameName=SkyrimSE'
+        'modid=0'
+        "version=$($d.version)"
+        "newestVersion=$($d.version)"
+        'category="0,"'
+        'installationFile='
+        'notes=Контракт мод-модели для EnvoyVoiceAdapter. Нужен автору мода, игре - нет; в профилях держать выключенным.'
+        ''
+        '[installedFiles]'
+        'size=0'
+    )
+    [IO.File]::WriteAllLines((Join-Path $sdkMod 'meta.ini'), $sdkMeta, $enc)
 }
 
 # Лицензия и перечень заимствованного едут в каждый мод. Человек, распаковавший
@@ -69,30 +79,35 @@ $meta = @(
 '  {0,-40} {1} файлов' -f $d.modName, @(Get-ChildItem -LiteralPath $mod -Recurse -File).Count
 if (-not $Apply) { ''; 'сухой прогон - добавь -Apply'; return }
 
-$target = Join-Path $d.modsRoot $d.modName
-New-Item -ItemType Directory -Force $target | Out-Null
-# Copy-Item -Recurse -Force над уже существующим деревом молча не перезаписывает
-# файлы во вложенных папках, и раскладка отчитывалась об успехе, оставив в сборке
-# библиотеку прошлой сборки. Копируем пофайлово и говорим, что изменилось.
-$added = 0; $updated = 0; $same = 0
-Get-ChildItem -LiteralPath $mod -Recurse -File | ForEach-Object {
-    $rel = $_.FullName.Substring($mod.Length).TrimStart('\')
-    $dst = Join-Path $target $rel
-    $dir = Split-Path -Parent $dst
-    if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force $dir | Out-Null }
-    if (-not (Test-Path -LiteralPath $dst)) {
-        Copy-Item -LiteralPath $_.FullName -Destination $dst -Force
-        $added++
-    } elseif ((Get-FileHash -LiteralPath $_.FullName).Hash -ne (Get-FileHash -LiteralPath $dst).Hash) {
-        Copy-Item -LiteralPath $_.FullName -Destination $dst -Force
-        $updated++
-    } else {
-        $same++
+# Поставок две - мод и контракт для авторов, - и раскладываются они одинаково.
+$copied = @()
+foreach ($pack in Get-ChildItem -LiteralPath $dist -Directory) {
+    $target = Join-Path $d.modsRoot $pack.Name
+    New-Item -ItemType Directory -Force $target | Out-Null
+    # Copy-Item -Recurse -Force над уже существующим деревом молча не перезаписывает
+    # файлы во вложенных папках, и раскладка отчитывалась об успехе, оставив в сборке
+    # библиотеку прошлой сборки. Копируем пофайлово и говорим, что изменилось.
+    $added = 0; $updated = 0; $same = 0
+    Get-ChildItem -LiteralPath $pack.FullName -Recurse -File | ForEach-Object {
+        $rel = $_.FullName.Substring($pack.FullName.Length).TrimStart('')
+        $dst = Join-Path $target $rel
+        $dir = Split-Path -Parent $dst
+        if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force $dir | Out-Null }
+        if (-not (Test-Path -LiteralPath $dst)) {
+            Copy-Item -LiteralPath $_.FullName -Destination $dst -Force
+            $added++
+        } elseif ((Get-FileHash -LiteralPath $_.FullName).Hash -ne (Get-FileHash -LiteralPath $dst).Hash) {
+            Copy-Item -LiteralPath $_.FullName -Destination $dst -Force
+            $updated++
+        } else {
+            $same++
+        }
     }
+    '  разложено: {0} - новых {1}, обновлено {2}, без изменений {3}' -f $pack.Name, $added, $updated, $same
+    $copied += $pack.Name
 }
-'  разложено: {0} - новых {1}, обновлено {2}, без изменений {3}' -f $d.modName, $added, $updated, $same
 
 if (-not $NoIndex) {
-    & $d.indexScript -Owner $d.indexOwner -Mods $d.modName -Note "Envoy Voice Adapter deploy $($d.version)"
+    & $d.indexScript -Owner $d.indexOwner -Mods $copied -Note "Envoy Voice Adapter deploy $($d.version)"
 }
 ''
