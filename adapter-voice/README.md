@@ -124,7 +124,8 @@ What stays as it came is **the recognised speech**: what a person said is data a
 and it reaches the log in the language it was said in.
 
 The language comes from the `language` key in `envoy-voice.json`; `auto` is the language of the
-game itself. English ships inside the mod, every other language as a mod of its own.
+game itself. Every language goes inside the mod of the adapter - a translation is a part of the
+module and not a mod to install beside it.
 
 ## Building
 
