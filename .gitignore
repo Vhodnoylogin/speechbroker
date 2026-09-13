@@ -1,6 +1,6 @@
 build/
 dist/
-# Скачанные исходники зависимостей, сохранённые при переносе сборки
+# Downloaded sources of the dependencies, kept when the build was moved
 _deps-keep/
 out/
 .vs/
@@ -9,10 +9,10 @@ vcpkg_installed/
 *.user
 __pycache__/
 
-# Локальные пути этой машины и служебное - из ствола master
+# Paths local to this machine, and housekeeping - out of the master trunk
 build.local.json
 *.log
 *-token.txt
 
-# Сценарий из живого звука - производное: собирается engine-scenario.py
+# The scenario made out of live sound is derived: engine-scenario.py builds it
 bridge/tests/scenarios/live.json
