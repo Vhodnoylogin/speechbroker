@@ -27,6 +27,14 @@ $mod = Join-Path $dist $d.modName
 New-Item -ItemType Directory -Force (Join-Path $mod $d.settingsTargetRel) | Out-Null
 Copy-Item -LiteralPath (Expand-Path $d.settings) -Destination (Join-Path $mod $d.settingsTargetRel) -Force
 
+# Свой контракт адаптер выкладывает так же, как мост выкладывает свой: автор
+# мод-модели должен найти его в установленном моде, а не в чужом репозитории.
+if ($d.publish) {
+    $sdk = Join-Path $mod $d.sdkOut
+    New-Item -ItemType Directory -Force $sdk | Out-Null
+    foreach ($f in $d.publish) { Copy-Item -LiteralPath (Expand-Path $f) -Destination $sdk -Force }
+}
+
 $dll = Expand-Path $d.dll
 if (Test-Path -LiteralPath $dll) {
     New-Item -ItemType Directory -Force (Join-Path $mod 'SKSE\Plugins') | Out-Null

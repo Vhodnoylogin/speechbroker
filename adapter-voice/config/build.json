@@ -13,6 +13,10 @@
     "bridgeToken": "D:/Skyrim VR Modding/MO2/plugins/mo2aibridge/mo2aibridge-token.txt",
     "dll": "{root}/build/Release/EnvoyVoiceAdapter.dll",
     "settings": "{root}/envoy-voice.json",
-    "settingsTargetRel": "SKSE/Plugins/envoy/adapters/voice"
+    "settingsTargetRel": "SKSE/Plugins/envoy/adapters/voice",
+    "sdkOut": "SDK",
+    "publish": [
+      "{root}/contract/envoy-voice-model.md"
+    ]
   }
 }
