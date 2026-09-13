@@ -2,7 +2,8 @@
   "log": {
     "level": "info",
     "file": "envoy.log",
-    "maxSizeKb": 4096
+    "maxSizeKb": 4096,
+    "speechText": false
   },
   "adapters": {
     "primary": {}

@@ -32,6 +32,10 @@
       "{root}/papyrus/Envoy.psc",
       "{root}/contract/envoy-keys.md",
       "{root}/contract/envoy-papyrus.md"
+    ],
+    "docs": [
+      "{root}/../LICENSE",
+      "{root}/../THIRD-PARTY-NOTICES.md"
     ]
   }
 }

@@ -13,8 +13,10 @@
 
 #include "core/Config.h"
 #include "core/Log.h"
+#include "core/Settings.h"
 #include "game/GameLoadWatch.h"
 #include "game/PapyrusApi.h"
+#include "game/MenuPanel.h"
 #include "game/SkseHost.h"
 #include "envoy-adapter.h"
 
@@ -109,14 +111,20 @@ extern "C" __declspec(dllexport) bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadIn
 		logFile = *dir / (std::string(PLUGIN_NAME) + ".log");
 	}
 
-	// "info" здесь - не настройка, а запасной вариант на случай, когда не удалось
-	// разобрать даже встроенный набор. В норме значение приходит из файла.
-	Envoy::Log::Init(config.Value<std::string>("/log/level").value_or("info"), logFile);
+	// Разобранные настройки, а не сырой документ: те же поля читает меню
+	// в игре и ReloadSettings, и значение обязано быть одно.
+	const auto& settings = Envoy::Settings::Get();
+	Envoy::Log::Init(settings.logLevel, logFile, settings.logMaxSizeKb);
+	Envoy::Log::SetShowSpeech(settings.logSpeechText);
 
 	// Ядро до этой строки отвечает себе само: работа делается на месте, в игре
 	// ничего не происходит, события уходят в журнал. Здесь на все три вопроса
 	// начинает отвечать игра.
 	Envoy::SkseHost::Install();
+
+	// Окно в меню модов. Мягкая зависимость: нет SKSE Menu Framework -
+	// нет и окна, журнал по-прежнему настраивается файлом.
+	Envoy::MenuPanel::Install();
 
 	// Версия контракта - свойство двоичного файла, а не настройка. Раньше сюда
 	// печаталось поле "interfaceVersion" из файла настроек, где с давних пор

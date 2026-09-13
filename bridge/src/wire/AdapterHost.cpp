@@ -5,6 +5,7 @@
 #include "bus/UtteranceStore.h"
 #include "core/Config.h"
 #include "core/Events.h"
+#include "core/Log.h"
 #include "core/MainThread.h"
 #include "core/Settings.h"
 
@@ -245,13 +246,26 @@ namespace Envoy
 			if (!UtteranceStore::Get().Refine(a_in.refinesId, utterance)) {
 				return 0;
 			}
-			SKSE::log::info("реплика {} уточнена адаптером {} ({}): {}",
-				a_in.refinesId, Safe(a_adapterId), utterance.engine, utterance.text);
+			// Сами слова - только если человек это разрешил. Иначе в журнале
+			// остаётся номер и модель, по которым разбор всё равно возможен.
+			if (Log::ShowSpeech()) {
+				SKSE::log::info("реплика {} уточнена адаптером {} ({}): {}",
+					a_in.refinesId, Safe(a_adapterId), utterance.engine, utterance.text);
+			} else {
+				SKSE::log::info("реплика {} уточнена адаптером {} ({})",
+					a_in.refinesId, Safe(a_adapterId), utterance.engine);
+				SKSE::log::debug("реплика {}: {}", a_in.refinesId, utterance.text);
+			}
 			return a_in.refinesId;
 		}
 
 		const auto id = UtteranceStore::Get().Add(std::move(utterance));
-		SKSE::log::info("реплика {} от адаптера {}: {}", id, Safe(a_adapterId), Safe(a_in.text));
+		if (Log::ShowSpeech()) {
+			SKSE::log::info("реплика {} от адаптера {}: {}", id, Safe(a_adapterId), Safe(a_in.text));
+		} else {
+			SKSE::log::info("реплика {} от адаптера {}", id, Safe(a_adapterId));
+			SKSE::log::debug("реплика {}: {}", id, Safe(a_in.text));
+		}
 
 		// Поглощение раньше приёма: если новый кусок вобрал придержанный,
 		// тот должен быть выброшен ДО того, как решится судьба нового.

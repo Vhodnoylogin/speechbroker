@@ -1,6 +1,8 @@
 #include "PapyrusApi.h"
 
 #include "core/Events.h"
+#include "core/Log.h"
+#include "core/Settings.h"
 #include "core/MainThread.h"
 #include "core/Scheduler.h"
 #include "wire/AdapterHost.h"
@@ -43,6 +45,14 @@ namespace Envoy
 	void PapyrusApi::ReloadSettings(Tag)
 	{
 		AdapterHost::Get().ReloadConfig();
+		// Журнал слушается настроек сразу. Прежде перечитанный файл менял
+		// пороги аукциона, но не уровень журнала, и наладчик видел прежние
+		// строки, будучи уверен, что подкрутил ручку.
+		const auto& settings = Settings::Get();
+		Log::SetLevel(settings.logLevel);
+		Log::SetShowSpeech(settings.logSpeechText);
+		SKSE::log::info("настройки перечитаны, журнал: уровень {}, слова игрока {}",
+			Log::Level(), settings.logSpeechText ? "пишем" : "не пишем");
 	}
 
 	std::int32_t PapyrusApi::Say(Tag, Str a_text, Str a_voice, std::int32_t a_priority)

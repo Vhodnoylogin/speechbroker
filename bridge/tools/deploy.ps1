@@ -51,6 +51,13 @@ $sdk = Join-Path $mod 'SDK'
 New-Item -ItemType Directory -Force $sdk | Out-Null
 foreach ($f in $d.sdk) { Copy-Item -LiteralPath (Expand-Path $f) -Destination $sdk -Force }
 
+# Лицензия и перечень заимствованного едут в каждый мод. Человек, распаковавший
+# архив, обязан найти их внутри: страницу, с которой он качал, он больше
+# не откроет, а условия шести чужих проектов требуют, чтобы текст был в поставке.
+if ($d.docs) {
+    foreach ($f in $d.docs) { Copy-Item -LiteralPath (Expand-Path $f) -Destination $mod -Force }
+}
+
 $meta = @(
     '[General]'
     'gameName=SkyrimSE'

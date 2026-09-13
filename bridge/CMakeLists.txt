@@ -156,7 +156,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     PLUGIN_NAME="${PROJECT_NAME}"
-    PLUGIN_AUTHOR="Claude"
+    PLUGIN_AUTHOR="Vhodnoylogin"
     PLUGIN_VERSION="${PROJECT_VERSION}"
 )
 
@@ -167,6 +167,9 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     # REL/Relocation.h из CommonLibSSE-NG включает rapidcsv.h, но путь к нему
     # библиотека наружу не отдаёт - приходится добавлять самим.
     "${RAPIDCSV_INCLUDE_DIRS}"
+    # Заголовок SKSE Menu Framework: мягкая зависимость, ничего не линкует.
+    # Лежит в дереве, а не тянется сборкой, чтобы мост собирался без сети.
+    "${CMAKE_CURRENT_SOURCE_DIR}/extern/SKSEMenuFramework"
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

@@ -1,15 +1,21 @@
 #include "Log.h"
 
 #include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
+#include <atomic>
 #include <memory>
 
 namespace Envoy
 {
 	namespace
 	{
+		// Слова игрока читают из потоков адаптера, а переключают из потока
+		// игры: значение обязано быть атомарным, иначе это гонка.
+		std::atomic_bool g_showSpeech{ false };
+
 		spdlog::level::level_enum ToLevel(std::string_view a_level)
 		{
 			if (a_level == "trace") {
@@ -36,19 +42,68 @@ namespace Envoy
 		}
 	}
 
-	void Log::Init(std::string_view a_level, const std::filesystem::path& a_file)
+	void Log::Init(std::string_view a_level, const std::filesystem::path& a_file, int a_maxSizeKb)
 	{
 		if (a_file.empty()) {
 			ToConsole(a_level);
 			return;
 		}
 
-		auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(a_file.string(), true);
+		spdlog::sink_ptr sink;
+		if (a_maxSizeKb > 0) {
+			// Два файла, а не десять: больше нужно при разборе давней ошибки,
+			// а журнал мода читают по свежим следам.
+			sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+				a_file.string(), static_cast<std::size_t>(a_maxSizeKb) * 1024, 1);
+		} else {
+			sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(a_file.string(), true);
+		}
 		Adopt(std::make_shared<spdlog::logger>("global log", std::move(sink)), a_level);
 	}
 
 	void Log::ToConsole(std::string_view a_level)
 	{
 		Adopt(spdlog::stdout_color_mt("global log"), a_level);
+	}
+
+	void Log::SetLevel(std::string_view a_level)
+	{
+		auto logger = spdlog::default_logger();
+		if (!logger) {
+			return;
+		}
+		const auto level = ToLevel(a_level);
+		logger->set_level(level);
+		logger->flush_on(level);
+	}
+
+	std::string Log::Level()
+	{
+		auto logger = spdlog::default_logger();
+		if (!logger) {
+			return "info";
+		}
+		switch (logger->level()) {
+		case spdlog::level::trace:
+			return "trace";
+		case spdlog::level::debug:
+			return "debug";
+		case spdlog::level::warn:
+			return "warning";
+		case spdlog::level::err:
+			return "error";
+		default:
+			return "info";
+		}
+	}
+
+	bool Log::ShowSpeech()
+	{
+		return g_showSpeech.load(std::memory_order_relaxed);
+	}
+
+	void Log::SetShowSpeech(bool a_show)
+	{
+		g_showSpeech.store(a_show, std::memory_order_relaxed);
 	}
 }

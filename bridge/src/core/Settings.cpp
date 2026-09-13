@@ -94,6 +94,9 @@ namespace Envoy
 		                        .value_or(dialogueMenuNames);
 		_primary           = cfg.Value<std::unordered_map<std::string, std::string>>("/adapters/primary")
 		                        .value_or(_primary);
+		logLevel           = cfg.Value<std::string>("/log/level").value_or(logLevel);
+		logMaxSizeKb       = cfg.Value<std::int32_t>("/log/maxSizeKb").value_or(logMaxSizeKb);
+		logSpeechText      = cfg.Value<bool>("/log/speechText").value_or(logSpeechText);
 
 		_read = true;
 
