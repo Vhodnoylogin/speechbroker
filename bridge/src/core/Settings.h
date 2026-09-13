@@ -8,19 +8,21 @@
 
 namespace Envoy
 {
-	// Разобранные настройки вместо указателей в документе JSON.
+	// Parsed settings instead of pointers into a JSON document.
 	//
-	// Файл читается дважды за сессию - при первом обращении и по ReloadSettings, -
-	// а в бою берутся готовые поля. До этого порядок участников извлекался из
-	// JSON на каждое сравнение внутри сортировки ставок, с выделением вектора
-	// строк на каждое; пороги склеивали указатель из кусков на каждую ставку.
-	// Порядок тем и имена окон диалога точно так же доставались указателем
-	// на каждую реплику - теперь и они здесь.
+	// The file is read twice a session - on first use and on ReloadSettings - and
+	// in the thick of things the ready-made fields are used. Before this, the
+	// order of participants was pulled out of the JSON on every comparison inside
+	// the bid sort, allocating a vector of strings each time; the thresholds glued
+	// a pointer together out of pieces on every bid. The topic order and the names
+	// of the dialogue menus were likewise fetched by pointer for every utterance -
+	// now they live here too.
 	//
-	// Значение в инициализаторе поля - единственное запасное в коде: на него
-	// падает Read, если ключа в файле нет. Эталон живёт в envoy.default.json,
-	// и в норме сюда попадает именно он; повторять число ещё и в Read нельзя -
-	// три копии одного умолчания разойдутся при первой правке.
+	// The value in a field initialiser is the only fallback in the code: Read
+	// lands on it when the key is absent from the file. The reference set lives in
+	// envoy.default.json and is normally what ends up here; repeating the number a
+	// third time inside Read is forbidden, because three copies of one default
+	// drift apart at the first edit.
 	class Settings
 	{
 	public:
@@ -30,52 +32,61 @@ namespace Envoy
 		static void            Reload();
 
 		std::int32_t bidWindowMs{ 750 };
-		// Сколько риска мы согласны терпеть, отдавая реплику. Настраивается
-		// именно допуск, а не порог завершённости: порог считается от него
-		// и от состава зала.
+		// How much risk we are willing to carry when handing an utterance over.
+		// What is configured is the tolerance, not the completeness threshold: the
+		// threshold is worked out from this and from who is in the room.
 		//
-		// Значение выбрано не на глаз. Калибровка по 22 размеченным записям
-		// дала БЕЗОПАСНЫЙ порог завершённости 0.33 - ниже него оборванные
-		// фразы встречаются, выше не встретилось ни одной. Допуск подобран
-		// так, чтобы у самого дешёвого зала - одного обычного подписчика
-		// с весом 0.4 - граница пришлась ровно на него: 0.4 * (1 - 0.33).
-		// Для дорогого зала та же формула сама даёт границу строже, 0.73.
+		// The value was not picked by eye. Calibration over 22 marked-up recordings
+		// put the SAFE completeness threshold at 0.33 - below it cut-off phrases do
+		// occur, above it not one did. The tolerance is chosen so that for the
+		// cheapest room - a single ordinary subscriber of weight 0.4 - the boundary
+		// lands exactly there: 0.4 * (1 - 0.33). For an expensive room the same
+		// formula gives a stricter boundary by itself, 0.73.
 		float        holdTolerance{ 0.27f };
 		float        minUtteranceScore{ 0.4f };
 		bool         sharedWinsTie{ true };
 		double       utteranceTtlSec{ 30.0 };
 		std::size_t  utteranceMaxStored{ 64 };
 
-		// Журнал. Уровень и предел размера читаются отсюда, а не из сырого
-		// документа: их меняют на ходу - из меню в игре и по ReloadSettings, -
-		// и значение должно быть в одном месте.
+		// The log. The level and the size limit are read from here rather than from
+		// the raw document: they are changed while the game runs - from the in-game
+		// menu and by ReloadSettings - and the value has to live in one place.
 		std::string  logLevel{ "info" };
 		std::int32_t logMaxSizeKb{ 4096 };
-		// Писать ли в журнал СЛОВА игрока. По умолчанию нет, и это не мелочь:
-		// иначе у человека в папке журналов копится расшифровка всего, что он
-		// говорил вслух дома. Включается сознательно - из меню или из файла.
+		// Whether to write the player's WORDS into the log. Off by default, and
+		// that is not a detail: otherwise a transcript of everything a person says
+		// aloud at home piles up in their log folder. It is turned on knowingly -
+		// from the menu or from the file.
 		bool         logSpeechText{ false };
 
-		// В каком порядке пробовать темы и какие окна считать диалогом.
-		// Порядок - правило, а не перечень: канал раньше боя, потому что явное
-		// обращение в канал старше обстановки, в которой оно сделано.
+		// Which language the text on screen is in. "auto" is the language the game
+		// itself runs in; a name such as "english" or "russian" pins it, which is
+		// what somebody playing a Russian build but wanting English text needs.
+		// Read at load only - the engine wants a restart for this as well.
+		std::string  language{ "auto" };
+
+		// Which order to try the topics in, and which menus count as dialogue. The
+		// order is a rule, not a list: channel comes before combat because an
+		// explicit address into a channel outranks the surroundings it was made in.
 		std::vector<std::string> topicOrder{ "channel", "dialogue", "menu", "combat", "world" };
 		std::vector<std::string> dialogueMenuNames{ "Dialogue Menu" };
 
-		// Кто назначен источником по способности прямо в настройках; пусто -
-		// источник выбирается по порядку регистрации.
+		// Who is named the source for a capability right in the settings; empty
+		// means the source is chosen by order of registration.
 		std::string PrimaryAdapter(const std::string& a_capability) const;
 
-		// Класс цены: 0 - обратимое действие, 1 - дорогое.
+		// Cost class: 0 - a reversible action, 1 - an expensive one.
 		float MinConfidence(std::int32_t a_costClass) const;
 		float MinMargin(std::int32_t a_costClass) const;
 
-		// Цена ошибки одного подписчика, если отдать ему обрывок фразы.
+		// What one subscriber's mistake costs if it is handed a fragment of a
+		// phrase.
 		float HoldWeight(std::int32_t a_costClass, bool a_revocable) const;
-		// Дольше этого реплику своего класса длины не держим ни при чём.
+		// Longer than this an utterance of its length class is never held.
 		std::int32_t HoldCeilingMs(std::int32_t a_lengthClass) const;
 
-		// Место участника в порядке из настроек; kNoPriority - не назван.
+		// The participant's place in the order from the settings; kNoPriority means
+		// it was not named.
 		std::size_t PriorityIndex(const std::string& a_ns) const;
 
 	private:
@@ -86,14 +97,14 @@ namespace Envoy
 
 		float                    _minConfidence[2]{ 0.55f, 0.75f };
 		float                    _minMargin[2]{ 0.05f, 0.15f };
-		// Отзывчивый / обычный обратимый / дорогой.
+		// Revocable / ordinary reversible / expensive.
 		float                    _holdWeight[3]{ 0.1f, 0.4f, 1.0f };
-		// Короткая / средняя / длинная.
+		// Short / middle / long.
 		//
-		// Это не бюджет задержки, а страховка от молчащего адаптера. Потолок
-		// обязан пережить приход продолжения: если он короче, чем пауза, после
-		// которой движок отдаёт следующий кусок, придержание кончится раньше,
-		// чем мы узнаем то, ради чего держали.
+		// This is not a latency budget but insurance against a silent adapter. The
+		// ceiling has to outlive the arrival of the continuation: if it is shorter
+		// than the pause after which the engine hands over the next piece, the hold
+		// ends before we learn the very thing we were holding for.
 		std::int32_t             _holdCeilingMs[3]{ 2500, 1500, 800 };
 		std::vector<std::string> _priority;
 		std::unordered_map<std::string, std::string> _primary;

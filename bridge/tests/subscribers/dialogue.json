@@ -1,5 +1,5 @@
 {
-  "_": "Подписан только на диалог. Его словарь состоит из слов, которые в обычной речи звучат постоянно, - и именно поэтому вне окна диалога он не должен получать НИЧЕГО. Тема отсекает его раньше аукциона.",
+  "_": "Subscribed to dialogue only. Its vocabulary is made of words that come up in ordinary speech all the time - and that is exactly why outside the dialogue window it must get NOTHING. The topic cuts it off before the auction.",
   "namespace": "test.dialogue",
   "topics": [
     "dialogue"

@@ -1,14 +1,16 @@
-/* Envoy Framework - интерфейс адаптера. Версия контракта - kInterfaceVersion ниже.
+/* Envoy Framework - the adapter interface. The contract version is
+ * kInterfaceVersion below.
  *
- * Адаптер - такой же мод, как мост: обычный плагин SKSE, живущий в том же
- * процессе игры. Поэтому говорят они вызовом функции, а не по сети.
+  * An adapter is a mod just like the bridge: an ordinary SKSE plugin living in
+  * the same process of the game. That is why they talk by calling a function
+  * rather than over a network.
  *
- * Наружу - к модели, которая частью игры быть не может, - смотрит только
- * адаптер, и транспорт туда выбирает он сам: HTTP, канал, встроенная
- * библиотека. Мосту об этом знать нечего.
+  * Outward - towards a model, which cannot be part of the game - only the
+  * adapter looks, and it chooses the transport itself: HTTP, a pipe, a library
+  * built in. There is nothing in that for the bridge to know.
  *
- * Рукопожатие такое же, как у HIGGS и PLANCK: мост рассылает сообщение SKSE
- * с указателем на интерфейс, адаптер его ловит.
+  * The handshake is the same as in HIGGS and PLANCK: the bridge broadcasts an
+  * SKSE message with a pointer to the interface and the adapter catches it.
  */
 #pragma once
 
@@ -18,10 +20,12 @@ namespace EnvoyAPI
 {
 	constexpr std::uint32_t kInterfaceVersion = 3;
 
-	// Тип сообщения SKSE, которым мост отдаёт интерфейс. Отправитель - "Envoy".
+	// The type of the SKSE message the bridge hands the interface over with. The
+	// sender is "Envoy".
 	constexpr std::uint32_t kMessageInterface = 'ENVY';
 
-	// Что адаптер прислал. Строки живут только на время вызова: мост копирует.
+	// What the adapter sent. The strings live only for the length of the call:
+	// the bridge copies them.
 	struct UtteranceIn
 	{
 		const char*  text{ nullptr };
@@ -34,32 +38,34 @@ namespace EnvoyAPI
 		std::int32_t durationMs{ 0 };
 		bool         isFinal{ true };
 
-		// 0 - новая реплика; иначе уточнение уже выданной. Так работает пара
-		// "быстрая модель плюс точная": вторая уточняет результат первой.
+		// 0 - a new utterance; anything else refines one already given out. That is
+		// how the pair "a fast model plus an accurate one" works: the second refines
+		// the result of the first.
 		std::int32_t refinesId{ 0 };
 
 		const char* const* altText{ nullptr };
 		const float*       altScore{ nullptr };
 		std::int32_t       altCount{ 0 };
 
-		// --- версия контракта 3 ---------------------------------------------
-		// Мост не читает этих полей у адаптера, объявившего версию младше.
+		// --- contract version 3 ---------------------------------------------
+		// The bridge does not read these fields from an adapter that declared an
+		// older version.
 
-		// Вероятность, что на этом куске предложение ЗАКОНЧИЛОСЬ. Знает это
-		// только адаптер: паузу, интонацию и тон слышит он, а мост получает
-		// уже текст. Единица - "закончено", и она же значение по умолчанию:
-		// адаптер, который об этом ничего не знает, ведёт себя как прежде.
+		// The chance that the sentence ENDED on this piece. Only the adapter knows
+		// this: it is the one that hears the pause, the intonation and the tone,
+		// while the bridge gets text already. One means "finished", and it is also
+		// the default: an adapter that knows nothing about this behaves as before.
 		float        complete{ 1.0f };
 
-		// 0 короткая, 1 средняя, 2 длинная. Мост держит куски разных классов
-		// разное время: у короткого продолжение приходит быстро, у длинного
-		// ждать уже нечего.
+		// 0 short, 1 middle, 2 long. The bridge holds pieces of different classes for
+		// different lengths of time: for a short one the continuation comes quickly,
+		// for a long one there is nothing left to wait for.
 		std::int32_t lengthClass{ 0 };
 
-		// Номера реплик, которые этот кусок вобрал в себя. Номера - те, что
-		// вернул PushUtterance: своей нумерации кусков мост не знает и знать
-		// не должен. Придержанные из них будут выброшены не оглашёнными,
-		// уже отданные - отозваны.
+		// The numbers of the utterances this piece has taken into itself. The numbers
+		// are the ones PushUtterance gave back: the bridge does not know the
+		// numbering of pieces and is not meant to. Those of them that are held will
+		// be thrown away unannounced, and those already handed over will be revoked.
 		const std::int32_t* supersedes{ nullptr };
 		std::int32_t        supersedesCount{ 0 };
 	};
@@ -67,31 +73,31 @@ namespace EnvoyAPI
 	struct AdapterInfo
 	{
 		const char*   id{ nullptr };        // "voice"
-		const char*   name{ nullptr };      // человекочитаемое
-		const char*   provides{ nullptr };  // "asr,tts" - через запятую
+		const char*   name{ nullptr };      // human readable
+		const char*   provides{ nullptr };  // "asr,tts" - comma separated
 		std::uint32_t contract{ kInterfaceVersion };
 	};
 
 	enum JobKind : std::int32_t
 	{
-		kJobListen     = 1,  // быть источником или замолчать
-		kJobVocabulary = 2,  // объединённый словарь подписчиков изменился
-		kJobSpeak      = 3,  // озвучить текст
-		kJobStop       = 4,  // прекратить озвучку
-		kJobAsk        = 5   // произвольный запрос к модели: содержимое мосту непрозрачно
+		kJobListen     = 1,  // be the source, or fall silent
+		kJobVocabulary = 2,  // the merged vocabulary of the subscribers has changed
+		kJobSpeak      = 3,  // speak the text
+		kJobStop       = 4,  // stop speaking
+		kJobAsk        = 5   // any request to the model: its content is opaque to the bridge
 	};
 
 	struct Job
 	{
 		std::int32_t       kind{ 0 };
-		bool               active{ false };    // для kJobListen
-		const char*        text{ nullptr };    // текст для kJobSpeak, причина для kJobListen
-		const char* const* phrases{ nullptr };  // для kJobVocabulary
+		bool               active{ false };    // for kJobListen
+		const char*        text{ nullptr };    // text for kJobSpeak, the reason for kJobListen
+		const char* const* phrases{ nullptr };  // for kJobVocabulary
 		std::int32_t       phraseCount{ 0 };
 		std::int32_t       speechId{ 0 };
 
-		// Для kJobAsk. payload мост не разбирает и не проверяет: иначе каждая
-		// новая модель означала бы правку моста.
+		// For kJobAsk. The bridge neither parses nor checks the payload: otherwise
+		// every new model would mean an edit to the bridge.
 		std::int32_t       requestId{ 0 };
 		const char*        service{ nullptr };
 		const char*        payload{ nullptr };
@@ -106,22 +112,24 @@ namespace EnvoyAPI
 
 		virtual std::uint32_t Version() const = 0;
 
-		// Мост держит по одной активной способности за раз; остальные адаптеры
-		// получают kJobListen с active=false и обязаны отпустить своё устройство.
+		// The bridge keeps one active source per capability at a time; the other
+		// adapters get kJobListen with active=false and are obliged to let go of
+		// their device.
 		virtual bool Register(const AdapterInfo& a_info, JobCallback a_onJob, void* a_user) = 0;
 		virtual void Unregister(const char* a_id) = 0;
 
-		// Возвращает номер реплики в игре или 0 при отказе.
+		// Gives back the number of the utterance in the game, or 0 on a refusal.
 		virtual std::int32_t PushUtterance(const char* a_adapterId, const UtteranceIn& a_utterance) = 0;
 
-		// Кто сейчас источник по способности. Имя копируется в буфер
-		// вызывающего: возвращать указатель на внутреннюю строку моста нельзя -
-		// её перепишет следующий спросивший, а спрашивают из разных потоков.
-		// false - источника нет либо буфер мал.
+		// Who is the source for a capability right now. The name is copied into the
+		// buffer of the caller: handing back a pointer to an internal string of the
+		// bridge is not allowed - the next one to ask would overwrite it, and the
+		// asking comes from different threads. false - there is no source, or the
+		// buffer is too small.
 		virtual bool SourceOf(const char* a_capability, char* a_out,
 			std::int32_t a_outSize) const = 0;
 
-		// Обратное направление: адаптер сообщает, чем кончилось задание.
+		// The other direction: the adapter reports how a job ended.
 		virtual void PushAnswer(const char* a_adapterId, std::int32_t a_requestId, bool a_ok,
 			const char* a_payload) = 0;
 		virtual void PushSpeechDone(const char* a_adapterId, std::int32_t a_speechId, bool a_ok,

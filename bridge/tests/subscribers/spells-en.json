@@ -1,5 +1,5 @@
 {
-  "_": "Словарь по-английски рядом с русскими. Мод, написанный не для нашего языка, объявляет свои фразы как есть - и мост обязан сопоставлять их той же меркой, не зная и не спрашивая, на каком языке говорят. Живая запись fireball-en для этого и сделана.",
+  "_": "An English vocabulary next to the Russian ones. A mod written for another language declares its phrases as they are - and the bridge is obliged to measure them by the same yardstick, without knowing or asking which language is being spoken. The live recording fireball-en was made for this.",
   "namespace": "test.spells.en",
   "topics": [
     "world",

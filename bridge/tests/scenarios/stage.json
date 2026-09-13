@@ -1,5 +1,5 @@
 {
-  "_": "Где играть каждую запись. Состояние игры звуком не задаётся: одна и та же фраза в бою и в диалоге уходит разным подписчикам, и выбрать это должен сценарий, а не микрофон. Записи, здесь не названные, играются в мире.",
+  "_": "Where to play each recording. The state of the game is not set by sound: one and the same phrase goes to different subscribers in combat and in dialogue, and that has to be chosen by the scenario, not by the microphone. Recordings not named here are played out in the world.",
 
   "fireball-ru":     { "combat": true },
   "fireball-en":     { "combat": true },

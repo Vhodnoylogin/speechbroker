@@ -39,8 +39,8 @@ namespace Envoy
 
 	float Settings::HoldWeight(std::int32_t a_costClass, bool a_revocable) const
 	{
-		// Дорогое остаётся дорогим, даже если объявлено отзывчивым: отменить
-		// брошенное заклинание нельзя, сколько бы мод об этом ни заявлял.
+		// Expensive stays expensive even when it declares itself revocable: a
+		// thrown spell cannot be called back, whatever the mod claims about it.
 		if (a_costClass >= 1) {
 			return _holdWeight[2];
 		}
@@ -70,8 +70,8 @@ namespace Envoy
 	{
 		const auto& cfg = Config::Get();
 
-		// value_or(поле) - запасное значение берётся из инициализатора поля,
-		// и второй копии числа здесь нет.
+		// value_or(the field) - the fallback comes from the field initialiser, and
+		// there is no second copy of the number here.
 		bidWindowMs        = cfg.Value<std::int32_t>("/auction/bidWindowMs").value_or(bidWindowMs);
 		minUtteranceScore  = cfg.Value<float>("/auction/minUtteranceScore").value_or(minUtteranceScore);
 		sharedWinsTie      = cfg.Value<bool>("/auction/sharedWinsTie").value_or(sharedWinsTie);
@@ -97,21 +97,23 @@ namespace Envoy
 		logLevel           = cfg.Value<std::string>("/log/level").value_or(logLevel);
 		logMaxSizeKb       = cfg.Value<std::int32_t>("/log/maxSizeKb").value_or(logMaxSizeKb);
 		logSpeechText      = cfg.Value<bool>("/log/speechText").value_or(logSpeechText);
+		language           = cfg.Value<std::string>("/language").value_or(language);
 
 		_read = true;
 
-		// Ключей в файле больше, чем мост читает сегодня: остальные - точки
-		// расширения, и по виду они неотличимы от рабочих настроек. Поэтому
-		// вслух перечисляем прочитанные: иначе наладчик будет крутить ручку,
-		// которая никуда не подключена, и не узнает об этом.
+		// There are more keys in the file than the bridge reads today: the rest are
+		// points of extension, and by sight they are indistinguishable from working
+		// settings. So the ones that were read are named out loud - otherwise
+		// somebody tuning the thing turns a knob that is connected to nothing and
+		// never finds out.
 		spdlog::info(
-			"настройки прочитаны: окно ставок {} мс, порог реплики {:.2f}, "
-			"уверенность {:.2f}/{:.2f}, отрыв {:.2f}/{:.2f}, ничью берёт делящийся: {}, "
-			"порядок участников: {}, хранение {:.0f} с не более {} реплик, "
-			"допуск придержания {:.2f}, цена ошибки {:.2f}/{:.2f}/{:.2f}, "
-			"потолок {}/{}/{} мс",
+			"settings read: bid window {} ms, utterance threshold {:.2f}, "
+			"confidence {:.2f}/{:.2f}, margin {:.2f}/{:.2f}, sharing takes a tie: {}, "
+			"{} participants in the order, kept {:.0f} s and at most {} utterances, "
+			"hold tolerance {:.2f}, cost of a mistake {:.2f}/{:.2f}/{:.2f}, "
+			"ceiling {}/{}/{} ms",
 			bidWindowMs, minUtteranceScore, _minConfidence[0], _minConfidence[1],
-			_minMargin[0], _minMargin[1], sharedWinsTie ? "да" : "нет", _priority.size(),
+			_minMargin[0], _minMargin[1], sharedWinsTie ? "yes" : "no", _priority.size(),
 			utteranceTtlSec, utteranceMaxStored, holdTolerance,
 			_holdWeight[0], _holdWeight[1], _holdWeight[2],
 			_holdCeilingMs[0], _holdCeilingMs[1], _holdCeilingMs[2]);

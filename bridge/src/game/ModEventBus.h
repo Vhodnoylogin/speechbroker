@@ -4,8 +4,9 @@
 
 namespace Envoy
 {
-	// Рассылка событий подписчикам. Событие несёт только имя, строку и число -
-	// больше в механизм SKSE не влезает, и это определяет всю форму контракта.
+	// Delivering events to the subscribers. An event carries only a name, a string
+	// and a number - nothing more fits into the mechanism of SKSE, and that
+	// decides the whole shape of the contract.
 	class ModEventBus
 	{
 	public:

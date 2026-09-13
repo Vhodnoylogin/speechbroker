@@ -4,16 +4,17 @@
 
 namespace Envoy
 {
-	// Шов «событие ушло подписчикам».
+	// The seam "the event went out to the subscribers".
 	//
-	// Событие - звонок в дверь: имя, строка и число, больше в механизм SKSE
-	// не влезает, и это определяет всю форму контракта. Куда именно звонить,
-	// ядро не знает: в игре это рассылка Papyrus, вне игры - строка в журнале.
-	// Ядру достаточно того, что звонок сделан.
+	// An event is a doorbell: a name, a string and a number, nothing more fits
+	// into the mechanism of SKSE, and that decides the whole shape of the
+	// contract. Where exactly to ring, the core does not know: in the game it is
+	// a Papyrus broadcast, outside the game a line in the log. That the bell was
+	// rung is all the core needs.
 	//
-	// Приёмник по умолчанию именно записывает: «событие X инициировано». Для
-	// проверки этого хватает - нас занимает, какое событие мост решил послать
-	// и по какой реплике, а не то, как на него ответил чужой скрипт.
+	// The default sink does write it down: "event X raised". For a check that is
+	// enough - what occupies us is which event the bridge decided to send and on
+	// which utterance, not how somebody else answered it from a script.
 	class Events
 	{
 	public:

@@ -1,5 +1,5 @@
 {
-  "note": "живой спор из прогона 04.09: оба узнали \"проверка связи\" на 0.96. Уверенность их не разведёт никогда, а двусмысленности нет - фраза одна. Делает тот, кто делится; жадный выбывает по собственному условию.",
+  "note": "a live argument out of the run of 04.09: both recognised one phrase at 0.96. Confidence will never separate them, and there is no ambiguity - the phrase is one. The one that shares acts; the greedy one drops out by its own condition.",
   "state": {
     "core.context.menuOpen": false,
     "core.player.inCombat": false

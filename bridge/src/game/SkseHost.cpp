@@ -14,9 +14,9 @@ namespace Envoy
 			return;
 		}
 
-		// Интерфейса задач нет - делаем на месте. Хуже, чем в главном потоке,
-		// но лучше, чем потерять работу молча.
-		SKSE::log::warn("интерфейс задач SKSE недоступен, работа сделана на месте");
+		// No task interface, so we do it on the spot. Worse than the main thread, but
+		// better than silently losing the work.
+		SKSE::log::warn("the SKSE task interface is unavailable, the work was done on the spot");
 		a_task();
 	}
 
@@ -46,8 +46,9 @@ namespace Envoy
 
 	void SkseHost::Install()
 	{
-		// Живут до конца процесса: ядро держит на них указатели, а снимать швы
-		// при выгрузке некому - плагин SKSE не выгружается.
+		// They live until the process ends: the core holds pointers to them, and there
+		// is nobody to take the seams down at unload - an SKSE plugin is not
+		// unloaded.
 		static Tasks   tasks;
 		static Skyrim  state;
 		static Papyrus events;
@@ -56,6 +57,6 @@ namespace Envoy
 		GameState::Install(&state);
 		Events::Install(&events);
 
-		SKSE::log::info("швы ядра подключены к игре: задачи, состояние, события");
+		SKSE::log::info("the seams of the core are wired to the game: tasks, state, events");
 	}
 }

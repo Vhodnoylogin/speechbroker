@@ -15,11 +15,11 @@ namespace Envoy
 	std::string_view Config::Describe(Origin a_origin)
 	{
 		switch (a_origin) {
-		case Origin::Created: return "файл настроек создан из встроенного набора";
-		case Origin::Merged:  return "файл настроек дополнен новыми ключами";
-		case Origin::File:    return "файл настроек прочитан";
-		case Origin::Broken:  return "файл настроек не разбирается, работаю на встроенных значениях";
-		default:              return "работаю на встроенных значениях";
+		case Origin::Created: return "settings file created from the built-in set";
+		case Origin::Merged:  return "settings file topped up with the new keys";
+		case Origin::File:    return "settings file read";
+		case Origin::Broken:  return "settings file does not parse, running on the built-in values";
+		default:              return "running on the built-in values";
 		}
 	}
 
@@ -59,8 +59,8 @@ namespace Envoy
 		_path = a_path;
 		_error.clear();
 
-		// Встроенный набор - всегда основа. Даже если дальше всё пойдёт не так,
-		// плагин остаётся работоспособным.
+		// The built-in set is always the base. Even if everything after this goes
+		// wrong, the plugin stays able to work.
 		try {
 			_doc = nlohmann::json::parse(kDefaultConfigJson);
 		} catch (const std::exception& e) {
@@ -80,7 +80,7 @@ namespace Envoy
 			std::ifstream stream(a_path);
 			stream >> fromFile;
 		} catch (const std::exception& e) {
-			// Файл трогать нельзя: там могут быть правки пользователя.
+			// The file must not be touched: the user's own edits may be in it.
 			_error = e.what();
 			_origin = Origin::Broken;
 			return true;

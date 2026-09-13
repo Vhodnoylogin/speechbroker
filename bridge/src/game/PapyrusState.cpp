@@ -4,9 +4,9 @@
 
 #include <SKSE/SKSE.h>
 
-// Снимок мира и публикация ключей: всё, что подписчик спрашивает о состоянии
-// игры, и всё, чем он сам может стать поставщиком. Единственный собеседник
-// этого файла - StateStore.
+// The snapshot of the world and the publishing of keys: everything a subscriber
+// asks about the state of the game, and everything it can itself become a
+// provider of. The only party this file talks to is StateStore.
 namespace Envoy
 {
 	std::int32_t PapyrusApi::GetStateStatus(Tag, std::int32_t, Str a_key)
@@ -61,7 +61,7 @@ namespace Envoy
 	void PapyrusApi::DeclareKey(Tag, Str a_key, Str a_type, float a_ttlSec, Str a_description)
 	{
 		if (!StateStore::Get().Declare(a_key.c_str(), a_type.c_str(), a_ttlSec, a_description.c_str())) {
-			SKSE::log::warn("ключ {} не принят: пустое имя или чужое пространство", a_key.c_str());
+			SKSE::log::warn("key {} refused: empty name or a namespace of somebody else", a_key.c_str());
 		}
 	}
 

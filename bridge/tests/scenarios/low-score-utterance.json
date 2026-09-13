@@ -1,5 +1,5 @@
 {
-  "note": "расслышано плохо - аукцион даже не начинается",
+  "note": "heard badly - the auction does not even begin",
   "state": {"core.context.menuOpen": false, "core.player.inCombat": false},
   "providers": ["core"],
   "utterance": {"id": 6, "text": "фае бол", "score": 0.30, "margin": 0.02, "final": true, "channel": ""},

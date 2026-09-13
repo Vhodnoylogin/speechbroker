@@ -8,10 +8,11 @@
 
 namespace Envoy
 {
-	// Игровая поверхность моста. Имя скрипта совпадает с contract/Envoy.psc.
+	// The bridge's in-game surface. The script name matches contract/Envoy.psc.
 	//
-	// Событие приносит подписчику только номер реплики - больше в механизм SKSE
-	// не влезает. Всё остальное он забирает этими функциями.
+	// An event brings the subscriber nothing but the number of an utterance -
+	// nothing more fits into SKSE's mechanism. Everything else it fetches with
+	// these functions.
 	class PapyrusApi
 	{
 	public:
@@ -29,9 +30,9 @@ namespace Envoy
 		static void Subscribe(Tag, Str a_ns, std::vector<Str> a_topics);
 		static void Unsubscribe(Tag, Str a_ns);
 		static void SetActive(Tag, Str a_ns, bool a_active);
-		// Что участник о себе объявляет: во что обходится его действие
-		// и умеет ли он его отменить. От этого зависит, придержит ли мост
-		// незаконченную фразу или отдаст сразу.
+		// What a participant declares about itself: what its action costs and
+		// whether it can undo it. Whether the bridge holds an unfinished phrase
+		// back or hands it over at once depends on this.
 		static void Declare(Tag, Str a_ns, std::int32_t a_costClass, bool a_revocable);
 		static void RegisterVocabulary(Tag, Str a_ns, std::vector<Str> a_phrases);
 		static void ClearVocabulary(Tag, Str a_ns);
@@ -39,7 +40,7 @@ namespace Envoy
 		static Str          GetText(Tag, std::int32_t a_id);
 		static float        GetScore(Tag, std::int32_t a_id);
 		static float        GetMargin(Tag, std::int32_t a_id);
-		// Насколько мост уверен, что на этой реплике фраза закончилась.
+		// How sure the bridge is that the phrase ended on this utterance.
 		static float        GetComplete(Tag, std::int32_t a_id);
 		static bool         IsFinal(Tag, std::int32_t a_id);
 		static Str          GetEngineId(Tag, std::int32_t a_id);
@@ -63,16 +64,17 @@ namespace Envoy
 		static Str              GetOutcome(Tag, std::int32_t a_id);
 		static Str              GetAnswer(Tag, std::int32_t a_requestId);
 
-		// Кто объявился и на какие темы - чтобы участник мог показать это игроку.
+		// Who declared themselves and on which topics - so that a participant can
+		// show it to the player.
 		static std::vector<Str> GetNamespaces(Tag);
 		static std::vector<Str> GetTopicsOf(Tag, Str a_ns);
-		// Самопроверка рассылки. SelfTest посылает Envoy_Ping, Pong - ответ скрипта.
+		// A self-test of delivery. SelfTest sends Envoy_Ping; Pong is the script's answer.
 		static void             SelfTest(Tag);
 		static void             Pong(Tag, std::int32_t a_token);
 		static Str              GetSpeechResult(Tag, std::int32_t a_speechId);
 		static Str              GetTopic(Tag, std::int32_t a_id);
 
-		// Второе направление моста: из игры в модель.
+		// The bridge's second direction: from the game to the model.
 		static std::int32_t Say(Tag, Str a_text, Str a_voice, std::int32_t a_priority);
 		static void         StopSpeech(Tag, std::int32_t a_speechId);
 		static std::int32_t Ask(Tag, Str a_service, Str a_payload);
@@ -101,5 +103,10 @@ namespace Envoy
 		static Str              GetSource(Tag, Str a_capability);
 		static bool             SetSource(Tag, Str a_capability, Str a_adapter);
 		static void             ReloadSettings(Tag);
+
+		// Text for the player. The engine resolves a $-string by itself only when
+		// the whole string is shown as it is; anything glued together, and the
+		// vocabulary a subscriber registers, comes through here.
+		static Str              Translate(Tag, Str a_key);
 	};
 }

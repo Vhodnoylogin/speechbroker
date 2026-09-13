@@ -1,12 +1,13 @@
-/* Envoy Framework — ABI поставщика состояния. Версия 1.
+/* Envoy Framework - the ABI of a state provider. Version 1.
  *
- * Поставщик — обычная DLL в SKSE\Plugins\EnvoyProviders\. Мост перебирает папку,
- * спрашивает EnvoyProvider_GetInfo и строит карту "ключ -> поставщик".
- * Нет мода — нет DLL — ключ отвечает ENVOY_S_NO_PROVIDER. Ни одной проверки
- * редакции игры внутри моста.
+  * A provider is an ordinary DLL in SKSE\Plugins\EnvoyProviders\. The bridge
+  * walks the folder, asks EnvoyProvider_GetInfo and builds a map "key ->
+  * provider". No mod - no DLL - the key answers ENVOY_S_NO_PROVIDER. Not a
+  * single check of the edition of the game inside the bridge.
  *
- * Движки распознавания и синтеза сюда НЕ входят: они подключаются к службе
- * моделей, а не к плагину. У плагина нет моделей и нет микрофона.
+  * The engines of recognition and synthesis do NOT belong here: they attach to
+  * the service of models, not to the plugin. The plugin has no models and no
+  * microphone.
  */
 #ifndef ENVOY_ABI_H
 #define ENVOY_ABI_H
@@ -34,23 +35,23 @@ typedef enum EnvoyStatus {
 } EnvoyStatus;
 
 typedef enum EnvoyCost {
-    ENVOY_COST_CHEAP     = 0,  /* считается при сборке снимка */
-    ENVOY_COST_EXPENSIVE = 1   /* только по запросу, с кэшем */
+    ENVOY_COST_CHEAP     = 0,  /* worked out when the snapshot is built */
+    ENVOY_COST_EXPENSIVE = 1   /* on request only, with a cache */
 } EnvoyCost;
 
 typedef struct EnvoyKeyDecl {
-    const char* key;          /* полное имя, включая пространство имён */
+    const char* key;          /* the full name, namespace included */
     uint32_t    type;         /* EnvoyType */
     uint32_t    cost;         /* EnvoyCost */
-    float       ttlSec;       /* 0 - не устаревает */
-    const char* description;  /* попадает в GetKeys() */
+    float       ttlSec;       /* 0 - never stales */
+    const char* description;  /* ends up in GetKeys() */
 } EnvoyKeyDecl;
 
 typedef struct EnvoyValue {
     uint32_t    type;
     int32_t     i;       /* ENVOY_T_BOOL, ENVOY_T_INT */
     float       f;       /* ENVOY_T_FLOAT */
-    const char* str;     /* ENVOY_T_STRING, живёт до конца сборки снимка */
+    const char* str;     /* ENVOY_T_STRING, lives until the snapshot is finished */
     uint32_t    formId;  /* ENVOY_T_FORM */
 } EnvoyValue;
 
@@ -62,18 +63,18 @@ typedef struct EnvoyProviderInfo {
     const EnvoyKeyDecl* keys;
 } EnvoyProviderInfo;
 
-/* --- экспорты, обязательные для поставщика --- */
+/* --- the exports a provider must have --- */
 
 __declspec(dllexport) const EnvoyProviderInfo* EnvoyProvider_GetInfo(void);
 
-/* configJson - раздел конфигурации моста для этого поставщика; может быть NULL.
-   Возвращает 0 при успехе. */
+/* configJson - the section of the settings of the bridge for this provider; may
+   be NULL. Gives back 0 on success. */
 __declspec(dllexport) int  EnvoyProvider_Init(const char* configJson);
 
 __declspec(dllexport) void EnvoyProvider_Shutdown(void);
 
-/* Вызывается из главного потока при сборке снимка. Обязан вернуться быстро
-   и никогда не блокировать. Возвращает EnvoyStatus. */
+/* Called from the main thread while the snapshot is built. Must return quickly
+   and must never block. Gives back an EnvoyStatus. */
 __declspec(dllexport) int  EnvoyProvider_Read(const char* key, EnvoyValue* out);
 
 #ifdef __cplusplus

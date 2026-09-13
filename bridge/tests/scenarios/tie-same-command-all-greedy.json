@@ -1,5 +1,5 @@
 {
-  "note": "одну команду просят двое, и оба требуют её себе. Уступать некому, порядок в настройках не задан - не делает никто.",
+  "note": "two ask for one command and both demand it for themselves. There is nobody to give way, and no order is set in the settings - nobody acts.",
   "state": {
     "core.context.menuOpen": false,
     "core.player.inCombat": false

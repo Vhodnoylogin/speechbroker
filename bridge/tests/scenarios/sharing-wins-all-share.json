@@ -1,5 +1,5 @@
 {
-  "note": "победил делящийся - жадный выбывает целиком, результат делят все оставшиеся",
+  "note": "the sharing one won - the greedy one drops out entirely, the rest share the result",
   "state": {"core.context.menuOpen": false, "core.player.inCombat": false},
   "providers": ["core"],
   "utterance": {"id": 11, "text": "что вокруг", "score": 0.88, "margin": 0.25, "final": true, "channel": ""},

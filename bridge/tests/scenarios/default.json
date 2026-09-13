@@ -1,101 +1,101 @@
 {
   "name": "Кому уходит фрагмент",
-  "_": "Каждый шаг проверяет одно решение моста. Тексты взяты из живых записей в dev/audio/takes - те же фразы, что произнесены в микрофон.",
+  "_": "Every step checks one decision of the bridge. The texts are taken from the live recordings in dev/audio/takes - the same phrases that were spoken into the microphone. They stay in Russian on purpose: they are speech, not interface, and they are the only cover the Cyrillic case folding in core/Text has.",
   "steps": [
     {
-      "_": "Ничья одного рода: doors и guard объявили одну и ту же фразу. Спор о том, чья это команда, а не о том, что сказано.",
+      "_": "A tie of one kind: doors and guard declared the same phrase. The argument is about whose command it is, not about what was said.",
       "text": "закрой дверь",
       "score": 0.94,
       "margin": 0.31
     },
     {
-      "_": "Фразу знает только doors - соперничества нет.",
+      "_": "Only doors knows the phrase - there is no rivalry.",
       "text": "запри на замок",
       "score": 0.91,
       "margin": 0.28
     },
     {
-      "_": "Дорогое и жадное в бою. Порог дорогого класса выше обратимого.",
+      "_": "Expensive and greedy, in combat. The threshold of the expensive class is higher than that of the reversible one.",
       "text": "огненный шар",
       "score": 0.93,
       "margin": 0.30,
       "state": { "combat": true }
     },
     {
-      "_": "Та же команда, сказанная невнятно. Уверенности не хватает на дорогой класс - и заклинание не срывается.",
+      "_": "The same command, said indistinctly. There is not enough confidence for the expensive class - and the spell does not go off.",
       "text": "огненный шар",
       "score": 0.62,
       "margin": 0.08,
       "state": { "combat": true }
     },
     {
-      "_": "Команда как начало более длинной фразы, СКАЗАННОЙ СЛИТНО. Границы здесь нет и быть не должно: паузы в речи не было, движок отдал один кусок. Настоящая опасность префикса живёт не тут, а там, где пауза есть, - её проверит запись prefix-pause.",
+      "_": "A command as the beginning of a longer phrase, SAID WITHOUT A BREAK. There is no boundary here and there must not be one: there was no pause in the speech and the engine handed over a single piece. The real danger of a prefix lives not here but where there is a pause - the recording prefix-pause checks that.",
       "text": "огненный шар в правую руку",
       "score": 0.89,
       "margin": 0.26,
       "state": { "combat": true }
     },
     {
-      "_": "Жадный против делящегося на одной фразе с одинаковой уверенностью. Цена у обоих одна - обратимая, поэтому исход решает именно жадность.",
+      "_": "Greedy against sharing on one phrase with equal confidence. The cost is the same for both - reversible - so the outcome is decided by greed alone.",
       "text": "отступаем",
       "score": 0.90,
       "margin": 0.27,
       "state": { "combat": true }
     },
     {
-      "_": "Дорогое, но не жадное: высокий порог есть, исключительности нет.",
+      "_": "Expensive but not greedy: the high threshold is there, the exclusivity is not.",
       "text": "лечи меня",
       "score": 0.92,
       "margin": 0.29,
       "state": { "combat": true }
     },
     {
-      "_": "Английская команда рядом с русскими словарями. Мост меряет их одной меркой и языка не спрашивает.",
+      "_": "An English command next to Russian vocabularies. The bridge measures them by one yardstick and does not ask about the language.",
       "text": "fireball",
       "score": 0.90,
       "margin": 0.27,
       "state": { "combat": true }
     },
     {
-      "_": "Словарь, пересекающийся сам с собой: «стой» целиком входит в «стой на месте». Уверенность высокая, запас почти нулевой - работает порог запаса.",
+      "_": "A vocabulary that overlaps itself: one phrase is contained whole inside a longer one. The confidence is high and the margin almost nil - the margin threshold works.",
       "text": "стой",
       "score": 0.93,
       "margin": 0.30
     },
     {
-      "_": "Широкий словарь из двадцати похожих фраз: лучшая и вторая отличаются на волос.",
+      "_": "A wide vocabulary of twenty similar phrases: the best and the second differ by a hair.",
       "text": "открой сундук",
       "score": 0.92,
       "margin": 0.29
     },
     {
-      "_": "Команда упомянута, а не отдана. Никто не должен ничего делать.",
+      "_": "The command is mentioned, not given. Nobody is to do anything.",
       "text": "я закрыл дверь как ты просил",
       "score": 0.92,
       "margin": 0.29
     },
     {
-      "_": "Открыто окно диалога, и «да» объявили ДВОЕ. Уверенность у них одинакова всегда - запись словаря даёт одно и то же число. Развести их может только порядок из настроек; на встроенных настройках порядок пуст, и они делят.",
+      "_": "The dialogue window is open, and TWO declared the same word. Their confidence is always equal - a vocabulary entry gives one and the same number. Only the order from the settings can separate them; on the built-in settings the order is empty and they share.",
       "text": "да",
       "score": 0.90,
       "margin": 0.27,
       "state": { "menu": "Dialogue Menu" }
     },
     {
-      "_": "Открыто окно диалога: тема отсекает всех, кроме подписчиков диалога.",
+      "_": "The dialogue window is open: the topic cuts off everybody except the subscribers of dialogue.",
       "text": "прощай",
       "score": 0.88,
       "margin": 0.24,
       "state": { "menu": "Dialogue Menu" }
     },
     {
-      "_": "То же слово вне диалога. Подписчик диалога его не получает вовсе.",
+      "_": "The same word outside dialogue. The subscriber of dialogue does not get it at all.",
       "text": "прощай",
       "score": 0.88,
       "margin": 0.24
     },
     {
-      "_": "Сказано в канал. Канал выбирается раньше всех прочих тем - даже боя.",
+      "_": "Said into a channel. A channel is chosen before every other topic - even before combat.",
       "text": "приём",
       "score": 0.91,
       "margin": 0.28,
@@ -103,13 +103,13 @@
       "state": { "combat": true }
     },
     {
-      "_": "То же слово без канала: до подписчика канала оно не доходит.",
+      "_": "The same word without a channel: it does not reach the subscriber of the channel.",
       "text": "приём",
       "score": 0.91,
       "margin": 0.28
     },
     {
-      "_": "Тишина: распознано пусто. Аукциону нечего разыгрывать.",
+      "_": "Silence: nothing was recognised. The auction has nothing to play out.",
       "text": "",
       "score": 0.0,
       "margin": 0.0

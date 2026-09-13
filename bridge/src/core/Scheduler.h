@@ -10,17 +10,17 @@
 
 namespace Envoy
 {
-	// Один поток на все отложенные дела.
+	// One thread for everything that waits.
 	//
-	// Прежде каждая реплика заводила свой отсоединённый поток - только чтобы
-	// поспать окно ставок и разбудить подведение итога. На фразу это поток,
-	// на разговор - десятки, и все они живут сами по себе: остановить их при
-	// выходе из игры нечем, а трогают они то, чего к тому времени может уже
-	// не быть.
+	// Each utterance used to start a detached thread of its own, only to sleep
+	// through the bid window and wake the settling up. That is one thread per
+	// phrase and dozens per conversation, all of them living on their own: there
+	// is nothing to stop them with when the game exits, and what they touch may
+	// by then be gone.
 	//
-	// Задача выполняется в потоке планировщика. Той, которой нужен игровой
-	// поток, полагается положить себя туда самой - планировщик про игру
-	// не знает ничего.
+	// A task runs in the thread of the scheduler. One that needs the thread of the
+	// game is expected to put itself there - the scheduler knows nothing about
+	// the game.
 	class Scheduler
 	{
 	public:
@@ -41,8 +41,8 @@ namespace Envoy
 			std::chrono::steady_clock::time_point at;
 			std::function<void()>                 task;
 
-			// Куча отдаёт наибольший элемент, а нам нужен ближайший по времени,
-			// поэтому сравнение перевёрнуто.
+			// A heap hands back the largest element and what we want is the nearest in
+			// time, so the comparison is turned around.
 			bool operator<(const Item& a_other) const { return at > a_other.at; }
 		};
 

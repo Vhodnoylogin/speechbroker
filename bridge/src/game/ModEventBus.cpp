@@ -11,16 +11,17 @@ namespace Envoy
 	{
 		auto* source = SKSE::GetModCallbackEventSource();
 
-		// Направление "мост -> Papyrus" в VR ни разу не подтверждено: обратное
-		// работает (подписчики зарегистрировались), а сюда доказательств нет.
-		// Один раз за запуск говорим прямо, есть ли вообще куда слать.
+		// The direction "bridge -> Papyrus" has never once been confirmed in VR: the
+		// other way round works (the subscribers did register), but there is no proof
+		// for this one. Once per launch we say plainly whether there is anywhere to
+		// send at all.
 		static std::once_flag once;
 		std::call_once(once, [source] {
 			if (source) {
-				SKSE::log::info("рассылка событий Papyrus готова");
+				SKSE::log::info("Papyrus event delivery is ready");
 			} else {
-				SKSE::log::error("рассылка событий Papyrus недоступна: "
-				                 "ни одно событие до скриптов не дойдёт");
+				SKSE::log::error("Papyrus event delivery is unavailable: "
+				                 "not one event will reach the scripts");
 			}
 		});
 

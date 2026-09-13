@@ -56,8 +56,8 @@ namespace Envoy
 
 			const auto at = _queue.top().at;
 			if (std::chrono::steady_clock::now() < at) {
-				// Ждём именно до срока ближайшего дела, а не фиксированный шаг:
-				// новое дело может оказаться раньше, и тогда нас разбудят.
+				// Waiting exactly until the nearest task is due rather than a fixed step: a
+				// new task may fall earlier, and then we are woken.
 				_wake.wait_until(lock, at);
 				continue;
 			}
@@ -65,7 +65,7 @@ namespace Envoy
 			auto task = std::move(const_cast<Item&>(_queue.top()).task);
 			_queue.pop();
 
-			// Задача выполняется без замка: она вправе поставить следующую.
+			// The task runs with the lock let go: it is entitled to queue the next one.
 			lock.unlock();
 			task();
 			lock.lock();

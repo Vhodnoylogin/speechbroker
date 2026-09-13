@@ -9,11 +9,12 @@
 
 namespace Envoy
 {
-	// Реестр состояния мира. Ключ описывает вопрос, а не способ ответа.
+	// The register of the state of the world. A key describes the question, not
+	// the way it is answered.
 	//
-	// Значение либо есть, либо спросить некому - и потребитель обязан различать
-	// это. Скриптовые поставщики публикуют значения при изменении, потому что
-	// синхронно спросить Papyrus из C++ нельзя.
+	// Either there is a value or there is nobody to ask - and the consumer is
+	// obliged to tell the two apart. Script providers publish values when they
+	// change, because Papyrus cannot be asked from C++ and answered on the spot.
 	class StateStore
 	{
 	public:
@@ -40,7 +41,7 @@ namespace Envoy
 
 		static StateStore& Get();
 
-		// Пространство core зарезервировано за ядром: чужие писать в него не могут.
+		// The core namespace is reserved for the core: outsiders cannot write into it.
 		bool Declare(const std::string& a_key, std::string a_type, double a_ttlSec, std::string a_description);
 		void Retract(const std::string& a_key);
 

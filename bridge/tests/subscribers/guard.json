@@ -1,5 +1,5 @@
 {
-  "_": "Нарочно пересекается с test.doors на фразе «закрой дверь». Это ничья ОДНОГО РОДА: оба поняли одну и ту же команду, и спор идёт о том, чья она. Отличать её от ничьей, где двое поняли РАЗНОЕ, и есть смысл поля phrase в ставке.",
+  "_": "Deliberately overlaps test.doors on one phrase. This is a tie of ONE KIND: both understood the same command, and the argument is about whose it is. Telling it apart from a tie where two understood DIFFERENT things is the whole point of the phrase field in a bid.",
   "namespace": "test.guard",
   "topics": [
     "world",

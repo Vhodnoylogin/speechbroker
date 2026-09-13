@@ -1,5 +1,5 @@
 {
-  "note": "тот же спор, но игрок расставил приоритет - решение детерминировано",
+  "note": "the same argument, but the player set a priority - the decision is deterministic",
   "config": {"auction": {"priority": ["MySpells", "OtherMod"]}},
   "state": {"core.context.menuOpen": false, "core.player.inCombat": false},
   "providers": ["core"],

@@ -1,5 +1,5 @@
 {
-  "_": "Широкий словарь из двадцати похожих фраз. Все начинаются одинаково, поэтому лучшая и вторая отличаются на волос: запас почти нулевой при высокой уверенности. Так выглядит настоящий мод-раздатчик команд, и именно на нём порог запаса решает, отдавать ли ему что-нибудь вообще.",
+  "_": "A wide vocabulary of twenty similar phrases. They all begin alike, so the best and the second differ by a hair: the margin is almost nil at a high confidence. This is what a real command-dealing mod looks like, and it is on this one that the margin threshold decides whether to give it anything at all.",
   "namespace": "test.wide",
   "topics": [
     "world"

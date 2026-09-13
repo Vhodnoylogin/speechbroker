@@ -6,11 +6,11 @@
 
 namespace Envoy
 {
-	// Кодовые точки, а не байты. Кириллица в UTF-8 занимает два байта, и
-	// std::tolower их не трогает, а расстояние редактирования по байтам
-	// назначает заглавной букве цену от того, в какой половине блока она
-	// стоит: "З" стоила 1 байт из 23, а "Ч" - 2 из 19. Регистронезависимость
-	// для русского не работала вовсе, и все пороги значили не то, чем казались.
+	// Code points, not bytes. Cyrillic takes two bytes in UTF-8, std::tolower does
+	// not touch them, and an edit distance over bytes prices a capital letter by
+	// which half of the block it sits in: one Russian capital cost 1 byte out of
+	// 23 and another cost 2 out of 19. Case-insensitivity did not work for Russian
+	// at all, and every threshold meant something other than it seemed to.
 	std::u32string Text::Decode(const std::string& a_text)
 	{
 		std::u32string out;
@@ -29,7 +29,7 @@ namespace Envoy
 				extra = 1;
 				point = lead & 0x1Fu;
 			} else if (lead >= 0x80) {
-				// Одиночный продолжающий байт - строка битая; пропускаем.
+				// A lone continuation byte - the string is broken; skip it.
 				++i;
 				continue;
 			}
@@ -50,10 +50,10 @@ namespace Envoy
 		if (a_point >= U'A' && a_point <= U'Z') {
 			return a_point + 0x20;
 		}
-		if (a_point >= 0x0410 && a_point <= 0x042F) {   // А-Я
+		if (a_point >= 0x0410 && a_point <= 0x042F) {   // Cyrillic A-Ya
 			return a_point + 0x20;
 		}
-		if (a_point >= 0x0400 && a_point <= 0x040F) {   // Ѐ-Џ, сюда же Ё
+		if (a_point >= 0x0400 && a_point <= 0x040F) {   // Cyrillic Ie-Dzhe, Yo among them
 			return a_point + 0x50;
 		}
 		return a_point;
@@ -61,8 +61,8 @@ namespace Envoy
 
 	bool Text::IsSpace(char32_t a_point)
 	{
-		// Пробельные - числами: табулятор, перевод строки, возврат каретки
-		// и неразрывный пробел.
+		// The whitespace ones by number: tab, line feed, carriage return and the
+		// non-breaking space.
 		return a_point == U' ' || a_point == 0x09 || a_point == 0x0A ||
 		       a_point == 0x0D || a_point == 0x00A0;
 	}
@@ -72,8 +72,8 @@ namespace Envoy
 		if (a_point < 0x80) {
 			return std::ispunct(static_cast<int>(a_point)) != 0;
 		}
-		// Знаки, которые в самом деле приходят от распознавания: кавычки-ёлочки,
-		// типографские кавычки и тире, многоточие.
+		// The marks that really do arrive from recognition: guillemets, typographic
+		// quotes and dashes, the ellipsis.
 		return a_point == 0x00AB || a_point == 0x00BB ||
 		       (a_point >= 0x2010 && a_point <= 0x2015) ||
 		       (a_point >= 0x2018 && a_point <= 0x201F) ||
@@ -98,8 +98,8 @@ namespace Envoy
 		return out;
 	}
 
-	// Похожесть строк без внешних библиотек: расстояние редактирования,
-	// приведённое к доле от длины. Для команд и коротких фраз этого хватает.
+	// Likeness of strings without outside libraries: edit distance taken as a
+	// share of the length. For commands and short phrases that is enough.
 	float Text::Similarity(const std::u32string& a_left, const std::u32string& a_right)
 	{
 		if (a_left.empty() || a_right.empty()) {

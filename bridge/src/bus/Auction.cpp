@@ -21,8 +21,8 @@ namespace Envoy
 		Result result;
 
 		const char* stranger = a_top.phrase.empty()
-		                           ? "команда победителя неизвестна - награда не делится"
-		                           : "узнал другую команду - эта не его";
+		                           ? "the command of the winner is unknown - the prize is not shared"
+		                           : "recognised a different command - this one is not its own";
 
 		for (const auto& bid : a_survivors) {
 			const bool same = bid.ns == a_top.ns ||
@@ -30,7 +30,7 @@ namespace Envoy
 			if (!same) {
 				result.denied[bid.ns] = stranger;
 			} else if (bid.greedy) {
-				result.denied[bid.ns] = "проиграл, а делиться отказался";
+				result.denied[bid.ns] = "lost, and refused to share";
 			} else {
 				result.winners.push_back(bid.ns);
 			}
@@ -59,7 +59,7 @@ namespace Envoy
 			if (bid.confidence >= Settings::Get().MinConfidence(bid.costClass)) {
 				survivors.push_back(bid);
 			} else {
-				a_result.denied[bid.ns] = "уверенность ниже порога своего класса";
+				a_result.denied[bid.ns] = "confidence below the threshold of its class";
 			}
 		}
 		return survivors;
@@ -94,8 +94,9 @@ namespace Envoy
 		Result     result;
 		const auto tied = Tied(a_survivors, a_need);
 
-		// Порядок из настроек - прямое указание игрока, и оно старше любых наших
-		// рассуждений: если он назвал, кто здесь главный, спорить не о чем.
+		// The order from the settings is a direct instruction from the player, and it
+		// outranks any reasoning of ours: if they named who is in charge here, there
+		// is nothing to argue about.
 		auto             best = Settings::kNoPriority;
 		std::size_t      count = 0;
 		const BidRecord* chosen = nullptr;
@@ -110,40 +111,41 @@ namespace Envoy
 			}
 		}
 		if (best != Settings::kNoPriority && count == 1) {
-			return Exclusive(chosen->ns, "ставки неразличимы, спор решён порядком из настроек",
+			return Exclusive(chosen->ns, "the bids are indistinguishable, the argument was settled by the order from the settings",
 				a_survivors);
 		}
 
-		// Порядок молчит. Дальше всё зависит от того, об одном ли спор. Разные
-		// команды при неразличимой уверенности - это двусмысленная реплика:
-		// понять её можно двояко, и оба понимания равно правдоподобны. Сделать
-		// по ней хоть что-нибудь значит угадывать.
+		// The order says nothing. What happens next depends on whether the argument is
+		// about one thing. Different commands at indistinguishable confidence mean an
+		// ambiguous utterance: it can be understood two ways and both readings are
+		// equally plausible. Doing anything at all about it amounts to guessing.
 		if (!SameCommand(tied)) {
-			result.reason = "фразу поняли по-разному и одинаково уверенно - реплика двусмысленна";
+			result.reason = "the phrase was understood differently and with equal confidence - the utterance is ambiguous";
 			for (const auto& bid : a_survivors) {
 				result.denied[bid.ns] = result.reason;
 			}
 			return result;
 		}
 
-		// Двусмысленности нет: все узнали одну и ту же команду, и спор идёт не
-		// о том, что сказано, а о том, чья это команда. Уверенность его не решит
-		// никогда, поэтому решает объявленная готовность делиться. Жадный при
-		// этом ничего не теряет: он сам объявил "мне одному или никак" и при
-		// чужой победе выбывает по собственному условию.
+		// There is no ambiguity: everybody recognised one and the same command, and
+		// the argument is not about what was said but about whose command it is.
+		// Confidence will never settle that, so it is settled by the declared
+		// willingness to share. A greedy bidder loses nothing by this: it declared
+		// "mine alone or not at all" itself and drops out by its own condition when
+		// somebody else wins.
 		if (Settings::Get().sharedWinsTie) {
-			// Спорщики уже проверены на одну команду выше, но раздача идёт
-			// по всем выжившим: отставший на целый запас тоже может узнать
-			// ту же фразу, и отказывать ему не за что. А узнавший другую
-			// не получит награду, даже если порог прошёл.
+			// The arguers were already checked for one command above, but the sharing
+			// runs over all the survivors: one left behind by a whole margin may also
+			// recognise the same phrase, and there is nothing to refuse it for. One that
+			// recognised something else gets no prize even if it passed the threshold.
 			auto shared = Share(a_survivors, tied.front());
 			if (!shared.winners.empty()) {
-				shared.reason = "одну команду просят несколько, порядок не задан - её делают те, кто делится";
+				shared.reason = "several ask for one command and no order is set - it is done by those that share";
 				return shared;
 			}
 		}
 
-		result.reason = "одну команду просят несколько, и все требуют её себе - не делает никто";
+		result.reason = "several ask for one command and all demand it for themselves - nobody does it";
 		for (const auto& bid : a_survivors) {
 			result.denied[bid.ns] = result.reason;
 		}
@@ -155,24 +157,25 @@ namespace Envoy
 		Result result;
 
 		if (_utterance.score < Settings::Get().minUtteranceScore) {
-			result.reason = "реплика расслышана хуже порога";
+			result.reason = "the utterance was heard below the threshold";
 			for (const auto& bid : _utterance.bids) {
 				result.denied[bid.ns] = result.reason;
 			}
 			return result;
 		}
 
-		// Отсутствие ставок и провал ставок - разные вещи, и сводить их к одной
-		// строке журнала значит лгать в диагностике: в прогоне 04.09 такую
-		// строку получили 34 реплики из 36, и ни у одной ставок не было.
+		// No bids at all and bids that failed are different things, and boiling them
+		// down to one line in the log means lying in the diagnosis: in the run of
+		// 04.09 that line was given to 34 utterances out of 36, and not one of them
+		// had any bids.
 		if (_utterance.bids.empty()) {
-			result.reason = "никто не заявился";
+			result.reason = "nobody bid";
 			return result;
 		}
 
 		auto survivors = Survivors(result);
 		if (survivors.empty()) {
-			result.reason = "ни одна ставка не прошла порог уверенности";
+			result.reason = "not one bid passed the confidence threshold";
 			return result;
 		}
 
@@ -187,24 +190,25 @@ namespace Envoy
 
 		const auto top = survivors.front();
 
-		// Дальше спорят только выжившие, и вердикт касается только их.
+		// From here only the survivors argue, and the verdict concerns only them.
 		Result verdict;
 		const auto need = Settings::Get().MinMargin(top.costClass);
 		if (survivors.size() > 1 && top.confidence - survivors[1].confidence < need) {
 			verdict = BreakTie(survivors, need);
 		} else if (top.greedy) {
-			verdict = Exclusive(top.ns, "победитель жадный - результат только ему", survivors);
+			verdict = Exclusive(top.ns, "the winner is greedy - the result goes to it alone", survivors);
 		} else {
 			verdict = Share(survivors, top);
 			verdict.reason = verdict.winners.size() > 1
-			                     ? "победитель делится - результат достался всем, кто узнал ту же команду"
-			                     : "победитель делится, делить не с кем";
+			                     ? "the winner shares - the result went to everybody that recognised the same command"
+			                     : "the winner shares, but there is nobody to share with";
 		}
 
-		// Выбывшие по порогу в круг спора не входили, и в вердикте их нет:
-		// их причина записана раньше и просто добавляется. Так слияние одно
-		// на все исходы; прежде их было два с разной семантикой, и в ветке
-		// порядка выбывший по порогу получал чужую причину.
+		// Those who dropped out on the threshold were never in the circle of the
+		// argument and are not in the verdict: their reason was written down earlier
+		// and is simply added. That makes the merge one for every outcome; there
+		// used to be two of them with different meanings, and in the branch of the
+		// order somebody who dropped out on the threshold got the wrong reason.
 		verdict.denied.insert(result.denied.begin(), result.denied.end());
 		return verdict;
 	}
@@ -222,15 +226,17 @@ namespace Envoy
 			return;
 		}
 
-		// Тема выбирается ДО решения о придержании: зал зависит от неё, и
-		// сказанное в бою слышат не те, кто слышит сказанное в мире.
+		// The topic is chosen BEFORE the decision to hold: the room depends on it,
+		// and what is said in combat is heard by different people than what is said
+		// out in the world.
 		//
-		// И выбирается один раз. Тема принадлежит моменту, когда фраза была
-		// сказана, а не моменту оглашения: придержанную реплику отпускают через
-		// секунды, когда бой мог кончиться или открыться меню. Прежде Offer
-		// выбирал тему заново, и в живом прогоне 07.09 «фаербол», сказанный
-		// в бою и придержанный по залу боя, ушёл событием Envoy_Speech_World -
-		// придержание считало риск по одному залу, оглашение шло другому.
+		// And it is chosen once. The topic belongs to the moment the phrase was said,
+		// not to the moment it is announced: a held utterance is let go seconds
+		// later, by which time the combat may have ended or a menu opened. Offer
+		// used to choose the topic afresh, and in the live run of 07.09 a fireball
+		// said in combat and held by the combat room went out as an
+		// Envoy_Speech_World event - holding counted the risk by one room while the
+		// announcement went to another.
 		auto item = *stored;
 		item.topic = TopicRouter::Pick(item);
 		UtteranceStore::Get().Update(a_id, item);
@@ -238,7 +244,7 @@ namespace Envoy
 		const auto verdict = Hold::Judge(item);
 		if (!verdict.hold) {
 			if (verdict.audience > 0) {
-				spdlog::info("реплика {} отдаётся сразу: {}", a_id, verdict.reason);
+				spdlog::info("utterance {} handed over at once: {}", a_id, verdict.reason);
 			}
 			Offer(a_id);
 			return;
@@ -247,15 +253,16 @@ namespace Envoy
 		item.held = true;
 		item.holdReason = verdict.reason;
 		UtteranceStore::Get().Update(a_id, item);
-		spdlog::info("реплика {} ПРИДЕРЖАНА: {}", a_id, verdict.reason);
+		spdlog::info("utterance {} IS HELD: {}", a_id, verdict.reason);
 
-		// Потолок - не главный путь, а страховка. Обычно удержание кончается
-		// раньше: либо приходит продолжение и обрывок выбрасывается вовсе,
-		// либо человек замолкает, и движок сам присылает законченную реплику.
+		// The ceiling is not the main path but insurance. Usually the hold ends
+		// earlier: either the continuation arrives and the fragment is thrown away
+		// altogether, or the person falls silent and the engine sends a finished
+		// utterance itself.
 		if (verdict.ceilingMs > 0) {
 			Scheduler::Get().After(std::chrono::milliseconds(verdict.ceilingMs), [a_id]() {
 				MainThread::Post([a_id]() {
-					Auctioneer::Get().Release(a_id, "истёк потолок класса длины");
+					Auctioneer::Get().Release(a_id, "the ceiling of the length class ran out");
 				});
 			});
 		}
@@ -268,14 +275,14 @@ namespace Envoy
 			return;
 		}
 		if (stored->supersededBy != 0) {
-			// Продолжение успело прийти: обрывок больше не разыгрывается.
+			// The continuation got here in time: the fragment is no longer played out.
 			return;
 		}
 
 		auto item = *stored;
 		item.held = false;
 		UtteranceStore::Get().Update(a_id, item);
-		spdlog::info("реплика {} отпущена: {}", a_id, a_why);
+		spdlog::info("utterance {} let go: {}", a_id, a_why);
 		Offer(a_id);
 	}
 
@@ -294,22 +301,22 @@ namespace Envoy
 			UtteranceStore::Get().Update(older, item);
 
 			if (wasHeld) {
-				// Придержали и не прогадали: фраза продолжилась, а обрывок
-				// так и не ушёл никуда. Ради этого случая всё и делалось.
-				spdlog::info("реплика {} выброшена не оглашённой: её поглотила {}",
+				// Held, and rightly so: the phrase went on and the fragment never went
+				// anywhere. This is the case the whole thing was built for.
+				spdlog::info("utterance {} thrown away unannounced: it was absorbed by {}",
 					older, a_newId);
 				continue;
 			}
 
 			if (!item.winners.empty()) {
-				// Успели отдать. Отменить сделанное мост не может - он не знает,
-				// что именно подписчик сделал, - но обязан сказать. Знает, как
-				// исправиться, только сам победитель.
+				// Handed over in time. The bridge cannot undo what was done - it does not
+				// know what exactly the subscriber did - but it is obliged to say so. Only
+				// the winner itself knows how to put things right.
 				std::string who;
 				for (const auto& winner : item.winners) {
 					who += who.empty() ? winner : ", " + winner;
 				}
-				spdlog::warn("реплика {} была отдана ({}) и поглощена репликой {} - отзыв",
+				spdlog::warn("utterance {} had been handed over ({}) and was absorbed by utterance {} - revoking",
 					older, who, a_newId);
 				Events::Send("Envoy_Revoked", "", static_cast<float>(older));
 			}
@@ -323,22 +330,25 @@ namespace Envoy
 			return;
 		}
 
-		// Тема уже выбрана при приёме и здесь не пересматривается: см. Receive.
+		// The topic was chosen when the utterance was taken in and is not revisited
+		// here: see Receive.
 		auto item = *stored;
 		item.offeredAt = std::chrono::steady_clock::now();
 		UtteranceStore::Get().Update(a_id, item);
 
-		// Уборка идёт здесь же: чаще реплик в хранилище ничего не происходит,
-		// а отдельный поток-уборщик пришлось бы ещё и останавливать при выходе.
+		// The tidying happens right here: nothing happens in the store more often
+		// than an utterance does, and a sweeper thread of its own would also have to
+		// be stopped on exit.
 		UtteranceStore::Get().PruneIfDue(Settings::Get().utteranceTtlSec,
 			Settings::Get().utteranceMaxStored);
 
-		// Наблюдатели видят каждую реплику независимо от темы - именно так мод
-		// может показать, что до него что-то не дошло и почему.
-		// Событие - звонок в дверь: в нём только номер реплики. Тему подписчик
-		// узнаёт по имени события, а для Envoy_Speech_Any - вызовом GetTopic.
-		// Текст всегда берётся из моста: точная модель может уточнить его уже
-		// после рассылки, и копия в событии разошлась бы с истиной.
+		// Observers see every utterance whatever the topic - that is exactly how a mod
+		// can show that something did not reach it, and why.
+		// An event is a doorbell: there is only the number of the utterance in it.
+		// The subscriber learns the topic from the name of the event, and for
+		// Envoy_Speech_Any by calling GetTopic. The text is always taken from the
+		// bridge: the accurate model may refine it after the broadcast, and a copy
+		// inside the event would part company with the truth.
 		Events::Send("Envoy_Speech_Any", "", static_cast<float>(a_id));
 		Events::Send(TopicRouter::EventName(item.topic), "", static_cast<float>(a_id));
 
@@ -361,20 +371,21 @@ namespace Envoy
 			outcome += outcome.empty() ? winner : ", " + winner;
 		}
 		if (outcome.empty()) {
-			outcome = "никто";
+			outcome = "nobody";
 		}
 
 		UtteranceStore::Get().SetOutcome(a_id, result.winners, result.denied,
 			outcome + " - " + result.reason);
 
-		spdlog::info("реплика {} тема {} ставок {} -> {} ({})", a_id, stored->topic,
+		spdlog::info("utterance {} topic {} bids {} -> {} ({})", a_id, stored->topic,
 			stored->bids.size(), outcome, result.reason);
 
-		// По одной рассылке на исход, а не на получателя: имени в событии больше
-		// нет, и каждый участник сам спрашивает IsWinner или GetDenyReason.
-		// Три имени сохранены не ради содержимого - оно у всех одно, - а ради
-		// условия: Envoy_Award молчит, когда никто не выиграл, Envoy_Denied -
-		// когда никому не отказано, а Envoy_Settled звучит всегда.
+		// One broadcast per outcome rather than per recipient: there is no name in the
+		// event any more, and each participant asks IsWinner or GetDenyReason for
+		// itself. The three names are kept not for their content - it is the same
+		// for everybody - but for their condition: Envoy_Award stays silent when
+		// nobody won, Envoy_Denied when nobody was refused, and Envoy_Settled always
+		// sounds.
 		if (!result.winners.empty()) {
 			Events::Send("Envoy_Award", "", static_cast<float>(a_id));
 		}

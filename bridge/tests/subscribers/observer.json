@@ -1,5 +1,5 @@
 {
-  "_": "Наблюдатель: слышит всё, не заявляет ничего. Словаря у него нет, поэтому он никогда не ставит и никогда не выигрывает. Нужен затем, что мод должен уметь показать игроку, что реплика до кого-то не дошла и почему.",
+  "_": "An observer: hears everything, claims nothing. It has no vocabulary, so it never bids and never wins. It is wanted because a mod has to be able to show the player that an utterance did not reach somebody, and why.",
   "namespace": "test.observer",
   "topics": [
     "any"

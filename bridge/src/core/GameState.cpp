@@ -4,8 +4,9 @@ namespace Envoy
 {
 	namespace
 	{
-		// Мир, в котором не происходит ничего. Это не отказ отвечать, а честный
-		// ответ: вне игры меню действительно закрыты и боя действительно нет.
+		// A world in which nothing happens. This is not a refusal to answer but an
+		// honest one: outside the game the menus really are closed and there really
+		// is no combat.
 		class Quiet final : public GameState::Source
 		{
 		public:

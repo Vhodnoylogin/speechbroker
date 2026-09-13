@@ -18,21 +18,21 @@ namespace Envoy
 	{
 		std::string  ns;
 		float        confidence{ 0.0f };
-		std::int32_t costClass{ 0 };   // 0 - обратимое, 1 - дорогое
-		// Жадность - заявка на исключительность. Срабатывает только если
-		// заявитель победил; при чужой победе жадный выбывает из раздачи
-		// по собственному условию "мне одному или никак".
+		std::int32_t costClass{ 0 };   // 0 - reversible, 1 - expensive
+		// Greed is a claim to exclusivity. It only fires if the one claiming it won;
+		// when somebody else wins, a greedy bidder drops out of the share by its own
+		// condition, "mine alone or not at all".
 		bool         greedy{ false };
-		// Фраза словаря, которую заявитель узнал в реплике. Мост определяет её
-		// сам, потому что словари принадлежат ему. Нужна она затем, что ничья
-		// бывает двух разных родов: двое поняли РАЗНОЕ одинаково уверенно -
-		// реплика двусмысленна; двое поняли ОДНО и то же - спор о том, чья это
-		// команда. Решать их одинаково нельзя.
+		// The vocabulary phrase the bidder recognised in the utterance. The bridge
+		// works it out itself, because the vocabularies belong to it. It is needed
+		// because a tie comes in two different kinds: two understood DIFFERENT things
+		// with equal confidence - the utterance is ambiguous; two understood THE SAME
+		// thing - an argument about whose command it is. They cannot be settled alike.
 		std::string  phrase;
 	};
 
-	// Реплика живёт в игре под своим номером: событие приносит подписчику только
-	// номер, всё остальное он забирает функциями.
+	// An utterance lives in the game under a number of its own: an event brings
+	// the subscriber only the number, and everything else it fetches by function.
 	struct Utterance
 	{
 		std::int32_t             id{ 0 };
@@ -48,50 +48,50 @@ namespace Envoy
 		std::int32_t             durationMs{ 0 };
 		bool                     wakeWord{ false };
 
-		// Вероятность, что на этом куске предложение ЗАКОНЧИЛОСЬ. Приходит
-		// от движка распознавания: он один слышит паузу, интонацию и тон,
-		// по которым это и определяется.
+		// The chance that the sentence ENDED on this piece. It comes from the
+		// recognition engine: that is the one thing that hears the pause, the
+		// intonation and the tone this is judged by.
 		//
-		// Единица по умолчанию не оптимизм, а совместимость: адаптер, ничего
-		// не знающий о завершённости, не должен получить придержание, которого
-		// не просил, - для него всё по-прежнему приходит законченным.
+		// The default of one is not optimism but compatibility: an adapter that knows
+		// nothing about completeness must not be given a hold it never asked for -
+		// for it, everything still arrives finished.
 		float                    complete{ 1.0f };
 
-		// Реплика придержана: оглашение отложено, пока не ясно, кончилась ли
-		// фраза. Придержанная реплика может не быть оглашена никогда - если
-		// продолжение придёт раньше, чем истечёт потолок.
+		// The utterance is held: announcing it is put off until it is clear whether
+		// the phrase has ended. A held utterance may never be announced at all - if
+		// the continuation arrives before the ceiling runs out.
 		bool                     held{ false };
 		std::string              holdReason;
 
 		std::string              topic;
-		// Длина - это не свойство текста, а способ нарезки: короткие куски
-		// режутся по короткой паузе, длинные склеиваются из них по длинной.
-		std::int32_t             lengthClass{ 0 };   // 0 короткая, 1 средняя, 2 длинная
-		// Номер куска у источника звука; 0 - соотносить не с чем.
+		// Length is not a property of the text but a way of cutting: short pieces are
+		// cut on a short pause, long ones are glued out of them on a long one.
+		std::int32_t             lengthClass{ 0 };   // 0 short, 1 middle, 2 long
+		// The number of the piece at the sound source; 0 - nothing to relate it to.
 		std::int32_t             sliceId{ 0 };
-		// Номер длинной реплики, вобравшей эту; 0 - пока не вобрана.
+		// The number of the long utterance that absorbed this one; 0 - not yet absorbed.
 		std::int32_t             supersededBy{ 0 };
 		std::vector<BidRecord>             bids;
 		std::vector<std::string>           winners;
-		// Кому отказано и почему. Упорядоченная карта нарочно: порядок обхода
-		// хеш-карты зависит от порядка вставки, и любая перестановка кода,
-		// не меняющая смысла, перемешивала бы строки отказов в журнале и в отчёте
-		// хоста - сетка безопасности срабатывала бы ложно.
+		// Who was refused and why. An ordered map on purpose: the traversal order of a
+		// hash map depends on the order of insertion, and any rearrangement of the
+		// code that changes no meaning would shuffle the refusal lines in the log and
+		// in the report of the host - the safety net would fire falsely.
 		std::map<std::string, std::string> denied;
-		std::string                        outcome;  // текст итога для наблюдателя
+		std::string                        outcome;  // the outcome in words, for an observer
 		bool                               awarded{ false };
 
 		std::chrono::steady_clock::time_point born{ std::chrono::steady_clock::now() };
-		// Когда реплику огласили подписчикам. Отметка нужна и после итога:
-		// опоздавшая ставка должна суметь сказать, насколько опоздала. Раньше
-		// она жила в отдельной карте с собственным мьютексом и собственной
-		// чисткой - хотя это обычное поле реплики.
+		// When the utterance was announced to the subscribers. The mark is needed
+		// after the settling as well: a late bid has to be able to say how late it
+		// was. It used to live in a map of its own with a mutex of its own and a
+		// sweep of its own - though it is an ordinary field of the utterance.
 		std::chrono::steady_clock::time_point offeredAt{};
 
-		// Сколько миллисекунд прошло с оглашения; -1 - ещё не оглашали. Нужно
-		// затем, чтобы в журнале было видно, успевает ли Papyrus ответить внутри
-		// окна ставок: в первом живом прогоне ни одна ставка не пришла, и
-		// отличить "скрипт промолчал" от "скрипт опоздал" было нечем.
+		// How many milliseconds have passed since the announcement; -1 - not announced
+		// yet. Wanted so that the log shows whether Papyrus manages to answer inside
+		// the bid window: in the first live run not one bid arrived, and there was
+		// nothing to tell "the script kept quiet" from "the script was late" with.
 		std::int64_t MsSinceOffer() const
 		{
 			if (offeredAt.time_since_epoch().count() == 0) {

@@ -1,5 +1,5 @@
 {
-  "note": "открыт диалог - мод заклинаний не получает предложение вообще",
+  "note": "dialogue is open - the spell mod gets no offer at all",
   "state": {"core.context.menuOpen": true, "core.context.menuName": "Dialogue Menu",
             "core.player.inCombat": false},
   "providers": ["core"],

@@ -1,33 +1,34 @@
-# Envoy — пространство ключей снимка
+# Envoy - the space of snapshot keys
 
-Ключ описывает **вопрос, а не способ ответа**. `core.target.looked` — «на что направлено внимание
-игрока»: в плоской игре это луч из камеры, в VR из взгляда или руки. Вопрос один, реализации разные.
+A key describes **the question, not the way it is answered**. `core.target.looked` is "what the
+attention of the player is pointed at": in a flat game that is a ray from the camera, in VR from
+the gaze or the hand. One question, different implementations.
 
-Каждый ключ отвечает одним из трёх состояний: значение / «спросить некому» / «поставщик не смог».
-У значения всегда есть возраст; что считать протухшим, решает подписчик.
+Every key answers with one of three states: a value / "nobody to ask" / "the provider could not".
+A value always has an age; what counts as stale is decided by the subscriber.
 
-## Пространства имён
+## Namespaces
 
-| Префикс | Кто владеет |
+| Prefix | Who owns it |
 |---|---|
-| `core.*`     | ядро моста. Работает в любой редакции игры |
-| `vr.*`       | поставщики VR-возможностей. Могут отсутствовать |
-| `physics.*`  | поставщики физики |
-| `envoy.*`    | сама служба моделей |
-| `<мод>.*`    | любой мод под своим именем |
+| `core.*`     | the core of the bridge. Works in any edition of the game |
+| `vr.*`       | providers of VR capabilities. May be absent |
+| `physics.*`  | providers of physics |
+| `envoy.*`    | the service of models itself |
+| `<mod>.*`    | any mod, under its own name |
 
-Писать в чужое пространство нельзя. Незаявленный ключ не принимается.
+Writing into somebody else namespace is not allowed. An undeclared key is not accepted.
 
-## Ядро
+## The core
 
-### Контекст
-    core.context.topic              string  выбранная тема реплики
+### Context
+    core.context.topic              string  the topic chosen for the utterance
     core.context.menuOpen           bool
     core.context.menuName           string
-    core.context.dialoguePartner    form    собеседник, если открыт диалог
+    core.context.dialoguePartner    form    the other party, if dialogue is open
     core.context.loading            bool
 
-### Игрок
+### The player
     core.player.inCombat            bool
     core.player.sneaking            bool
     core.player.swimming            bool
@@ -40,47 +41,48 @@
     core.player.staminaPct          float
     core.player.level               int
 
-### Руки
-    core.hands.right                form    экипировано в правой
+### The hands
+    core.hands.right                form    equipped in the right hand
     core.hands.left                 form
     core.hands.rightKind            string  spell | weapon | shield | torch | empty
     core.hands.leftKind             string
     core.hands.shout                form
 
-### Внимание и окружение
-    core.target.looked              form    на что направлено внимание
+### Attention and surroundings
+    core.target.looked              form    what the attention is pointed at
     core.target.lookedDistance      float
     core.target.lookedHostile       bool
-    core.target.lineOfSight         bool    ДОРОГОЙ
-    core.actors.nearest             form    ДОРОГОЙ
-    core.actors.nearestDistance     float   ДОРОГОЙ
-    core.actors.hostileCount        int     ДОРОГОЙ
+    core.target.lineOfSight         bool    EXPENSIVE
+    core.actors.nearest             form    EXPENSIVE
+    core.actors.nearestDistance     float   EXPENSIVE
+    core.actors.hostileCount        int     EXPENSIVE
     core.actors.followerCount       int
 
-### Мир
+### The world
     core.world.cell                 form
     core.world.cellName             string
     core.world.interior             bool
     core.world.location             form
-    core.world.locationKeywords     string  через запятую
+    core.world.locationKeywords     string  comma separated
     core.world.gameHour             float   0..24
     core.world.weather              form
 
-## Необязательные пространства
+## The optional namespaces
 
-    vr.hands.rightHeld              form    физически зажатое   (HIGGS)
-    vr.hands.leftHeld               form                        (HIGGS)
-    vr.hands.grabbing               bool                        (HIGGS)
-    vr.pose.crouching               bool    физическое приседание (VRIK)
-    vr.gesture.last                 string  распознанный жест     (VRIK)
-    physics.contact.actor           form    с кем физический контакт (PLANCK)
-    envoy.noiseLevel                float   уровень шума на микрофоне
+    vr.hands.rightHeld              form    physically gripped      (HIGGS)
+    vr.hands.leftHeld               form                            (HIGGS)
+    vr.hands.grabbing               bool                            (HIGGS)
+    vr.pose.crouching               bool    physically crouching    (VRIK)
+    vr.gesture.last                 string  the recognised gesture  (VRIK)
+    physics.contact.actor           form    who there is physical contact with (PLANCK)
+    envoy.noiseLevel                float   the level of noise on the microphone
     envoy.engineBusy                bool
 
-Ключ без поставщика отвечает «спросить некому» — на SE, на AE и на VR без соответствующего мода.
-Это не ошибка и не повод падать.
+A key with no provider answers "nobody to ask" - on SE, on AE and on VR without the mod in
+question. That is neither an error nor a reason to fall over.
 
-## Дорогие ключи
+## The expensive keys
 
-Помеченные `ДОРОГОЙ` считаются только по запросу и кэшируются на время жизни реплики.
-Список — в `snapshot.lazyKeys` конфигурации, радиус и предел перебора актёров тоже.
+The ones marked `EXPENSIVE` are worked out on request only and cached for the life of the
+utterance. The list is in `snapshot.lazyKeys` of the settings, and so are the radius and the limit
+of the actor scan.

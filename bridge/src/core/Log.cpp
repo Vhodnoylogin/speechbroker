@@ -12,8 +12,8 @@ namespace Envoy
 {
 	namespace
 	{
-		// Слова игрока читают из потоков адаптера, а переключают из потока
-		// игры: значение обязано быть атомарным, иначе это гонка.
+		// The player's words are read from the adapter's threads and switched from
+		// the game's thread: the value has to be atomic or it is a race.
 		std::atomic_bool g_showSpeech{ false };
 
 		spdlog::level::level_enum ToLevel(std::string_view a_level)
@@ -51,8 +51,8 @@ namespace Envoy
 
 		spdlog::sink_ptr sink;
 		if (a_maxSizeKb > 0) {
-			// Два файла, а не десять: больше нужно при разборе давней ошибки,
-			// а журнал мода читают по свежим следам.
+			// Two files, not ten: more than that is wanted when digging into an
+			// old fault, and a mod's log is read while the trail is fresh.
 			sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
 				a_file.string(), static_cast<std::size_t>(a_maxSizeKb) * 1024, 1);
 		} else {

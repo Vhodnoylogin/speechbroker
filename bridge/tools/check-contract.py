@@ -1,7 +1,7 @@
-"""Сверка контракта Papyrus с тем, что плагин реально регистрирует.
+"""Checking the Papyrus contract against what the plugin really registers.
 
-Функция, объявленная в Envoy.psc, но не зарегистрированная в плагине, не падает
-на сборке - она падает в игре, в журнале, у пользователя. Поэтому сверяем здесь.
+A function declared in Envoy.psc but not registered in the plugin does not fail
+at build time - it fails in the game, in the log, at the user. So we check here.
 
     python tools/check-contract.py
 """
@@ -23,14 +23,14 @@ registered = set(re.findall(
 missing = sorted(declared - registered)
 extra = sorted(registered - declared)
 
-print("объявлено в контракте: %d" % len(declared))
-print("зарегистрировано в плагине: %d" % len(registered))
+print("declared in the contract: %d" % len(declared))
+print("registered in the plugin: %d" % len(registered))
 
 for name in missing:
-    print("  НЕТ РЕАЛИЗАЦИИ: %s" % name)
+    print("  NO IMPLEMENTATION: %s" % name)
 for name in extra:
-    print("  НЕ ОБЪЯВЛЕНО В КОНТРАКТЕ: %s" % name)
+    print("  NOT DECLARED IN THE CONTRACT: %s" % name)
 
 if missing or extra:
     sys.exit(1)
-print("контракт и плагин совпадают")
+print("the contract and the plugin agree")

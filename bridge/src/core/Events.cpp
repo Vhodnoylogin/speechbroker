@@ -6,9 +6,10 @@ namespace Envoy
 {
 	namespace
 	{
-		// Приёмник по умолчанию: событие записывается, а не рассылается.
-		// Вне игры рассылать некому, и это не потеря - вопрос проверки в том,
-		// какое событие мост решил послать и по какой реплике.
+		// The default sink: the event is written down, not broadcast. Outside the
+		// game there is nobody to broadcast to, and that is no loss - the question
+		// under check is which event the bridge decided to send and on which
+		// utterance.
 		class ToJournal final : public Events::Sink
 		{
 		public:
@@ -16,10 +17,10 @@ namespace Envoy
 				float a_number) override
 			{
 				if (a_string.empty()) {
-					spdlog::info("событие {} инициировано, реплика {}", a_event,
+					spdlog::info("event {} raised, utterance {}", a_event,
 						static_cast<int>(a_number));
 				} else {
-					spdlog::info("событие {} инициировано, строка «{}», число {}", a_event,
+					spdlog::info("event {} raised, string '{}', number {}", a_event,
 						a_string, a_number);
 				}
 			}

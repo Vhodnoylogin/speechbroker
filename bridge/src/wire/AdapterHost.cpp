@@ -87,11 +87,11 @@ namespace Envoy
 		if (!a_info.id || !a_onJob) {
 			return false;
 		}
-		// Рукопожатие: версию проверяем один раз, здесь, и запоминаем. Адаптер
-		// старее нас - работаем по его версии и не читаем полей, которых в ней
-		// не было. Новее - отказ: неизвестно, что он пришлёт.
+		// The handshake: the version is checked once, here, and remembered. An adapter
+		// older than us - we work by its version and do not read fields that were not
+		// in it. Newer - refused: there is no telling what it will send.
 		if (a_info.contract < 1 || a_info.contract > EnvoyAPI::kInterfaceVersion) {
-			SKSE::log::error("адаптер {}: версия контракта {}, мост понимает от 1 до {}",
+			SKSE::log::error("adapter {}: contract version {}, the bridge understands 1 to {}",
 				a_info.id, a_info.contract, EnvoyAPI::kInterfaceVersion);
 			return false;
 		}
@@ -112,7 +112,7 @@ namespace Envoy
 		}
 		Dispatch(pending);
 
-		SKSE::log::info("адаптер зарегистрирован: {} ({}), контракт {}",
+		SKSE::log::info("adapter registered: {} ({}), contract {}",
 			a_info.id, Safe(a_info.name), a_info.contract);
 
 		const auto phrases = SubscriptionRegistry::Get().MergedVocabulary();
@@ -132,20 +132,20 @@ namespace Envoy
 			pending = RecomputeSources();
 		}
 		Dispatch(pending);
-		SKSE::log::info("адаптер ушёл: {}", a_id);
+		SKSE::log::info("adapter left: {}", a_id);
 	}
 
 	std::unordered_map<std::string, std::string> AdapterHost::Choose(
 		const std::unordered_map<std::string, Entry>&       a_adapters,
 		const std::unordered_map<std::string, std::string>& a_overrides)
 	{
-		// По каждой способности - один источник. Старшинство такое:
-		// принуждение из меню (SetSource), иначе имя из настроек
-		// (adapters.primary), иначе зарегистрировавшийся первым. Названный,
-		// но не умеющий этого или не пришедший, ничего не меняет: способность
-		// уходит первому по порядку, а не остаётся без источника. Принуждение
-		// заслоняет имя из настроек целиком, даже если само не сработало:
-		// игрок сказал своё слово в меню, и файл ему больше не указ.
+		// One source per capability. The seniority is this: what the menu forced
+		// (SetSource), failing that the name from the settings (adapters.primary),
+		// failing that whoever registered first. One that is named but cannot do it,
+		// or never turned up, changes nothing: the capability goes to the first in
+		// order rather than being left without a source. A forcing shadows the name
+		// from the settings entirely, even when it did not take: the player said
+		// their word in the menu, and the file is no longer their master.
 		const auto& settings = Settings::Get();
 
 		std::unordered_map<std::string, std::string> chosen;
@@ -196,10 +196,10 @@ namespace Envoy
 			out.user = entry.second.user;
 			out.kind = EnvoyAPI::kJobListen;
 			out.active = active;
-			out.text = active ? "назначен источником: " + role : "источником назначен другой";
+			out.text = active ? "made the source: " + role : "somebody else was made the source";
 			pending.push_back(std::move(out));
 
-			SKSE::log::info("адаптер {}: {}", entry.first, active ? "источник" : "в запасе");
+			SKSE::log::info("adapter {}: {}", entry.first, active ? "source" : "in reserve");
 		}
 
 		return pending;
@@ -218,8 +218,8 @@ namespace Envoy
 		utterance.latencyMs = a_in.latencyMs;
 		utterance.durationMs = a_in.durationMs;
 
-		// Поля третьей версии читаем только у того, кто её объявил: у прежних
-		// адаптеров на этом месте чужая память, а не нули.
+		// The fields of the third version are read only from one that declared it: at
+		// that offset an older adapter has somebody else memory, not zeroes.
 		std::vector<std::int32_t> swallowed;
 		{
 			std::scoped_lock lock(_mutex);
@@ -234,41 +234,43 @@ namespace Envoy
 			}
 		}
 
-		// Число без массива - ошибка адаптера, а не повод уронить игру:
-		// оценки без текстов уже пропускались, тексты без оценок - нет.
+		// A count without an array is a fault of the adapter, not a reason to bring
+		// the game down: scores without texts were already skipped, texts without
+		// scores were not.
 		for (std::int32_t i = 0; a_in.altText && i < a_in.altCount; ++i) {
 			utterance.alternatives.push_back({ Safe(a_in.altText[i]),
 				a_in.altScore ? a_in.altScore[i] : 0.0f });
 		}
 
 		if (a_in.refinesId != 0) {
-			// Уточнение от точной модели: реплика уже живёт и уже разослана.
+			// A refinement from the accurate model: the utterance already lives and has
+			// already gone out.
 			if (!UtteranceStore::Get().Refine(a_in.refinesId, utterance)) {
 				return 0;
 			}
-			// Сами слова - только если человек это разрешил. Иначе в журнале
-			// остаётся номер и модель, по которым разбор всё равно возможен.
+			// The words themselves only if the person allowed it. Otherwise the log keeps
+			// the number and the model, which still make a diagnosis possible.
 			if (Log::ShowSpeech()) {
-				SKSE::log::info("реплика {} уточнена адаптером {} ({}): {}",
+				SKSE::log::info("utterance {} refined by adapter {} ({}): {}",
 					a_in.refinesId, Safe(a_adapterId), utterance.engine, utterance.text);
 			} else {
-				SKSE::log::info("реплика {} уточнена адаптером {} ({})",
+				SKSE::log::info("utterance {} refined by adapter {} ({})",
 					a_in.refinesId, Safe(a_adapterId), utterance.engine);
-				SKSE::log::debug("реплика {}: {}", a_in.refinesId, utterance.text);
+				SKSE::log::debug("utterance {}: {}", a_in.refinesId, utterance.text);
 			}
 			return a_in.refinesId;
 		}
 
 		const auto id = UtteranceStore::Get().Add(std::move(utterance));
 		if (Log::ShowSpeech()) {
-			SKSE::log::info("реплика {} от адаптера {}: {}", id, Safe(a_adapterId), Safe(a_in.text));
+			SKSE::log::info("utterance {} from adapter {}: {}", id, Safe(a_adapterId), Safe(a_in.text));
 		} else {
-			SKSE::log::info("реплика {} от адаптера {}", id, Safe(a_adapterId));
-			SKSE::log::debug("реплика {}: {}", id, Safe(a_in.text));
+			SKSE::log::info("utterance {} from adapter {}", id, Safe(a_adapterId));
+			SKSE::log::debug("utterance {}: {}", id, Safe(a_in.text));
 		}
 
-		// Поглощение раньше приёма: если новый кусок вобрал придержанный,
-		// тот должен быть выброшен ДО того, как решится судьба нового.
+		// Absorption before taking in: if the new piece has swallowed a held one, that
+		// one has to be thrown out BEFORE the fate of the new one is decided.
 		MainThread::Post([id, swallowed = std::move(swallowed)]() {
 			if (!swallowed.empty()) {
 				Auctioneer::Get().Supersede(id, swallowed);
@@ -290,8 +292,9 @@ namespace Envoy
 		if (it == _sources.end()) {
 			return false;
 		}
-		// Обрезать имя нельзя: получится имя чужого адаптера, и спрашивающий
-		// об этом не узнает. Лучше честный отказ.
+		// The name must not be cut short: that would make it the name of a different
+		// adapter, and the one asking would never find out. An honest refusal is
+		// better.
 		if (static_cast<std::size_t>(a_outSize) <= it->second.size()) {
 			return false;
 		}
@@ -340,8 +343,8 @@ namespace Envoy
 	void AdapterHost::ReloadConfig()
 	{
 		Config::Get().Load(Config::Get().Path());
-		// Снимок настроек живёт отдельно от документа, значит его надо
-		// пересобрать - иначе перечитанный файл ни на что не повлияет.
+		// The snapshot of the settings lives apart from the document, so it has to be
+		// rebuilt - otherwise rereading the file would change nothing.
 		Settings::Reload();
 
 		std::vector<Outgoing> pending;
@@ -380,7 +383,7 @@ namespace Envoy
 
 			auto source = _sources.find("tts");
 			if (source == _sources.end()) {
-				SKSE::log::warn("озвучить некому: нет источника tts");
+				SKSE::log::warn("nobody to speak it: there is no tts source");
 				return 0;
 			}
 			auto adapter = _adapters.find(source->second);
@@ -403,7 +406,7 @@ namespace Envoy
 		}
 		Dispatch(pending);
 
-		SKSE::log::info("озвучка {} -> адаптер {}: {}", speechId, target, a_text);
+		SKSE::log::info("speech {} -> adapter {}: {}", speechId, target, a_text);
 		return speechId;
 	}
 
@@ -432,10 +435,11 @@ namespace Envoy
 		{
 			std::scoped_lock lock(_mutex);
 
-			// Способность и есть имя службы: кто объявил "llm", тот и отвечает на "llm".
+			// The capability is the name of the service: whoever declared "llm" is the one
+			// that answers "llm".
 			auto source = _sources.find(a_service);
 			if (source == _sources.end()) {
-				SKSE::log::warn("спросить некого: нет источника {}", a_service);
+				SKSE::log::warn("nobody to ask: there is no {} source", a_service);
 				return 0;
 			}
 			auto adapter = _adapters.find(source->second);
@@ -457,7 +461,7 @@ namespace Envoy
 		}
 		Dispatch(pending);
 
-		SKSE::log::info("запрос {} к {} -> адаптер {}", requestId, a_service, target);
+		SKSE::log::info("request {} to {} -> adapter {}", requestId, a_service, target);
 		return requestId;
 	}
 
@@ -482,11 +486,11 @@ namespace Envoy
 			std::scoped_lock lock(_mutex);
 			_answers[a_requestId] = Safe(a_payload);
 		}
-		SKSE::log::info("ответ {} от адаптера {}: {}", a_requestId, Safe(a_adapterId),
-			a_ok ? "успех" : "неудача");
+		SKSE::log::info("answer {} from adapter {}: {}", a_requestId, Safe(a_adapterId),
+			a_ok ? "success" : "failure");
 
-		// Через швы ядра, а не напрямую к SKSE: у шва есть запасной путь
-		// с предупреждением, у прямого вызова - молчаливая потеря.
+		// Through the seams of the core rather than straight to SKSE: a seam has a
+		// fallback path with a warning, a direct call has a silent loss.
 		MainThread::Post([a_requestId]() {
 			Events::Send("Envoy_Answer", "", static_cast<float>(a_requestId));
 		});
@@ -500,7 +504,7 @@ namespace Envoy
 			std::scoped_lock lock(_mutex);
 			_speechResults[a_speechId] = how;
 		}
-		SKSE::log::info("озвучка {} у адаптера {}: {}", a_speechId, Safe(a_adapterId), how);
+		SKSE::log::info("speech {} at adapter {}: {}", a_speechId, Safe(a_adapterId), how);
 
 		MainThread::Post([a_speechId]() {
 			Events::Send("Envoy_SpeechDone", "", static_cast<float>(a_speechId));

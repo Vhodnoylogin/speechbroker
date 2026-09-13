@@ -15,8 +15,8 @@ namespace Envoy
 	{
 		std::scoped_lock lock(_mutex);
 
-		// Номер обязан помещаться в число Papyrus без потери точности,
-		// поэтому переполняемся в единицу, а не в отрицательные значения.
+		// The number has to fit into a Papyrus integer without losing precision, so
+		// we roll over to one rather than into negative values.
 		if (_next >= 16'000'000) {
 			_next = 1;
 		}
@@ -31,11 +31,11 @@ namespace Envoy
 	{
 		std::scoped_lock lock(_mutex);
 		return Mutate(a_id, [&](Utterance& item) {
-			// Ставки переживают обновление: они принадлежат реплике, а не тексту.
-			// А вот тему здесь именно НАЗНАЧАЮТ - её пишет аукционист при приёме
-			// реплики, и сохранять вместо неё прежнюю нельзя: прежней не
-			// существует, и тема осталась бы пустой навсегда. Уточнение текста
-			// темы не касается вовсе, потому что идёт через Refine.
+			// Bids outlive an update: they belong to the utterance, not to the text. The
+			// topic, on the other hand, is ASSIGNED here - the auctioneer writes it when
+			// the utterance is taken in, and keeping the previous one instead is wrong:
+			// there is no previous one, and the topic would stay empty forever. Refining
+			// the text does not touch the topic at all, because that goes through Refine.
 			auto bids = std::move(item.bids);
 			item = a_utterance;
 			item.id = a_id;

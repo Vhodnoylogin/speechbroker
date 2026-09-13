@@ -1,7 +1,11 @@
-"""Прогон сценариев без игры.
+"""Runs the scenarios without the game.
 
-    python tests/run-scenarios.py            все сценарии
-    python tests/run-scenarios.py fireball    только совпадающие по имени
+    python tests/run-scenarios.py            every scenario
+    python tests/run-scenarios.py fireball   only the ones whose name matches
+
+A scenario with no expected report next to it is skipped rather than fatal: the
+stage and default files are fixtures for the console host, not questions with a
+known answer, and one of them used to bring the whole run down.
 """
 import json
 import sys
@@ -26,10 +30,14 @@ def merge(base: dict, over: dict) -> dict:
     return out
 
 
-def run_one(path: Path) -> tuple[bool, str]:
+def run_one(path: Path) -> tuple[bool | None, str]:
+    expected = path.parent.parent / "expected" / path.name
+    if not expected.exists():
+        return None, "no expected report, nothing to compare against"
+
     sc = json.loads(path.read_text(encoding="utf-8"))
     cfg = merge(CFG, sc.get("config"))
-    exp = json.loads((path.parent.parent / "expected" / path.name).read_text(encoding="utf-8"))
+    exp = json.loads(expected.read_text(encoding="utf-8"))
 
     topic = ref.pick_topic(sc["state"], sc["utterance"], cfg)
     offered = ref.offered_to(sc["subscribers"], topic)
@@ -47,7 +55,7 @@ def run_one(path: Path) -> tuple[bool, str]:
         want["denied"] = sorted(exp["denied"])
     if got == want:
         return True, result["reason"]
-    return False, "ожидалось %s, получено %s" % (want, got)
+    return False, "expected %s, got %s" % (want, got)
 
 
 def main() -> int:
@@ -55,14 +63,19 @@ def main() -> int:
     files = sorted((ROOT / "tests" / "scenarios").glob("*.json"))
     files = [f for f in files if flt in f.stem]
     if not files:
-        print("сценариев не найдено")
+        print("no scenarios found")
         return 1
     failed = 0
+    skipped = 0
     for f in files:
         ok, note = run_one(f)
-        print("%s %-28s %s" % ("OK  " if ok else "СБОЙ", f.stem, note))
-        failed += 0 if ok else 1
-    print("\n%d из %d прошли" % (len(files) - failed, len(files)))
+        mark = "SKIP" if ok is None else ("OK  " if ok else "FAIL")
+        print("%s %-28s %s" % (mark, f.stem, note))
+        if ok is None:
+            skipped += 1
+        elif not ok:
+            failed += 1
+    print("\n%d of %d passed, %d skipped" % (len(files) - failed - skipped, len(files) - skipped, skipped))
     return 1 if failed else 0
 
 

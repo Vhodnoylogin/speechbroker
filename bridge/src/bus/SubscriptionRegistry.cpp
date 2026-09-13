@@ -85,7 +85,7 @@ namespace Envoy
 			if (mine == "any" || mine == a_topic) {
 				return true;
 			}
-			// Канал приходит темой вида "channel:имя".
+			// A channel arrives as a topic of the form "channel:<name>".
 			if (mine == "channel" && a_topic.rfind("channel:", 0) == 0) {
 				return true;
 			}

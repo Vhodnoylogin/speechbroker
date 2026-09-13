@@ -1,17 +1,19 @@
-// Envoy Framework - мост между Skyrim и внешними моделями.
+// Envoy Framework - the bridge between Skyrim and outside models.
 //
-// Мост статичен: он ничего не инициирует и не знает ни одной внешней программы.
-// Связь с конкретной моделью делает адаптер, знающий обе стороны.
+// The bridge is static: it starts nothing and knows no external program. Talking
+// to a particular model is the adapter's job, and the adapter knows both sides.
 //
-// Один файл работает в SE, AE и VR: возможности определяются не редакцией игры,
-// а тем, есть ли поставщик нужных данных.
+// One file works in SE, AE and VR: what it can do is decided by whether a
+// provider for the data exists, not by which edition of the game is running.
 
 #include <RE/Skyrim.h>
 #include <SKSE/SKSE.h>
 
 #include <filesystem>
+#include <string>
 
 #include "core/Config.h"
+#include "core/Loc.h"
 #include "core/Log.h"
 #include "core/Settings.h"
 #include "game/GameLoadWatch.h"
@@ -24,14 +26,41 @@
 
 namespace
 {
-	// Единственный путь, заданный в коде: местоположение файла настроек,
-	// а не настройка. Всё остальное читается из него.
+	// The only paths written into the code: where the settings file lives and
+	// where the game keeps its translations. Neither is a setting - the first is
+	// the place everything else is read from, and the second is fixed by the
+	// engine.
 	constexpr auto kConfigPath = LR"(Data\SKSE\Plugins\envoy\envoy.json)";
+	constexpr auto kTranslations = LR"(Data\Interface\Translations)";
 
-	// Какие сообщения SKSE до нас доходят - вопрос не теоретический: в первом
-	// живом прогоне мост не получил сообщения о загрузке игры и потому не позвал
-	// участников объявиться заново. Пока причина не ясна, каждое сообщение
-	// называется в журнале по имени.
+	// Which language the text on screen is in. "auto" means the one the game
+	// itself runs in, which is what a player expects and never has to set.
+	//
+	// Asking the engine rather than reading Skyrim.ini ourselves matters: the file
+	// that wins is decided by the launcher, by MO2 and by which of the several
+	// ini files the player last edited, and the engine has already settled all of
+	// that by the time we ask.
+	std::string ResolveLanguage(const std::string& a_asked)
+	{
+		if (!a_asked.empty() && a_asked != "auto") {
+			return a_asked;
+		}
+		if (auto* ini = RE::INISettingCollection::GetSingleton()) {
+			if (auto* setting = ini->GetSetting("sLanguage:General")) {
+				if (setting->GetType() == RE::Setting::Type::kString) {
+					if (const auto* value = setting->GetString(); value && *value) {
+						return value;
+					}
+				}
+			}
+		}
+		return "english";
+	}
+
+	// Which SKSE messages actually reach us is not a theoretical question: in the
+	// first live run the bridge never got the message about the game loading and
+	// so never called the participants to declare themselves again. Until the
+	// cause is known, every message is named in the log.
 	const char* MessageName(std::uint32_t a_type)
 	{
 		switch (a_type) {
@@ -44,7 +73,7 @@ namespace
 		case SKSE::MessagingInterface::kInputLoaded:  return "kInputLoaded";
 		case SKSE::MessagingInterface::kNewGame:      return "kNewGame";
 		case SKSE::MessagingInterface::kDataLoaded:   return "kDataLoaded";
-		default:                                      return "неизвестное";
+		default:                                      return "unknown";
 		}
 	}
 
@@ -54,21 +83,22 @@ namespace
 			return;
 		}
 
-		SKSE::log::info("сообщение SKSE: {} ({})", MessageName(a_message->type), a_message->type);
+		SKSE::log::info("SKSE message: {} ({})", MessageName(a_message->type), a_message->type);
 
-		// Интерфейс отдаётся так же, как это делают HIGGS и PLANCK: рассылкой
-		// сообщения SKSE. Адаптеры - обычные плагины, они его ловят и вызывают
-		// функции напрямую. Ни портов, ни адресов.
+		// The interface is handed out the way HIGGS and PLANCK hand theirs out: by
+		// broadcasting an SKSE message. Adapters are ordinary plugins, they catch
+		// it and call the functions directly. No ports, no addresses.
 		if (a_message->type == SKSE::MessagingInterface::kPostPostLoad) {
 			auto* api = static_cast<EnvoyAPI::IEnvoy*>(&Envoy::AdapterHost::Get());
 			SKSE::GetMessagingInterface()->Dispatch(EnvoyAPI::kMessageInterface, &api,
 				static_cast<std::uint32_t>(sizeof(api)), nullptr);
-			SKSE::log::info("интерфейс моста разослан адаптерам");
+			SKSE::log::info("bridge interface broadcast to the adapters");
 		}
 
-		// Загрузку игры мост узнаёт не от SKSE, а от самого движка: в VR
-		// сообщения kPostLoadGame нет вовсе, и эта ветка молчала бы всегда.
-		// Держатель игровых событий появляется к kDataLoaded, тогда и подписываемся.
+		// The bridge learns about a game being loaded from the engine, not from
+		// SKSE: in VR there is no kPostLoadGame message at all, and this branch
+		// would be silent forever. The holder of the game events appears by
+		// kDataLoaded, and that is when we subscribe.
 		if (a_message->type == SKSE::MessagingInterface::kDataLoaded) {
 			Envoy::GameLoadWatch::Install();
 		}
@@ -89,9 +119,9 @@ extern "C" __declspec(dllexport) constinit auto SKSEPlugin_Version = []() {
 	v.PluginVersion(REL::Version{ 0, 1, 0 });
 	v.PluginName(PLUGIN_NAME);
 	v.AuthorName(PLUGIN_AUTHOR);
-	// Адресная библиотека плюс современная раскладка структур: этой парой SKSE
-	// признаёт плагин пригодным и для новых сборок игры. VR эти данные не читает
-	// вовсе - там работает SKSEPlugin_Query выше.
+	// The address library plus the modern struct layout: this pair is what makes
+	// SKSE accept the plugin for newer builds of the game as well. VR does not
+	// read this data at all - there SKSEPlugin_Query above does the work.
 	v.UsesAddressLibrary(true);
 	v.UsesStructsPost629(true);
 	v.CompatibleVersions({ SKSE::RUNTIME_SSE_LATEST });
@@ -105,37 +135,42 @@ extern "C" __declspec(dllexport) bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadIn
 	auto& config = Envoy::Config::Get();
 	config.Load(kConfigPath);
 
-	// Куда писать журнал, знает SKSE, а не ядро: путь отдаётся ему снаружи.
+	// Where to write the log is SKSE's business, not the core's: the path is
+	// handed to it from outside.
 	std::filesystem::path logFile;
 	if (auto dir = SKSE::log::log_directory()) {
 		logFile = *dir / (std::string(PLUGIN_NAME) + ".log");
 	}
 
-	// Разобранные настройки, а не сырой документ: те же поля читает меню
-	// в игре и ReloadSettings, и значение обязано быть одно.
+	// Parsed settings rather than the raw document: the in-game menu and
+	// ReloadSettings read the same fields, and the value has to be one.
 	const auto& settings = Envoy::Settings::Get();
 	Envoy::Log::Init(settings.logLevel, logFile, settings.logMaxSizeKb);
 	Envoy::Log::SetShowSpeech(settings.logSpeechText);
 
-	// Ядро до этой строки отвечает себе само: работа делается на месте, в игре
-	// ничего не происходит, события уходят в журнал. Здесь на все три вопроса
-	// начинает отвечать игра.
+	// Text on screen. Loaded once, before anything can draw: changing the language
+	// needs the game restarted, which is what the engine demands of itself too.
+	Envoy::Loc::Load(kTranslations, ResolveLanguage(settings.language));
+
+	// Up to this line the core answers its own three questions: work is done on
+	// the spot, nothing happens in the game, events go to the log. Here the game
+	// starts answering all three.
 	Envoy::SkseHost::Install();
 
-	// Окно в меню модов. Мягкая зависимость: нет SKSE Menu Framework -
-	// нет и окна, журнал по-прежнему настраивается файлом.
+	// The window in the mod menu. A soft dependency: no SKSE Menu Framework, no
+	// window, and the log is still set from the file.
 	Envoy::MenuPanel::Install();
 
-	// Версия контракта - свойство двоичного файла, а не настройка. Раньше сюда
-	// печаталось поле "interfaceVersion" из файла настроек, где с давних пор
-	// лежала единица: два разных числа под одним именем, и в журнал попадало
-	// не то. Разбор прогона 07.09 начался именно с этой строки.
-	SKSE::log::info("{} v{} загружен, контракт версии {}", PLUGIN_NAME, PLUGIN_VERSION,
+	// The contract version is a property of the binary, not a setting. This line
+	// used to print the "interfaceVersion" field out of the settings file, where a
+	// stale 1 had been sitting for ages: two different numbers under one name, and
+	// the wrong one reached the log. Sorting out the run of 07.09 started here.
+	SKSE::log::info("{} v{} loaded, contract version {}", PLUGIN_NAME, PLUGIN_VERSION,
 		EnvoyAPI::kInterfaceVersion);
 	SKSE::log::info("{}: {}", Envoy::Config::Describe(config.Source()), config.Path().string());
 
 	if (!config.Error().empty()) {
-		SKSE::log::warn("настройки: {}", config.Error());
+		SKSE::log::warn("settings: {}", config.Error());
 	}
 
 	if (auto* papyrus = SKSE::GetPapyrusInterface()) {

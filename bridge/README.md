@@ -1,119 +1,147 @@
-# Envoy — мост
+# Envoy - the bridge
 
-Сердце Envoy: плагин SKSE, который принимает распознанную речь от адаптеров, выбирает ей тему,
-разыгрывает её между подписавшимися модами и рассылает событие победителю. О микрофоне,
-моделях и HTTP он не знает ничего — это дело адаптера.
+The heart of Envoy: an SKSE plugin that takes recognised speech from the adapters, picks a topic
+for it, plays it out between the mods that subscribed and sends an event to the winner. About the
+microphone, the models and HTTP it knows nothing - that is the business of the adapter.
 
-Что такое Envoy целиком и как части соотносятся — в [описании модуля](../README.md).
+What Envoy is as a whole and how the parts relate is in the [description of the module](../README.md).
 
-## Что делает мост
+## What the bridge does
 
-| Обязанность | Где |
+| Duty | Where |
 |---|---|
-| принять реплику от адаптера и завести её под номером | `src/wire/AdapterHost`, `src/bus/UtteranceStore` |
-| выбрать тему: диалог, меню, бой, мир | `src/bus/TopicRouter` |
-| решить, придержать ли незаконченную фразу | `src/bus/Hold` |
-| собрать ставки и назвать победителя | `src/bus/Auction` |
-| разбудить победителя событием Papyrus | `src/game/ModEventBus` |
-| держать реестр состояния мира | `src/bus/StateStore` |
+| take an utterance from an adapter and file it under a number | `src/wire/AdapterHost`, `src/bus/UtteranceStore` |
+| pick a topic: dialogue, menu, combat, world | `src/bus/TopicRouter` |
+| decide whether to hold an unfinished phrase back | `src/bus/Hold` |
+| gather the bids and name the winner | `src/bus/Auction` |
+| wake the winner with a Papyrus event | `src/game/ModEventBus` |
+| keep the register of the state of the world | `src/bus/StateStore` |
 
-**Событие — это звонок в дверь.** Оно будит мод и несёт только номер реплики; всё
-остальное мод забирает функциями `Envoy.*` по этому номеру. Ответить из события нельзя,
-и это сознательно: полезная нагрузка в событии заставила бы мост угадывать, что именно
-понадобится каждому подписчику.
+**An event is a doorbell.** It wakes a mod up and carries only the number of an utterance;
+everything else the mod fetches with the `Envoy.*` functions by that number. There is no answering
+from inside an event, and that is deliberate: a payload inside the event would force the bridge to
+guess what exactly each subscriber is going to need.
 
-## Два слоя: ядро и SKSE
+## Two layers: the core and SKSE
 
-Мост разделён надвое, и разделение держится сборкой, а не обещанием.
+The bridge is split in two, and the split is held by the build rather than by a promise.
 
-**Ядро** — `src/core` и `src/bus`: аукцион, хранилище реплик, выбор темы,
-словари, настройки, журнал. Об игре оно не знает ничего — ни одного включения
-`<SKSE/…>` или `<RE/…>`. Всё, что ему нужно от игры, оно спрашивает через три шва:
+**The core** is `src/core` and `src/bus`: the auction, the store of utterances, the choice of
+topic, the vocabularies, the settings, the log and the text on screen. About the game it knows
+nothing - not one include of `<SKSE/…>` or `<RE/…>`. Everything it needs from the game it asks for
+through three seams:
 
-| Шов | Вопрос ядра | Ответ в игре | Ответ без игры |
+| Seam | The question of the core | The answer in the game | The answer without the game |
 |---|---|---|---|
-| `core/MainThread` | где выполнить работу | интерфейс задач SKSE | своя очередь, которую вычерпывает главный поток |
-| `core/GameState` | открыто ли меню, идёт ли бой | `RE::UI`, `RE::PlayerCharacter` | не происходит ничего |
-| `core/Events` | разошли событие подписчикам | рассылка Papyrus | строка в журнале |
+| `core/MainThread` | where to do this work | the task interface of SKSE | a queue of its own, drained by the main thread |
+| `core/GameState` | is a menu open, is combat on | `RE::UI`, `RE::PlayerCharacter` | nothing is happening |
+| `core/Events` | send this event to the subscribers | a Papyrus broadcast | a line in the log |
 
-Без установленных швов ядро отвечает себе само, и это не заглушки на безрыбье:
-вне игры меню действительно закрыты, а работа, взятая из своей очереди главным
-потоком, даёт строго определённый порядок — проверка перестаёт зависеть от того,
-когда проснулся чужой поток.
+With no seams set the core answers itself, and these are not stopgaps for want of anything better:
+outside the game the menus really are closed, and work taken from its own queue by the main thread
+gives a strictly defined order - a check stops depending on when somebody else thread woke up.
 
-**Слой SKSE** — `src/game` и `src/wire` плюс `src/main.cpp`: функции Papyrus,
-раздача интерфейса адаптерам, наблюдение за загрузкой и `game/SkseHost.cpp`,
-который отвечает на те же три вопроса средствами Skyrim.
+**The SKSE layer** is `src/game` and `src/wire` plus `src/main.cpp`: the Papyrus functions, the
+handing out of the interface to adapters, watching for a game load, and `game/SkseHost.cpp`, which
+answers those same three questions by the means of Skyrim.
 
-Сторожит правило цель `envoy-host` из `tests/`: она собирает ядро **без**
-CommonLibSSE. Появится в ядре включение из игры — хост не соберётся, и нарушение
-станет видно сразу, а не через полгода.
+The rule is guarded by the `envoy-host` target out of `tests/`: it builds the core **without**
+CommonLibSSE. Let an include from the game appear in the core and the host will not build, and the
+breach shows at once rather than in six months.
 
-## Прогон аукциона без игры
+## Text on screen
+
+Every line a player can read is a key, and the lines behind the keys are read out of
+`Interface\Translations\Envoy*_<language>.txt` - Skyrim's own format. The table is written by hand
+as UTF-8 in `localization/` and turned into what the game reads by `tools/build-localization.py`;
+the same script writes `src/core/LocStrings.h`, the baseline compiled into the plugin, so a missing
+file shows text rather than bare keys.
+
+English ships inside the mod. Every other language is a mod of its own holding a single
+`Interface\Translations` folder, so adding a language means adding a mod and nothing else.
+
+Two things are deliberately **not** translated. The log stays English: its lines travel into other
+people's bug reports. And the five level names in the menu - `trace`, `debug`, `info`, `warning`,
+`error` - stay as they are, because they are the values of the `log.level` key and a person reading
+the window has to be able to type what they see into the settings file.
+
+A subscriber gets at the same table through `Envoy.Translate`. It is wanted for two things the
+engine cannot do by itself: a line glued together out of a translated part and a number, and text
+that is never shown at all - the vocabulary a subscriber registers, which has to be in the language
+the player actually speaks.
+
+## Running the auction without the game
 
     build\tests\Release\envoy-host.exe
-    envoy-host.exe --scenario tests\scenarios\default.json --report прогон.txt
-    envoy-host.exe --config %TEMP%\priority.json    с заданным порядком участников
+    envoy-host.exe --scenario tests\scenarios\default.json --report run.txt
+    envoy-host.exe --config %TEMP%\priority.json    with a set order of participants
 
-Настройки хост берёт из `envoy-host.json` рядом с собой, а `--config` подменяет
-файл. `tests/envoy-host.json` — заготовка с непустым `auction.priority`: на ней
-исполняется **первая ступень** разбора ничьей, которая на встроенных настройках
-молчит. Запускать её надо **копией вне репозитория**: недостающие ключи Config
-дописывает в файл, и заготовка разрослась бы до полного набора.
+The host takes its settings from `envoy-host.json` next to itself, and `--config` replaces the
+file. `tests/envoy-host.json` is a blank with a non-empty `auction.priority`: on it the **first
+step** of the tie-breaking runs, which on the built-in settings says nothing. It has to be run as a
+**copy outside the repository**: Config writes the missing keys back into the file, and the blank
+would grow into the full set.
 
-Хост поднимает то же ядро, объявляет **тестовых подписчиков** из
-`tests/subscribers/*.json` и проигрывает сценарий из `tests/scenarios/`.
-От подписчика нужны только объявленные данные — темы и словарь; как он поступит
-с выигрышем, проверку не занимает. Вопрос ровно один: **кому мост отдал реплику
-и почему**.
+The host raises the same core, declares the **test subscribers** out of `tests/subscribers/*.json`
+and plays a scenario out of `tests/scenarios/`. All that is wanted from a subscriber is what it
+declared - its topics and its vocabulary; what it does with a win does not concern the check. The
+question is exactly one: **who the bridge gave the utterance to, and why**.
 
-Ставку хост делает за подписчика сам, произведением двух величин: насколько
-хорошо реплику расслышали и насколько она похожа на объявленную фразу. Настоящий
-подписчик считает уверенность как хочет — здесь взято простейшее защитимое
-правило.
+The host bids on behalf of a subscriber itself, as the product of two quantities: how well the
+utterance was heard and how close it is to the declared phrase. A real subscriber works its
+confidence out however it likes - here the simplest defensible rule is taken.
 
-**Отчёт хоста — это сетка безопасности всей переработки.** Прогон снимается до правки
-и после неё, и отчёты обязаны совпасть дословно; разошлись молча — значит, изменилось
-поведение, о котором не заявляли.
+**The report of the host is the safety net of the whole rework.** A run is taken before a change
+and after it, and the reports have to match word for word; if they diverge silently, then some
+behaviour changed that nobody declared.
 
-## Раскладка
+The spoken phrases in `tests/scenarios/` and `tests/subscribers/` stay in Russian on purpose. They
+are speech, not interface: they are what was said into a microphone in the live recordings, and
+they are the only cover the Cyrillic case folding in `core/Text` has. One English vocabulary,
+`spells-en.json`, stands among them precisely so that it shows the bridge measures both by one
+yardstick without asking about the language.
 
-    contract/   публичный контракт: ABI, игровое API, пространство ключей
-    config/     эталон настроек и config/build.json
-    src/core/   ядро: настройки, журнал, планировщик, швы к игре
-    src/bus/    ядро: реплики, подписки, темы, аукцион
-    src/game/   слой SKSE: Papyrus, события, состояние игры
-    src/wire/   слой SKSE: раздача интерфейса адаптерам
-    providers/  поставщики состояния
-    papyrus/    Envoy.psc - объявления для слушателей, и скрипт квеста-носителя
-    esp/        квест-носитель
-    tests/      прогон аукциона без игры
-    docs/       описания, в том числе заготовка универсального адаптера
-    tools/      сборка, раскладка в mods\ и сверка контракта
+## The layout
 
-## Сборка
+    contract/       the public contract: the ABI, the in-game API, the space of keys
+    config/         the reference settings and config/build.json
+    localization/   the string tables, UTF-8, one per language
+    src/core/       the core: settings, log, scheduler, text, the seams to the game
+    src/bus/        the core: utterances, subscriptions, topics, the auction
+    src/game/       the SKSE layer: Papyrus, events, the state of the game
+    src/wire/       the SKSE layer: handing the interface out to adapters
+    providers/      the state providers
+    papyrus/        Envoy.psc - the declarations for listeners, and the script of the carrier quest
+    esp/            the carrier quest
+    tests/          running the auction without the game
+    docs/           descriptions, including a sketch of a universal adapter
+    tools/          building, laying out into mods\ and checking the contract
+
+## Building
 
     cmake --build build --config Release
     tools\build-papyrus.ps1
     tools\deploy.ps1 -Apply
     tools\package.ps1 -Apply
 
-Раскладку и упаковку запускать только при закрытой игре. Мост выкладывается **первым**:
-пока его `SDK\` не появился в `mods\`, ни адаптер, ни подписчик не соберутся.
+Lay out and pack only with the game closed. The bridge is laid out **first**: until its SDK package
+appears in `mods\`, neither the adapter nor the subscriber will build.
 
-## Что мост публикует для чужих модов
+## What the bridge publishes for other mods
 
-Папка `SDK\` внутри мода моста:
+The `Envoy Framework - SDK` package, laid out next to the mod:
 
-| Файл | Кому |
+| File | For whom |
 |---|---|
-| `envoy-adapter.h` | авторам адаптеров: C-ABI, версия контракта, структуры реплик |
-| `envoy-abi.h` | авторам поставщиков состояния |
-| `Envoy.psc` | авторам подписчиков: объявления Papyrus |
-| `envoy-papyrus.md` | им же: разбор каждого вызова и события |
-| `envoy-keys.md` | пространство ключей состояния |
+| `cpp/envoy-adapter.h` | authors of adapters: the C ABI, the contract version, the structures of utterances |
+| `cpp/envoy-abi.h` | authors of state providers |
+| `papyrus/Envoy.psc` | authors of subscribers: the Papyrus declarations |
+| `docs/envoy-papyrus.md` | the same people: every call and every event taken apart |
+| `docs/envoy-keys.md` | the space of state keys |
+| `localization/envoy.*.txt` | translators: the source tables of the bridge |
+| `tools/build-localization.py` | anybody: turning a table into what the game reads |
 
-Версия контракта берётся **из двоичного файла** (`EnvoyAPI::kInterfaceVersion`), а не из
-настроек: третье число, которое можно поправить в файле, однажды уже разошлось с правдой.
-Правило совместимости двустороннее — адаптер принимает мост новее себя и отказывается
-работать с мостом старше.
+The contract version is taken **from the binary** (`EnvoyAPI::kInterfaceVersion`) and not from the
+settings: a third number that can be edited in a file has already parted company with the truth
+once. The compatibility rule has two sides - an adapter accepts a bridge newer than itself and
+refuses to work with one older.

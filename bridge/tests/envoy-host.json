@@ -1,5 +1,5 @@
 {
-  "_": "Настройки для прогона с ЗАДАННЫМ порядком участников. Встроенный набор оставляет порядок пустым, и ничья решается делением; здесь порядок задан, и видно первую ступень лестницы разбора ничьей - ту, что до сих пор не исполнялась ни разу.",
+  "_": "Settings for a run with the order of participants SET. The built-in set leaves the order empty and a tie is settled by sharing; here the order is set, and the first step of the tie-breaking ladder becomes visible - the one that has never yet been taken.",
   "auction": {
     "priority": [
       "test.doors",

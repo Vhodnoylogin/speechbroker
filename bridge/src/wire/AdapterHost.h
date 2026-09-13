@@ -10,14 +10,17 @@
 
 namespace Envoy
 {
-	// Приёмная моста для адаптеров. Мост не знает ни одной внешней программы:
-	// адаптеры - такие же моды, они приходят сами и называются сами.
+	// The reception desk of the bridge for adapters. The bridge knows no external
+	// program at all: adapters are mods like any other, they come by themselves
+	// and name themselves.
 	//
-	// Задания отдаются вызовом обратной функции прямо в потоке вызывающего,
-	// поэтому адаптер обязан лишь положить задание в свою очередь и вернуться.
+	// Jobs are handed over by calling a callback right in the thread of the caller,
+	// so an adapter is obliged only to put the job into a queue of its own and
+	// return.
 	//
-	// Замок при этом всегда отпущен: задания собираются под ним, а рассылаются
-	// после. Иначе адаптер, ответивший мосту из обработчика, вставал бы намертво.
+	// The lock is always let go by then: jobs are gathered under it and sent out
+	// after. Otherwise an adapter that answered the bridge from its handler would
+	// seize up for good.
 	class AdapterHost final : public EnvoyAPI::IEnvoy
 	{
 	public:
@@ -31,14 +34,14 @@ namespace Envoy
 		bool         SourceOf(const char* a_capability, char* a_out,
 		                 std::int32_t a_outSize) const override;
 
-		// Для меню и скриптов.
+		// For the menu and the scripts.
 		bool                     SetSource(const std::string& a_capability, const std::string& a_adapter);
 		std::string              Source(const std::string& a_capability) const;
 		std::vector<std::string> AdapterIds() const;
 		void                     ReloadConfig();
 
-		// Ответ модели и исход озвучки: событие несёт только номер, поэтому
-		// подписчик приходит за содержимым сюда.
+		// The answer of a model and the outcome of speaking: the event carries only a
+		// number, so the subscriber comes here for the content.
 		std::string Answer(std::int32_t a_requestId) const;
 		std::string SpeechResult(std::int32_t a_speechId) const;
 
@@ -63,14 +66,14 @@ namespace Envoy
 			void*                    user{ nullptr };
 			std::uint64_t            order{ 0 };
 			bool                     active{ false };
-			// Версия контракта, объявленная при рукопожатии. Мост не читает
-			// полей, которых в этой версии ещё не было.
+			// The contract version declared at the handshake. The bridge does not read
+			// fields that did not yet exist in that version.
 			std::uint32_t            contract{ 0 };
 		};
 
-		// Задание, собранное под замком и разосланное уже без него. Строки
-		// принадлежат ему самому: указатели внутри EnvoyAPI::Job живут только
-		// на время вызова, а вызов случается после того, как замок отпущен.
+		// A job gathered under the lock and sent out without it. The strings belong to
+		// the job itself: the pointers inside EnvoyAPI::Job live only for the length
+		// of the call, and the call happens after the lock has been let go.
 		struct Outgoing
 		{
 			EnvoyAPI::JobCallback    onJob{ nullptr };
@@ -89,17 +92,18 @@ namespace Envoy
 
 		static void Dispatch(const std::vector<Outgoing>& a_jobs);
 
-		// Правило «кто источник по способности», отделённое от последствий.
-		// Чистая функция от состава адаптеров, принуждений из меню и имён из
-		// настроек: её можно прочитать и проверить, не думая о замках,
-		// заданиях и журнале. Прежде правило было переплетено с ними.
+		// The rule "who is the source for a capability", separated from its
+		// consequences. A pure function of which adapters there are, of what the menu
+		// forced and of the names from the settings: it can be read and checked
+		// without thinking about locks, jobs and the log. The rule used to be
+		// tangled up with them.
 		static std::unordered_map<std::string, std::string> Choose(
 			const std::unordered_map<std::string, Entry>&       a_adapters,
 			const std::unordered_map<std::string, std::string>& a_overrides);
 
-		// Применяет Choose: переключает активность и возвращает задания вместо
-		// того, чтобы их рассылать. Вызывающий обязан отпустить замок и только
-		// потом звать Dispatch.
+		// Applies Choose: switches who is active and hands back the jobs instead of
+		// sending them. The caller is obliged to let the lock go and only then call
+		// Dispatch.
 		[[nodiscard]] std::vector<Outgoing> RecomputeSources();
 
 		mutable std::mutex                           _mutex;
@@ -107,8 +111,8 @@ namespace Envoy
 		std::unordered_map<std::string, std::string> _sources;
 		std::unordered_map<std::string, std::string> _overrides;
 
-		// Событие несёт только номер, поэтому сам ответ и исход озвучки должны
-		// где-то лежать, пока подписчик за ними не придёт.
+		// The event carries only a number, so the answer itself and the outcome of
+		// speaking have to lie somewhere until the subscriber comes for them.
 		std::unordered_map<std::int32_t, std::string> _answers;
 		std::unordered_map<std::int32_t, std::string> _speechResults;
 		std::uint64_t                                _order{ 0 };

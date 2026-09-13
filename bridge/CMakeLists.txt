@@ -6,13 +6,13 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Мы никогда не ставим проект через install, а правила установки CommonLibSSE-NG
-# рассчитаны на vcpkg и ломаются, когда fmt и spdlog приходят из FetchContent.
+# We never install the project, and the install rules of CommonLibSSE-NG are
+# written for vcpkg and break when fmt and spdlog arrive from FetchContent.
 set(CMAKE_SKIP_INSTALL_RULES ON)
 
-# ---------------------------------------------------------------- зависимости
-# CommonLibSSE-NG ищет fmt и spdlog через find_package, поэтому мы подсовываем
-# их FetchContent'ом с OVERRIDE_FIND_PACKAGE. vcpkg при этом не нужен.
+# ---------------------------------------------------------------- dependencies
+# CommonLibSSE-NG looks for fmt and spdlog through find_package, so we slip them
+# in with FetchContent and OVERRIDE_FIND_PACKAGE. vcpkg is not needed for this.
 include(FetchContent)
 
 set(FMT_INSTALL OFF CACHE BOOL "" FORCE)
@@ -41,9 +41,10 @@ FetchContent_Declare(
     GIT_SHALLOW TRUE
 )
 
-# rapidcsv нужен самой CommonLibSSE-NG: из CSV она читает адресную библиотеку,
-# и именно этим путём поддерживается VR. Забираем только заголовок: у src/
-# нет своего CMakeLists, поэтому проект rapidcsv не настраивается.
+# rapidcsv is wanted by CommonLibSSE-NG itself: it reads the address library out
+# of a CSV, and that is exactly the path by which VR is supported. We take only
+# the header: src/ has no CMakeLists of its own, so the rapidcsv project is not
+# configured.
 FetchContent_Declare(
     rapidcsv
     GIT_REPOSITORY https://github.com/d99kris/rapidcsv.git
@@ -56,10 +57,10 @@ FetchContent_MakeAvailable(fmt spdlog nlohmann_json rapidcsv)
 
 set(RAPIDCSV_INCLUDE_DIRS "${rapidcsv_SOURCE_DIR}/src" CACHE PATH "" FORCE)
 
-# Тесты самой библиотеки нам не нужны - иначе она потянет ещё и Catch2.
+# We do not need the tests of the library itself - they would drag in Catch2.
 set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
 
-message(STATUS "Fetching CommonLibSSE-NG (первый раз это долго)...")
+message(STATUS "Fetching CommonLibSSE-NG (the first time this takes a while)...")
 FetchContent_Declare(
     CommonLibSSE
     GIT_REPOSITORY https://github.com/CharmedBaryon/CommonLibSSE-NG.git
@@ -76,10 +77,11 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(httplib)
 
-# ------------------------------------------------------------ эталон настроек
-# Единственный источник истины - config/envoy.default.json. В двоичный файл он
-# попадает целиком на этапе сборки: второй копии значений в коде нет, а плагин
-# при первом запуске разворачивает этот набор в файл рядом с собой.
+# ------------------------------------------------------- the reference settings
+# The single source of truth is config/envoy.default.json. It goes into the
+# binary whole at build time: there is no second copy of the values in the
+# code, and on the first launch the plugin unfolds this set into a file next to
+# itself.
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/config/envoy.default.json" ENVOY_DEFAULT_JSON)
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/EnvoyDefaults.h.in"
@@ -89,16 +91,16 @@ configure_file(
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/config/envoy.default.json")
 
-# ------------------------------------------------------------------- два слоя
-# Ядро (envoy-core) об SKSE не знает ничего: ни включения, ни вызова. Всё, что
-# ему нужно от игры, оно спрашивает через три шва - core/MainThread,
-# core/GameState, core/Events, - и без установленных швов отвечает себе само.
-# Поэтому ядро собирается и работает без игры, а проверять аукцион можно
-# консольным хостом из tests/.
+# ------------------------------------------------------------------- two layers
+# The core (envoy-core) knows nothing about SKSE: neither an include nor a call.
+# Everything it needs from the game it asks for through three seams -
+# core/MainThread, core/GameState, core/Events - and with no seams set it
+# answers itself. That is why the core builds and runs without the game, and
+# why the auction can be checked with the console host out of tests/.
 #
-# Независимость держится не обещанием, а этим файлом: цель envoy-core не связана
-# с CommonLibSSE ни одной строкой, и любое включение <SKSE/...> в ядре не
-# соберётся. Нарушить правило молча нельзя.
+# The independence rests on this file rather than on a promise: the envoy-core
+# target is not linked to CommonLibSSE by a single line, and any include of
+# <SKSE/...> in the core will not build. The rule cannot be broken silently.
 file(GLOB_RECURSE ENVOY_CORE_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/bus/*.cpp")
@@ -125,9 +127,10 @@ if(MSVC)
     )
 endif()
 
-# ------------------------------------------------------------- слой SKSE
-# Здесь и только здесь живёт игра: функции Papyrus, рассылка событий, раздача
-# интерфейса адаптерам и ответы на три вопроса ядра средствами Skyrim.
+# ------------------------------------------------------------- the SKSE layer
+# Here and only here does the game live: the Papyrus functions, the sending of
+# events, the handing out of the interface to adapters, and the answers to the
+# three questions of the core by the means of Skyrim.
 file(GLOB_RECURSE ENVOY_SKSE_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/wire/*.cpp")
@@ -139,8 +142,8 @@ add_library(${PROJECT_NAME} SHARED
     ${ENVOY_SKSE_SOURCES} ${ENVOY_SKSE_HEADERS}
     "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 
-# Строгие флаги - только на наш код. Чужие библиотеки собираются своими:
-# ставить им /WX означало бы падать на чужих предупреждениях.
+# The strict flags are for our code only. Other libraries build with their own:
+# giving them /WX would mean failing on somebody else warnings.
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE
         /MP /W4 /WX /permissive- /Zc:preprocessor /EHsc /utf-8
@@ -164,11 +167,11 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/contract"
     "${CMAKE_CURRENT_BINARY_DIR}/generated"
-    # REL/Relocation.h из CommonLibSSE-NG включает rapidcsv.h, но путь к нему
-    # библиотека наружу не отдаёт - приходится добавлять самим.
+    # REL/Relocation.h out of CommonLibSSE-NG includes rapidcsv.h, but the library
+    # does not hand the path to it outside - we have to add it ourselves.
     "${RAPIDCSV_INCLUDE_DIRS}"
-    # Заголовок SKSE Menu Framework: мягкая зависимость, ничего не линкует.
-    # Лежит в дереве, а не тянется сборкой, чтобы мост собирался без сети.
+    # The SKSE Menu Framework header: a soft dependency, it links nothing. It sits
+    # in the tree rather than being fetched, so that the bridge builds offline.
     "${CMAKE_CURRENT_SOURCE_DIR}/extern/SKSEMenuFramework"
 )
 
@@ -179,14 +182,15 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     httplib::httplib
 )
 
-# Раскладка в mods\ делается tools/deploy.ps1, а не постсборочным шагом:
-# писать в сборку при запущенной игре нельзя.
+# Laying out into mods\ is done by tools/deploy.ps1 and not by a post-build
+# step: writing into the build while the game is running is not allowed.
 
 add_subdirectory(providers)
 
-# Консольный хост проверки: то же ядро, но без игры.
+# The console host for checks: the same core, but without the game.
 add_subdirectory(tests)
-# Адаптер здесь не собирается: это отдельный модуль со своим файлом сборки
-# в adapter-voice. Мост о нём не знает вовсе - он отдаёт контракт папкой SDK,
-# и этого достаточно. Ветка у Envoy пока одна: модули разъедутся по веткам
-# позже, когда будут закончены основные настройки.
+# The adapter is not built here: it is a module of its own with a build file of
+# its own in adapter-voice. The bridge does not know about it at all - it hands
+# the contract over as the SDK folder, and that is enough. Envoy still has one
+# branch: the modules will move to branches of their own later, once the main
+# settings are finished.

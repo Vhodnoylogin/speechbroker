@@ -1,5 +1,5 @@
 {
-  "note": "две дорогие ставки почти вровень и приоритет не задан - не делает никто",
+  "note": "two expensive bids almost level and no priority set - nobody acts",
   "state": {"core.context.menuOpen": false, "core.player.inCombat": false},
   "providers": ["core"],
   "utterance": {"id": 4, "text": "удар", "score": 0.80, "margin": 0.04, "final": true, "channel": ""},

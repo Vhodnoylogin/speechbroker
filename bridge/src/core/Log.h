@@ -6,38 +6,45 @@
 
 namespace Envoy
 {
-	// Журнал моста. Уровень берётся из конфигурации, в коде его нет.
+	// The bridge's log. The level comes from the settings; it is not in the code.
 	//
-	// Куда писать, решает тот, кто заводит ядро: в игре это папка журналов SKSE,
-	// вне игры - папка рядом с хостом проверки. Само ядро путей не знает и
-	// пишет через spdlog, у которого к этому времени уже есть куда.
+	// Where to write is decided by whoever starts the core: in the game that is
+	// SKSE's log folder, outside it a folder next to the test host. The core knows
+	// no paths and writes through spdlog, which by then already has somewhere to
+	// put things.
 	//
-	// Журналом управляют на ходу: из меню в игре и по Envoy.ReloadSettings.
-	// Поэтому уровень и разрешение писать слова игрока живут здесь, а не только
-	// в файле настроек, - иначе меню меняло бы одно, а журнал слушался другое.
+	// The log is steered while the game runs: from the in-game menu and by
+	// Envoy.ReloadSettings. That is why the level and the permission to write the
+	// player's words live here and not only in the settings file - otherwise the
+	// menu would change one thing and the log would obey another.
+	//
+	// The lines themselves stay English and are not translated. They travel into
+	// other people's bug reports, and a log in a language the author cannot read
+	// is a log nobody can answer.
 	class Log
 	{
 	public:
-		// Предел размера - в килобайтах; ноль означает "не вращать".
-		// Без вращения файл за долгую сессию вырастает без предела: ключ
-		// log.maxSizeKb был в эталоне настроек с самого начала и не читался
-		// никем, то есть обещал то, чего не делал.
+		// The size limit is in kilobytes; zero means "do not rotate".
+		// Without rotation the file grows without bound over a long session: the
+		// log.maxSizeKb key had been in the reference settings from the start and
+		// was read by nobody, which is to say it promised what it did not do.
 		static void Init(std::string_view a_level, const std::filesystem::path& a_file,
 			int a_maxSizeKb = 0);
 
-		// Без файла - только на экран. Так удобнее гонять проверки.
+		// No file, screen only. Handier for running checks.
 		static void ToConsole(std::string_view a_level);
 
-		// Сменить уровень уже заведённого журнала. Действует сразу и до конца
-		// сессии; постоянное значение задаётся в файле настроек.
+		// Change the level of a log that is already running. Takes effect at once
+		// and until the end of the session; the lasting value is set in the
+		// settings file.
 		static void SetLevel(std::string_view a_level);
 
-		// Текущий уровень словом - его показывает меню.
+		// The current level as a word - the menu shows it.
 		static std::string Level();
 
-		// Можно ли писать в журнал сами слова игрока. По умолчанию нельзя:
-		// иначе в папке журналов копится расшифровка всего, что человек
-		// говорил вслух дома, и он об этом нигде не предупреждён.
+		// Whether the player's own words may go into the log. Not by default:
+		// otherwise a transcript of everything a person said aloud at home piles up
+		// in the log folder, and they were warned about it nowhere.
 		static bool ShowSpeech();
 		static void SetShowSpeech(bool a_show);
 	};

@@ -1,5 +1,5 @@
 {
-  "_": "Второй подписчик диалога, и он нарочно сталкивается с test.dialogue на «да» и «нет». Оба узнают ОДНУ фразу с одинаковой уверенностью - это ничья, которую уверенностью не развести никогда, потому что запись словаря даёт одно и то же число всегда. Разводит её только порядок из настроек.",
+  "_": "A second subscriber of dialogue, and it deliberately collides with test.dialogue on yes and no. Both recognise ONE phrase with equal confidence - a tie that confidence will never separate, because a vocabulary entry always gives the same number. Only the order from the settings separates it.",
   "namespace": "test.trade",
   "topics": [
     "dialogue"

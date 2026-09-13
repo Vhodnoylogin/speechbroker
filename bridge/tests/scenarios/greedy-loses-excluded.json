@@ -1,5 +1,5 @@
 {
-  "note": "жадный уверен почти так же, но проиграл - и потому не получает ничего",
+  "note": "the greedy one is almost as confident, but it lost - and so it gets nothing",
   "state": {"core.context.menuOpen": false, "core.player.inCombat": false},
   "providers": ["core"],
   "utterance": {"id": 12, "text": "кто здесь", "score": 0.85, "margin": 0.20, "final": true, "channel": ""},

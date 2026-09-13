@@ -41,8 +41,8 @@ namespace Envoy
 
 	StateStore::Entry* StateStore::Touch(const std::string& a_key)
 	{
-		// Незаявленный ключ не принимается: иначе пространство имён превратится
-		// в свалку, и никто не сможет узнать, что вообще доступно.
+		// An undeclared key is not accepted: otherwise the namespace turns into a
+		// tip and nobody can find out what is available at all.
 		auto it = _entries.find(a_key);
 		if (it == _entries.end()) {
 			return nullptr;

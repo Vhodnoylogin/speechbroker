@@ -10,9 +10,10 @@
 
 namespace Envoy
 {
-	// Реплики приходят из потока сервера, а читают их скрипты из главного потока,
-	// поэтому всё под замком. Наружу отдаются копии: держать ссылку на запись,
-	// которую в любой момент могут удалить по сроку, нельзя.
+	// Utterances arrive from the thread of the server and are read by scripts from
+	// the main thread, so everything is under a lock. Copies are handed outside:
+	// holding a reference to a record that may be dropped on its deadline at any
+	// moment is not allowed.
 	class UtteranceStore
 	{
 	public:
@@ -20,13 +21,14 @@ namespace Envoy
 
 		std::int32_t             Add(Utterance a_utterance);
 		bool                     Update(std::int32_t a_id, const Utterance& a_utterance);
-		// Уточнение от точной модели: текст и оценки заменяются, ставки и тема
-		// сохраняются - реплика уже разослана и уже разыграна или разыгрывается.
+		// A refinement from the accurate model: the text and the scores are replaced,
+		// the bids and the topic are kept - the utterance has already gone out and is
+		// already played out, or is being played out.
 		bool                     Refine(std::int32_t a_id, const Utterance& a_utterance);
-		// Реплика отдаётся указателем на неизменяемый снимок, а не значением.
-		// Прежде каждый вопрос о ней - текст, оценка, тема, совпадение, итог -
-		// копировал её целиком вместе со ставками, победителями и картой
-		// отказов; вопросов же на одну реплику приходится по десятку.
+		// An utterance is handed over as a pointer to an immutable snapshot rather
+		// than by value. Every question about it - text, score, topic, match, outcome
+		// - used to copy the whole thing along with the bids, the winners and the map
+		// of refusals; and there are a dozen questions per utterance.
 		std::shared_ptr<const Utterance> Find(std::int32_t a_id) const;
 
 		bool AddBid(std::int32_t a_id, BidRecord a_bid);
@@ -34,9 +36,9 @@ namespace Envoy
 			std::map<std::string, std::string> a_denied, std::string a_outcome);
 
 		void        Prune(double a_ttlSec, std::size_t a_maxStored);
-		// Уборка по двум дешёвым условиям вместо сметания на каждую реплику:
-		// либо накопилось больше предела, либо с прошлого раза прошла четверть
-		// срока хранения. Обе проверки - за постоянное время.
+		// Tidying on two cheap conditions instead of a sweep on every utterance:
+		// either more than the limit has piled up, or a quarter of the keeping time
+		// has passed since last time. Both checks take constant time.
 		void        PruneIfDue(double a_ttlSec, std::size_t a_maxStored);
 		std::size_t Count() const;
 
@@ -46,9 +48,9 @@ namespace Envoy
 	private:
 		UtteranceStore() = default;
 
-		// Копирование при записи: читатели держат снимок и живут с ним сколько
-		// угодно, а писатель делает свою копию и подменяет указатель. Копия
-		// выходит одна на запись вместо одной на каждый вопрос.
+		// Copy on write: readers hold a snapshot and live with it for as long as they
+		// like, while a writer makes a copy of its own and swaps the pointer. That is
+		// one copy per write instead of one per question.
 		template <class Fn>
 		bool Mutate(std::int32_t a_id, Fn a_change)
 		{
@@ -69,7 +71,7 @@ namespace Envoy
 		std::string                                    _lastAwardedTo;
 		std::chrono::steady_clock::time_point          _lastAwardAt{};
 		std::int32_t                                   _next{ 1 };
-		// Когда убирались в прошлый раз - чтобы не сметать на каждую реплику.
+		// When the last tidy-up was - so as not to sweep on every utterance.
 		std::chrono::steady_clock::time_point           _lastPrune{};
 	};
 }

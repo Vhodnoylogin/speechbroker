@@ -1,5 +1,5 @@
 {
-  "_": "Словарь пересекается сам с собой: «стой» целиком входит в «стой на месте». Запас между лучшей и второй фразой схлопывается, и начинает работать minMargin - порог, который до сих пор не делал ничего, потому что у всех подписчиков фразы были непохожи.",
+  "_": "A vocabulary that overlaps itself: one phrase is contained whole inside a longer one. The margin between the best and the second phrase collapses, and minMargin starts to work - a threshold that had done nothing until now, because every subscriber had phrases unlike each other.",
   "namespace": "test.follower",
   "topics": [
     "world",

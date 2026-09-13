@@ -1,5 +1,5 @@
 {
-  "_": "Обратимое, но жадное - вторая половина той же пары. Нарочно сталкивается с test.guard на фразе «отступаем»: оба уверены одинаково, оба обратимы, но один делится, а другой требует всё себе. Именно здесь видно, что решает жадность, а не цена.",
+  "_": "Reversible but greedy - the other half of the same pair. It deliberately collides with test.guard on one phrase: both are equally confident, both are reversible, but one shares and the other demands everything for itself. This is where it shows that greed decides, not cost.",
   "namespace": "test.panic",
   "topics": [
     "any"

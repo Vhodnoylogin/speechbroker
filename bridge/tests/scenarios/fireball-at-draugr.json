@@ -1,5 +1,5 @@
 {
-  "note": "бой, цель враждебна - мод заклинаний уверенно ставит и берёт реплику",
+  "note": "combat, the target is hostile - the spell mod bids confidently and takes the utterance",
   "state": {"core.context.menuOpen": false, "core.player.inCombat": true,
             "core.target.lookedHostile": true, "core.actors.hostileCount": 3},
   "providers": ["core"],

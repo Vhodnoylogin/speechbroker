@@ -1,19 +1,21 @@
-// Envoy Framework - прогон аукциона без игры.
+// Envoy Framework - running the auction without the game.
 //
-//     envoy-host [--subscribers <папка>] [--scenario <файл>] [--config <файл>] [--report <файл>]
+//     envoy-host [--subscribers <folder>] [--scenario <file>] [--config <file>] [--report <file>]
 //
-// Ядро здесь то же самое, что внутри игры: те же аукцион, хранилище реплик,
-// выбор темы и словари. Разница ровно в трёх ответах, которые вместо Skyrim
-// даёт этот хост:
+// The core here is the very same one that runs inside the game: the same
+// auction, the same store of utterances, the same choice of topic and the same
+// vocabularies. The difference is exactly three answers which this host gives
+// instead of Skyrim:
 //
-//   работа        - складывается в очередь, которую главный поток вычерпывает сам;
-//   состояние     - берётся из сценария, а не у движка;
-//   события       - пишутся в журнал, а не рассылаются Papyrus.
+//   work      - is put into a queue the main thread drains itself;
+//   state     - is taken from the scenario rather than from the engine;
+//   events    - are written to the log rather than broadcast to Papyrus.
 //
-// Подписчики здесь тоже не настоящие. От них нужны только объявленные данные -
-// на какие темы подписаны и какой словарь заявили. Как подписчик поступит
-// с выигрышем, проверку не занимает: вопрос в том, КОМУ мост отдал фрагмент
-// и почему, а не в том, что победитель потом сделал.
+// The subscribers here are not real either. All that is wanted from them is
+// what they declared - which topics they are subscribed to and which
+// vocabulary they announced. What a subscriber does with a win is not what
+// the check is about: the question is WHO the bridge gave the fragment to and
+// why, not what the winner did afterwards.
 
 #include "bus/Auction.h"
 #include "bus/SubscriptionRegistry.h"
@@ -41,8 +43,8 @@
 #include <vector>
 
 #ifdef _WIN32
-// Без этого windows.h объявляет макросы min и max, и любое std::min
-// перестаёт разбираться - ошибка при этом указывает не на макрос.
+// Without this windows.h declares the macros min and max, and any std::min
+// stops parsing - with an error that does not point at the macro.
 #	define NOMINMAX
 #	include <windows.h>
 #endif
@@ -52,11 +54,12 @@ namespace
 	namespace fs = std::filesystem;
 	using json = nlohmann::json;
 
-	// Состояние игры по сценарию.
+	// The state of the game, from the scenario.
 	//
-	// Вне игры её нет, но выкинуть состояние из проверки нельзя: тема выбирается
-	// именно по нему, и «сказано в бою» против «сказано в мире» - это разные
-	// наборы подписчиков, а не оттенок.
+	// Outside the game there is none, but the state cannot be dropped from the
+	// check: the topic is chosen precisely by it, and "said in combat" against
+	// "said out in the world" are different sets of subscribers, not a shade of
+	// meaning.
 	class ScriptedState final : public Envoy::GameState::Source
 	{
 	public:
@@ -79,17 +82,17 @@ namespace
 		bool IsInCombat() const override { return combat; }
 	};
 
-	// Главный поток хоста.
+	// The main thread of the host.
 	//
-	// Без диспетчера ядро делает работу на месте вызова - но зовут его не
-	// только отсюда. Потолок придержания срабатывает в потоке планировщика,
-	// и «на месте» означало бы «в том потоке»: отпуск реплики шёл бы
-	// параллельно с приёмом следующей и с нашими ставками. Два прогона одного
-	// двоичного файла давали на одну реплику то 7 ставок, то 5 - смотря кто
-	// успевал первым. Здесь работа складывается в очередь, а вычерпывает её
-	// главный поток между своими шагами: порядок становится строго
-	// определённым, и в ядре не остаётся ничего, что делалось бы из двух
-	// потоков сразу.
+	// With no dispatcher the core does the work right where it was called - but it
+	// is not called only from here. The hold ceiling fires in the thread of the
+	// scheduler, and "on the spot" would mean "in that thread": letting an
+	// utterance go would run alongside taking in the next one and alongside our
+	// bids. Two runs of one binary gave now 7 bids on an utterance and now 5,
+	// depending on who got there first. Here the work is put into a queue and the
+	// main thread drains it between its own steps: the order becomes strictly
+	// defined, and nothing is left in the core that would be done from two threads
+	// at once.
 	class MainQueue final : public Envoy::MainThread::Dispatcher
 	{
 	public:
@@ -99,8 +102,8 @@ namespace
 			_queue.push_back(std::move(a_task));
 		}
 
-		// Выполнить всё накопленное. Задача вправе поставить следующую,
-		// поэтому очередь забирается целиком, а замок на время работы отпущен.
+		// Run everything that has piled up. A task is entitled to queue the next one,
+		// so the queue is taken whole and the lock is let go for the duration.
 		void Drain()
 		{
 			std::vector<Envoy::MainThread::Task> batch;
@@ -118,23 +121,23 @@ namespace
 		std::vector<Envoy::MainThread::Task> _queue;
 	};
 
-	// Тестовый подписчик: только то, что он о себе объявил.
+	// A test subscriber: nothing but what it declared about itself.
 	struct TestSubscriber
 	{
 		std::string              ns;
 		std::vector<std::string> topics;
 		std::vector<std::string> vocabulary;
-		std::int32_t             costClass{ 0 };   // 0 обратимое, 1 дорогое
+		std::int32_t             costClass{ 0 };   // 0 reversible, 1 expensive
 		bool                     greedy{ false };
-		// Умеет ли отменить сделанное. Отзывчивому мост отдаёт незаконченную
-		// фразу сразу: он способен исправиться. Неотзывчивому - только когда
-		// уверен, что фраза кончилась.
+		// Whether it can undo what it did. To a revocable one the bridge hands an
+		// unfinished phrase straight away: it can put itself right. To a
+		// non-revocable one only when it is sure the phrase has ended.
 		bool                     revocable{ false };
 	};
 
 	std::string CostName(std::int32_t a_class)
 	{
-		return a_class == 1 ? "дорогое" : "обратимое";
+		return a_class == 1 ? "expensive" : "reversible";
 	}
 
 	json ReadJson(const fs::path& a_path)
@@ -146,19 +149,20 @@ namespace
 		try {
 			return json::parse(in);
 		} catch (const std::exception& exc) {
-			spdlog::error("не разобран {}: {}", a_path.string(), exc.what());
+			spdlog::error("cannot parse {}: {}", a_path.string(), exc.what());
 			return json{};
 		}
 	}
 
-	// Состав участников: кто объявился и что о себе сказал.
+	// The cast of participants: who declared themselves and what they said about
+	// themselves.
 	class Roster
 	{
 	public:
 		bool Load(const fs::path& a_dir)
 		{
 			if (!fs::exists(a_dir)) {
-				spdlog::error("нет папки подписчиков: {}", a_dir.string());
+				spdlog::error("no subscribers folder: {}", a_dir.string());
 				return false;
 			}
 
@@ -168,8 +172,8 @@ namespace
 					files.push_back(entry.path());
 				}
 			}
-			// По имени файла: порядок объявления не должен зависеть от того,
-			// как файловая система решила их отдать.
+			// By file name: the order of declaration must not depend on how the file
+			// system felt like handing them over.
 			std::sort(files.begin(), files.end());
 
 			for (const auto& file : files) {
@@ -190,15 +194,15 @@ namespace
 			return !_subs.empty();
 		}
 
-		// Объявить всех мосту - так же, как это сделал бы скрипт каждого.
+		// Declare them all to the bridge - just as the script of each would.
 		void Declare() const
 		{
 			auto& registry = Envoy::SubscriptionRegistry::Get();
 			for (const auto& sub : _subs) {
 				registry.Subscribe(sub.ns, sub.topics);
-				// Род объявляется отдельно от подписки: решение придержать реплику
-				// принимается ДО того, как кто-либо успел заявиться, и опираться
-				// на ставки в нём нельзя.
+				// The kind is declared separately from the subscription: the decision to hold
+				// an utterance is taken BEFORE anybody has managed to bid, and it cannot lean
+				// on bids.
 				registry.Declare(sub.ns, sub.costClass, sub.revocable);
 				if (!sub.vocabulary.empty()) {
 					registry.SetVocabulary(sub.ns, sub.vocabulary);
@@ -208,15 +212,16 @@ namespace
 				for (const auto& topic : sub.topics) {
 					topics += topics.empty() ? topic : ", " + topic;
 				}
-				spdlog::info("подписчик {}: темы [{}], фраз {}, {}{}{}", sub.ns, topics,
+				spdlog::info("subscriber {}: topics [{}], phrases {}, {}{}{}", sub.ns, topics,
 					sub.vocabulary.size(), CostName(sub.costClass),
-					sub.greedy ? ", жадный" : "",
-					sub.revocable ? ", отзывчивый" : "");
+					sub.greedy ? ", greedy" : "",
+					sub.revocable ? ", revocable" : "");
 			}
 		}
 
-		// Жадность реестру не объявляют - это свойство ставки, а не подписки, -
-		// поэтому хост берёт её из своего описания подписчика.
+		// Greed is not declared to the registry - it is a property of a bid, not of a
+		// subscription - so the host takes it from its own description of the
+		// subscriber.
 		bool Greedy(const std::string& a_ns) const
 		{
 			const auto it = std::find_if(_subs.begin(), _subs.end(),
@@ -228,8 +233,8 @@ namespace
 		std::vector<TestSubscriber> _subs;
 	};
 
-	// Прогон сценария: шаги, ставки за подписчиков, ожидание придержанных
-	// и отчёт по каждой реплике.
+	// Running a scenario: the steps, the bids on behalf of the subscribers, the
+	// wait for the held ones and a report on every utterance.
 	class Run
 	{
 	public:
@@ -243,13 +248,14 @@ namespace
 				Step(step);
 			}
 
-			// Сценарий кончился, но потолки придержанных могли ещё не истечь. Ждём их
-			// и дописываем итог: реплика, отпущенная последней, должна быть в отчёте
-			// так же, как все прочие.
+			// The scenario has ended, but the ceilings of the held ones may not have run
+			// out yet. We wait for them and add the outcome: an utterance let go last
+			// has to be in the report just like all the others.
 			if (!_waiting.empty()) {
-				spdlog::info("ждём {} придержанных реплик", _waiting.size());
-				// Сколько ждать, говорят настройки: дольше самого длинного потолка
-				// придержание не длится, дальше - окно ставок и запас на очередь.
+				spdlog::info("waiting for {} held utterances", _waiting.size());
+				// How long to wait is said by the settings: a hold never lasts longer than
+				// the longest ceiling, and after that come the bid window and some room for
+				// the queue.
 				const auto& settings = Envoy::Settings::Get();
 				const auto  ceiling = std::max({ settings.HoldCeilingMs(0),
                                                     settings.HoldCeilingMs(1),
@@ -263,71 +269,72 @@ namespace
 		std::string Report(const std::string& a_scenarioName) const
 		{
 			std::ostringstream report;
-			report << "=== прогон аукциона без игры ===\n\n";
-			report << "сценарий: " << a_scenarioName << "\n";
-			report << "окно ставок: " << Envoy::Settings::Get().bidWindowMs << " мс\n\n";
+			report << "=== auction run without the game ===\n\n";
+			report << "scenario: " << a_scenarioName << "\n";
+			report << "bid window: " << Envoy::Settings::Get().bidWindowMs << " ms\n\n";
 
-			// Теперь, когда решилось всё, дочитываем итоги из снимка.
+			// Now that everything is settled, the outcomes are read back from the snapshot.
 			std::size_t heldCount = 0, droppedCount = 0;
 			for (const auto& told : _history) {
 				const auto found = _snapshot.find(told.id);
 				const Envoy::Utterance* done = found == _snapshot.end() ? nullptr : &found->second;
 
-				report << "реплика " << told.id << ": «" << (done ? done->text : std::string{}) << "»\n";
+				report << "utterance " << told.id << ": '" << (done ? done->text : std::string{}) << "'\n";
 				if (!told.source.empty()) {
-					report << "    запись    : " << told.source << "  (эталон «"
-					       << told.reference << "»)\n";
+					report << "    source    : " << told.source << "  (reference '"
+					       << told.reference << "')\n";
 				}
 				if (told.hadComplete) {
-					report << "    кусок     : " << told.sliceId << ", завершённость "
+					report << "    piece     : " << told.sliceId << ", completeness "
 					       << told.complete << "\n";
 				}
 				for (const auto& line : told.swallowed) {
-					report << "    поглощает : " << line << "\n";
+					report << "    absorbs   : " << line << "\n";
 				}
-				report << "    тема      : " << told.topic << "\n";
+				report << "    topic     : " << told.topic << "\n";
 
 				if (done && !done->holdReason.empty()) {
 					++heldCount;
-					report << "    придержана: " << done->holdReason << "\n";
+					report << "    held      : " << done->holdReason << "\n";
 					if (done->supersededBy != 0) {
 						++droppedCount;
-						report << "    ВЫБРОШЕНА : не оглашалась, её поглотила реплика "
+						report << "    DROPPED   : never announced, absorbed by utterance "
 						       << done->supersededBy << "\n";
 					}
 				}
 
 				if (done) {
-					report << "    ставок    : " << done->bids.size() << "\n";
+					report << "    bids      : " << done->bids.size() << "\n";
 					for (const auto& bid : done->bids) {
 						report << "        " << bid.ns << "  " << bid.confidence
 						       << "  " << CostName(bid.costClass)
-						       << (bid.greedy ? ", жадный" : "")
-						       << "  фраза «" << bid.phrase << "»\n";
+						       << (bid.greedy ? ", greedy" : "")
+						       << "  phrase '" << bid.phrase << "'\n";
 					}
 					std::string winners;
 					for (const auto& who : done->winners) {
 						winners += winners.empty() ? who : ", " + who;
 					}
-					report << "    выиграл   : " << (winners.empty() ? "никто" : winners) << "\n";
+					report << "    won       : " << (winners.empty() ? "nobody" : winners) << "\n";
 					for (const auto& [who, why] : done->denied) {
-						report << "    отказано  : " << who << " - " << why << "\n";
+						report << "    denied    : " << who << " - " << why << "\n";
 					}
-					report << "    итог      : " << done->outcome << "\n";
+					report << "    outcome   : " << done->outcome << "\n";
 				}
 				report << "\n";
 			}
 
-			report << "=== придержание ===\n";
-			report << "придержано реплик: " << heldCount << " из " << _history.size() << "\n";
-			report << "из них выброшено не оглашёнными: " << droppedCount
-			       << " - столько раз обрывок фразы НЕ ушёл никому\n\n";
+			report << "=== holding ===\n";
+			report << "utterances held: " << heldCount << " of " << _history.size() << "\n";
+			report << "of those dropped unannounced: " << droppedCount
+			       << " - that many times a fragment of a phrase did NOT go to anybody\n\n";
 			return report.str();
 		}
 
 	private:
-		// Что известно о реплике только на её шаге. Итог дочитывается из хранилища
-		// в конце: у придержанной он появляется позже, чем шаг заканчивается.
+		// What is known about an utterance at its own step alone. The outcome is read
+		// back from the store at the end: for a held one it appears later than the
+		// step finishes.
 		struct Told
 		{
 			std::int32_t             id{ 0 };
@@ -340,21 +347,22 @@ namespace
 			std::vector<std::string> swallowed;
 		};
 
-		// Ожидание идёт долями, и между долями главный поток делает две вещи:
-		// вычерпывает очередь ядра и торгует за отпущенных. Доля - это шаг
-		// опоздания на торги, а не настройка: окно ставок открывается в тот миг,
-		// когда придержанную отпустили, и проверка не должна его проспать.
+		// The waiting goes in slices, and between the slices the main thread does two
+		// things: it drains the queue of the core and bids for the ones let go. A
+		// slice is a step of lateness to the bidding, not a setting: the bid window
+		// opens the moment a held utterance is let go, and the check must not sleep
+		// through it.
 		static constexpr std::int64_t kPollSliceMs = 50;
-		// Запас на то, что итог ставится в очередь из потока планировщика
-		// и до следующей доли не виден. Несколько долей с избытком.
+		// Room for the fact that the outcome is queued from the thread of the
+		// scheduler and is not visible until the next slice. A few slices over.
 		static constexpr std::int64_t kQueueSlackMs = 250;
 
 		void Step(const json& a_step)
 		{
 			_state.Reset();
-			// Проверяем именно объект, а не наличие ключа: сценарий, собранный
-			// программой, вполне может положить туда пустоту, и разбирать её как
-			// объект значит уронить весь прогон на одном шаге.
+			// We check the object itself rather than the presence of the key: a scenario
+			// put together by a program may well leave emptiness there, and parsing that
+			// as an object would mean bringing the whole run down on one step.
 			if (a_step.contains("state") && a_step["state"].is_object()) {
 				const auto& s = a_step["state"];
 				_state.menu = s.value("menu", std::string{});
@@ -362,10 +370,11 @@ namespace
 				_state.combat = s.value("combat", false);
 			}
 
-			// Номер куска у движка - свой в каждой записи, номер реплики - сквозной.
-			// Связь между ними нужна, чтобы длинный кусок мог сказать, какие короткие
-			// он поглощает: именно здесь и видно, успел ли мост отдать команду до того,
-			// как выяснилось, что фраза ещё не кончилась.
+			// The number of a piece at the engine is its own in every recording, while the
+			// number of an utterance runs across all of them. The link between the two is
+			// needed so that a long piece can say which short ones it absorbs: that is
+			// exactly where it shows whether the bridge managed to hand a command over
+			// before it turned out the phrase had not ended.
 			const auto source = a_step.value("source", std::string{});
 			if (source != _currentSource) {
 				_currentSource = source;
@@ -373,9 +382,9 @@ namespace
 				_lastEmitMs = 0;
 			}
 
-			// Куски одной записи проигрываются по меткам времени, а не подряд.
-			// Иначе продолжение приходит мгновенно, и придержание выглядит
-			// работающим там, где в жизни успел бы истечь потолок.
+			// The pieces of one recording are played by their timestamps and not one after
+			// another. Otherwise the continuation arrives instantly and holding looks as
+			// though it works where in life the ceiling would have run out.
 			const auto emitMs = a_step.value("emitMs", 0);
 			if (emitMs > _lastEmitMs) {
 				Wait(emitMs - _lastEmitMs);
@@ -392,14 +401,15 @@ namespace
 			utterance.lengthClass = a_step.value("lengthClass", 0);
 			utterance.sliceId = a_step.value("sliceId", 0);
 			utterance.durationMs = a_step.value("durationMs", 0);
-			// Единица по умолчанию: сценарий, не знающий о завершённости, ведёт
-			// себя как прежде - всё приходит законченным и ничего не держится.
+			// The default of one: a scenario that knows nothing about completeness behaves
+			// as before - everything arrives finished and nothing is held.
 			utterance.complete = a_step.value("complete", 1.0f);
 			utterance.isFinal = true;
 
-			// Прочие гипотезы движка. Аукцион их пока не спрашивает, но реплика
-			// обязана нести их целиком: подписчик вправе увидеть, что фразу можно
-			// понять иначе, а мост не вправе решать это за него.
+			// The other hypotheses of the engine. The auction does not ask for them yet,
+			// but an utterance is obliged to carry them whole: a subscriber is entitled
+			// to see that the phrase can be understood otherwise, and the bridge is not
+			// entitled to decide that for it.
 			if (a_step.contains("alternatives")) {
 				for (const auto& alt : a_step["alternatives"]) {
 					utterance.alternatives.push_back(Envoy::Alternative{
@@ -412,9 +422,9 @@ namespace
 				_sliceToId[utterance.sliceId] = id;
 			}
 
-			// Длинный кусок поглощает короткие, из которых он собран. Решает это
-			// мост, а не хост: придержанные он выбросит не оглашёнными,
-			// а уже отданные - отзовёт.
+			// A long piece absorbs the short ones it is made of. That is decided by the
+			// bridge and not by the host: the held ones it will throw away unannounced,
+			// and the ones already handed over it will revoke.
 			std::vector<std::int32_t> older;
 			if (a_step.contains("supersedes")) {
 				for (const auto& mark : a_step["supersedes"]) {
@@ -425,7 +435,7 @@ namespace
 				}
 			}
 
-			spdlog::info("--- реплика {}: «{}» (завершённость {:.2f}) ---", id, utterance.text,
+			spdlog::info("--- utterance {}: '{}' (completeness {:.2f}) ---", id, utterance.text,
 				utterance.complete);
 
 			std::vector<std::string> swallowed;
@@ -438,17 +448,18 @@ namespace
 				for (const auto& winner : was->winners) {
 					who += who.empty() ? winner : ", " + winner;
 				}
-				swallowed.push_back("реплика " + std::to_string(mark) +
-					(was->held ? " - придержана, выброшена не оглашённой"
-					           : (who.empty() ? " - её никто не получил"
-					                          : " - НО ОНА УЖЕ ОТДАНА: " + who)));
+				swallowed.push_back("utterance " + std::to_string(mark) +
+					(was->held ? " - held, dropped unannounced"
+					           : (who.empty() ? " - nobody got it"
+					                          : " - BUT IT WAS ALREADY HANDED OVER: " + who)));
 			}
 			if (!older.empty()) {
 				Envoy::Auctioneer::Get().Supersede(id, older);
 			}
 
-			// Приём вместо оглашения. Мост сам решит, огласить реплику сейчас или
-			// придержать, пока не станет ясно, кончилась ли фраза.
+			// Taking in instead of announcing. The bridge will decide for itself whether
+			// to announce the utterance now or hold it until it is clear whether the
+			// phrase has ended.
 			Envoy::Auctioneer::Get().Receive(id);
 
 			auto offered = Envoy::UtteranceStore::Get().Find(id);
@@ -456,22 +467,23 @@ namespace
 			const bool held = offered && offered->held;
 
 			if (held) {
-				// Придержанную не торгуем и не ждём: в жизни движок в это время
-				// продолжает работать, и продолжение может прийти раньше, чем
-				// истечёт потолок. Ставки за неё поставим, если её всё-таки отпустят.
+				// A held one is neither bid on nor waited for: in life the engine goes on
+				// working at this time, and the continuation may arrive before the ceiling
+				// runs out. We will bid on it if it is let go after all.
 				_waiting.push_back(id);
-				spdlog::info("реплика {} придержана - ставки не собираем", id);
+				spdlog::info("utterance {} is held - no bids are gathered", id);
 			} else {
 				PlaceBids(id, utterance.text, utterance.score, topic);
-				// Итог подводит сам аукционист по истечении окна ставок, из потока
-				// планировщика. Ждём его, а не подводим за него.
+				// The outcome is settled by the auctioneer itself once the bid window has run
+				// out, from the thread of the scheduler. We wait for it rather than settle
+				// on its behalf.
 				Wait(Envoy::Settings::Get().bidWindowMs + kQueueSlackMs);
 			}
 
-			// Итог сюда не пишем. Придержанная реплика решится позже - когда её
-			// поглотят или отпустят по потолку, - и снимок, сделанный сейчас,
-			// показал бы её вечно нерешённой. Всё, что известно только на этом
-			// шаге, запоминаем; остальное дочитаем из хранилища в конце.
+			// The outcome is not written here. A held utterance is settled later - when it
+			// is absorbed or let go on the ceiling - and a snapshot taken now would show
+			// it forever unsettled. Everything known only at this step is remembered;
+			// the rest is read back from the store at the end.
 			Told told;
 			told.id = id;
 			told.source = source;
@@ -484,13 +496,14 @@ namespace
 			_history.push_back(std::move(told));
 		}
 
-		// Ставки вместо скриптов Papyrus. Кто в зале - подписчики темы, чьи словари
-		// узнали фразу, - отвечает сам реестр, тем же вопросом, которым пользуется
-		// придержание; своей копии правила «слышит ли подписчик тему» у хоста нет.
-		// Уверенность - та же оценка, по которой придержание судит, дошёл бы
-		// подписчик до порога. Настоящий подписчик считает её сам; здесь взято
-		// простейшее защитимое правило, потому что поведение подписчиков проверку
-		// не занимает.
+		// Bids instead of Papyrus scripts. Who is in the room - the subscribers of the
+		// topic whose vocabularies recognised the phrase - is answered by the
+		// registry itself, by the same question holding uses; the host has no copy
+		// of its own of the rule "does this subscriber hear this topic".
+		// The confidence is the same estimate by which holding judges whether a
+		// subscriber would reach the threshold. A real subscriber works it out
+		// itself; here the simplest defensible rule is taken, because the behaviour
+		// of subscribers is not what the check is about.
 		void PlaceBids(std::int32_t a_id, const std::string& a_text, float a_score,
 			const std::string& a_topic) const
 		{
@@ -500,42 +513,43 @@ namespace
 				const float confidence = who.match.Confidence(a_score);
 				Envoy::UtteranceStore::Get().AddBid(a_id,
 					Envoy::BidRecord{ who.ns, confidence, who.costClass, greedy, who.match.phrase });
-				spdlog::info("ставка {}: уверенность {:.2f} (слышимость {:.2f} x словарь {:.2f}), "
-				             "фраза «{}», {}{}",
+				spdlog::info("bid {}: confidence {:.2f} (audibility {:.2f} x vocabulary {:.2f}), "
+				             "phrase '{}', {}{}",
 					who.ns, confidence, a_score, who.match.score, who.match.phrase,
-					CostName(who.costClass), greedy ? ", жадный" : "");
+					CostName(who.costClass), greedy ? ", greedy" : "");
 			}
 			if (heard.empty()) {
-				spdlog::info("ставок нет - никто из подписчиков темы {} не узнал фразу", a_topic);
+				spdlog::info("no bids - not one subscriber of topic {} recognised the phrase", a_topic);
 			}
 		}
 
-		// Придержанную реплику могли отпустить по потолку, пока мы занимались
-		// следующим куском. Оглашение случилось - значит пора торговать.
+		// A held utterance may have been let go on the ceiling while we were busy with
+		// the next piece. The announcement happened - so it is time to bid.
 		void CatchUp()
 		{
 			std::vector<std::int32_t> still;
 			for (const auto id : _waiting) {
 				auto item = Envoy::UtteranceStore::Get().Find(id);
 				if (!item || item->supersededBy != 0) {
-					continue;   // поглощена - судьба решена, торговать нечего
+					continue;   // absorbed - its fate is settled, nothing to bid on
 				}
 				if (item->held) {
 					still.push_back(id);
 					continue;
 				}
-				spdlog::info("реплика {} отпущена - торгуем с опозданием", id);
+				spdlog::info("utterance {} let go - bidding late", id);
 				PlaceBids(id, item->text, item->score, item->topic);
 			}
 			_waiting.swap(still);
 		}
 
-		// Последнее известное состояние каждой реплики.
+		// The last known state of every utterance.
 		//
-		// Хранилище моста - живой кеш, а не журнал: оно чистится по сроку и по
-		// числу, и к концу прогона ранние реплики из него уже вымыты. Это верно
-		// для моста и неверно для проверки, которой нужен итог по КАЖДОЙ. Поэтому
-		// снимок держим у себя, а не требуем от хранилища быть тем, чем оно не является.
+		// The store of the bridge is a live cache, not a journal: it is cleaned by
+		// deadline and by count, and by the end of a run the early utterances have
+		// been washed out of it. That is right for the bridge and wrong for a check,
+		// which needs the outcome of EVERY one. So the snapshot is kept here rather
+		// than demanding the store be something it is not.
 		void Keep()
 		{
 			for (const auto& told : _history) {
@@ -545,8 +559,8 @@ namespace
 			}
 		}
 
-		// Ждать надо не одним сном, а короткими долями с работой между ними:
-		// вычерпать очередь ядра, поторговать за отпущенных, обновить снимок.
+		// The waiting must not be one sleep but short slices with work between them:
+		// drain the queue of the core, bid for the ones let go, refresh the snapshot.
 		void Wait(std::int64_t a_ms)
 		{
 			for (std::int64_t left = a_ms; left > 0; left -= kPollSliceMs) {
@@ -565,7 +579,7 @@ namespace
 		std::string                 _currentSource;
 		std::map<int, std::int32_t> _sliceToId;
 		std::int32_t                _lastEmitMs{ 0 };
-		std::vector<std::int32_t>   _waiting;   // придержанные, чьей судьбы мы ещё не знаем
+		std::vector<std::int32_t>   _waiting;   // the held ones whose fate we do not know yet
 		std::vector<Told>           _history;
 		std::map<std::int32_t, Envoy::Utterance> _snapshot;
 	};
@@ -577,10 +591,11 @@ int main(int argc, char** argv)
 	::SetConsoleOutputCP(CP_UTF8);
 #endif
 
-	// Файл настроек хост заводит себе сам: встроенный эталон разворачивается
-	// рядом с исполняемым, и правила аукциона получаются ровно те же, что
-	// в игре, - без единого пути, заданного здесь. Именно рядом с исполняемым,
-	// а не в текущей папке: запуск из корня репозитория оставлял файл в нём.
+	// The host makes itself a settings file: the built-in reference unfolds next to
+	// the executable, and the rules of the auction come out exactly the same as
+	// in the game - without a single path set here. Next to the executable
+	// precisely: running from the root of the repository used to leave the file
+	// in it.
 	fs::path subscribersDir = ENVOY_TEST_DIR "/subscribers";
 	fs::path scenarioFile = ENVOY_TEST_DIR "/scenarios/default.json";
 	fs::path configFile = fs::absolute(argv[0]).parent_path() / "envoy-host.json";
@@ -605,7 +620,8 @@ int main(int argc, char** argv)
 	config.Load(configFile);
 	spdlog::info("{}: {}", Envoy::Config::Describe(config.Source()), config.Path().string());
 
-	// Два из трёх швов ядра отвечает хост; события остаются в журнале.
+	// Two of the three seams of the core are answered by the host; the events stay
+	// in the log.
 	static ScriptedState state;
 	static MainQueue     main;
 	Envoy::GameState::Install(&state);
@@ -613,7 +629,7 @@ int main(int argc, char** argv)
 
 	Roster roster;
 	if (!roster.Load(subscribersDir)) {
-		spdlog::error("ни одного подписчика - проверять нечего");
+		spdlog::error("not a single subscriber - nothing to check");
 		return 2;
 	}
 	roster.Declare();
@@ -621,11 +637,11 @@ int main(int argc, char** argv)
 	const auto scenario = ReadJson(scenarioFile);
 	const auto steps = scenario.contains("steps") ? scenario["steps"] : json::array();
 	if (steps.empty()) {
-		spdlog::error("в сценарии нет шагов: {}", scenarioFile.string());
+		spdlog::error("the scenario has no steps: {}", scenarioFile.string());
 		return 2;
 	}
 	const auto scenarioName = scenario.value("name", scenarioFile.stem().string());
-	spdlog::info("сценарий «{}», шагов {}", scenarioName, steps.size());
+	spdlog::info("scenario '{}', {} steps", scenarioName, steps.size());
 
 	Run run(state, main, roster);
 	run.Play(steps);
@@ -635,7 +651,7 @@ int main(int argc, char** argv)
 	if (!reportFile.empty()) {
 		std::ofstream out(reportFile, std::ios::binary);
 		out << text;
-		spdlog::info("отчёт: {}", reportFile.string());
+		spdlog::info("report: {}", reportFile.string());
 	} else {
 		std::fputs(text.c_str(), stdout);
 	}

@@ -1,5 +1,5 @@
 {
-  "note": "тот же спор об одной команде, но игрок расставил порядок. Прямое указание старше любых наших правил, и жадный побеждает.",
+  "note": "the same argument about one command, but the player set the order. A direct instruction outranks any rule of ours, and the greedy one wins.",
   "config": {
     "auction": {
       "priority": [

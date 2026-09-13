@@ -6,16 +6,17 @@
 
 namespace Envoy
 {
-	// Слой SKSE: три ответа игры на три вопроса ядра.
+	// The SKSE layer: the three answers of the game to the three questions of the
+	// core.
 	//
-	// Ядро не знает ни одного из этих типов и знать не должно. Оно спрашивает
-	// «положи работу в главный поток», «открыто ли меню», «разошли событие» -
-	// а здесь на эти вопросы отвечают Skyrim и SKSE. Уберите этот файл, и ядро
-	// продолжит работать: без игры вопросы получают ответы по умолчанию.
+	// The core knows none of these types and is not meant to. It asks "put this
+	// work into the main thread", "is a menu open", "send this event out" - and
+	// here Skyrim and SKSE answer. Take this file away and the core keeps
+	// working: without the game the questions get their default answers.
 	class SkseHost
 	{
 	public:
-		// Поставить игру источником ответов. Зовётся один раз при загрузке.
+		// Make the game the source of the answers. Called once, at load.
 		static void Install();
 
 	private:

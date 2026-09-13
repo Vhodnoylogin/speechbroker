@@ -9,23 +9,24 @@
 
 namespace Envoy
 {
-	// Единственная точка чтения настроек.
+	// The single place settings are read.
 	//
-	// Значения не задаются в коде россыпью: эталонный набор целиком вкомпилирован
-	// из config/envoy.default.json. При первом запуске он превращается в файл рядом
-	// с плагином, при следующих - служит основой, поверх которой ложится файл
-	// пользователя. Поэтому новые ключи после обновления появляются у пользователя
-	// сами, а испорченный файл не роняет плагин и не затирается.
+	// Values are not scattered through the code: the whole reference set is
+	// compiled in from config/envoy.default.json. On the first launch it becomes a
+	// file next to the plugin; on later ones it serves as the base the user's file
+	// is laid over. That is why new keys appear at the user's end by themselves
+	// after an update, and why a damaged file neither brings the plugin down nor
+	// gets overwritten.
 	class Config
 	{
 	public:
 		enum class Origin
 		{
-			Baseline,   // файла не было и создать не удалось - работаем на встроенном
-			Created,    // файла не было, создали из встроенного
-			Merged,     // файл прочитан и дополнен недостающими ключами
-			File,       // файл прочитан, дополнять нечего
-			Broken      // файл есть, но не разбирается - работаем на встроенном, файл не тронут
+			Baseline,   // no file, and it could not be created - running on the built-in set
+			Created,    // no file, so one was created from the built-in set
+			Merged,     // file read and topped up with the keys it was missing
+			File,       // file read, nothing to top up
+			Broken      // file is there but does not parse - built-in set, file left alone
 		};
 
 		static Config& Get();
@@ -37,7 +38,7 @@ namespace Envoy
 		const std::string&           Error() const { return _error; }
 		const nlohmann::json&        Raw() const { return _doc; }
 
-		// Доступ по указателю JSON, например "/hub/port".
+		// Access by JSON pointer, for instance "/hub/port".
 		template <class T>
 		std::optional<T> Value(std::string_view a_pointer) const
 		{

@@ -4,15 +4,16 @@
 
 namespace Envoy
 {
-	// Шов «что сейчас происходит в игре».
+	// The seam "what is going on in the game right now".
 	//
-	// Тема реплики выбирается по состоянию игры, а не по смыслу фразы: сказанное
-	// вне окна диалога до подписчиков диалога не дойдёт никогда. Само ядро об
-	// игре не знает ничего и спрашивает через этот шов.
+	// An utterance gets its topic from the state of the game, not from the sense
+	// of the phrase: something said outside the dialogue window will never reach
+	// the dialogue subscribers. The core itself knows nothing about the game and
+	// asks through this seam.
 	//
-	// Вне игры отвечает источник по умолчанию, у которого не происходит ничего:
-	// меню закрыты, пауза снята, боя нет. Проверке этого мало, поэтому она
-	// ставит свой источник и говорит в нём, что хочет.
+	// Outside the game the default source answers, and in it nothing happens:
+	// menus closed, no pause, no combat. A check needs more than that, so it sets
+	// a source of its own and says in it whatever it wants.
 	class GameState
 	{
 	public:

@@ -1,5 +1,5 @@
 {
-  "_": "Дорогое и жадное: заклинание не отменишь, и делить его не с кем. Порог уверенности для дорогого класса выше, поэтому невнятная фраза до него не доходит - ровно то, ради чего классы цены и заведены.",
+  "_": "Expensive and greedy: a spell cannot be called back, and there is nobody to share it with. The confidence threshold for the expensive class is higher, so an indistinct phrase does not reach it - which is exactly what the cost classes were made for.",
   "namespace": "test.magic",
   "topics": [
     "world",

@@ -1,4 +1,5 @@
 {
+  "language": "auto",
   "log": {
     "level": "info",
     "file": "envoy.log",

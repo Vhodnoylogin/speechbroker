@@ -4,26 +4,27 @@
 
 namespace Envoy
 {
-	// Сравнение произнесённого со словарём. Это отдельная забота, а не часть
-	// реестра подписок: реестр отвечает на вопрос "кто на что подписан",
-	// а здесь живёт вопрос "насколько это похоже на ту фразу".
+	// Comparing what was said against a vocabulary. This is a concern of its own
+	// and not part of the subscription registry: the registry answers "who is
+	// subscribed to what", and the question that lives here is "how close is this
+	// to that phrase".
 	//
-	// Всё считается по кодовым точкам, а не по байтам. Кириллица в UTF-8
-	// занимает два байта, и посимвольные операции над байтами дают чепуху:
-	// регистр не сбивается вовсе, а цена заглавной буквы зависит от того,
-	// в какой половине блока она стоит.
+	// Everything is counted in code points, not in bytes. Cyrillic takes two
+	// bytes in UTF-8, and per-character work over bytes gives nonsense: the case
+	// is not folded at all, and the price of a capital letter depends on which
+	// half of the block it sits in.
 	class Text
 	{
 	public:
-		// Разбор UTF-8 в кодовые точки. Битый байт пропускается, а не роняет строку.
+		// Splitting UTF-8 into code points. A broken byte is skipped, not fatal.
 		static std::u32string Decode(const std::string& a_text);
 
-		// Приведение: сбить регистр, выбросить знаки препинания, схлопнуть пробелы.
-		// Делать это надо один раз - при объявлении словаря, а не на каждый вопрос.
+		// Folding: drop the case, throw out the punctuation, squeeze the spaces. To
+		// be done once - when the vocabulary is declared, not on every question.
 		static std::u32string Normalize(const std::string& a_text);
 
-		// Похожесть без внешних библиотек: расстояние редактирования, приведённое
-		// к доле от длины. Для команд и коротких фраз этого хватает.
+		// Likeness without outside libraries: edit distance taken as a share of the
+		// length. For commands and short phrases that is enough.
 		static float Similarity(const std::u32string& a_left, const std::u32string& a_right);
 
 	private:

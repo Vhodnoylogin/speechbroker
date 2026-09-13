@@ -4,6 +4,7 @@
 
 #include "bus/SubscriptionRegistry.h"
 #include "bus/UtteranceStore.h"
+#include "core/Loc.h"
 #include "wire/AdapterHost.h"
 
 #include <algorithm>
@@ -25,26 +26,27 @@ namespace Envoy
 
 	std::int32_t PapyrusApi::GetInterfaceVersion(Tag)
 	{
-		// Из двоичного файла, а не из настроек: подписчик спрашивает, какой
-		// контракт мост УМЕЕТ, а не какой ему прописали в json. Прежде здесь
-		// возвращалась единица из файла настроек, и любой скрипт, сверяющий
-		// версию, получал неправду.
+		// Out of the binary, not out of the settings: a subscriber is asking which
+		// contract the bridge CAN do, not the one somebody wrote into its json. This
+		// used to hand back a 1 out of the settings file, and every script that
+		// checked the version was told a lie.
 		return static_cast<std::int32_t>(EnvoyAPI::kInterfaceVersion);
 	}
 
 	bool PapyrusApi::IsAvailable(Tag)
 	{
-		// Если библиотеки нет, функция не зарегистрирована, вызов не проходит и мод
-		// получает false. Поэтому "да" здесь означает именно то, что нужно.
+		// If the library is absent the function is not registered, the call does not
+		// go through and the mod gets false. So "yes" here means exactly that.
 		return true;
 	}
 
 	void PapyrusApi::Subscribe(Tag, Str a_ns, std::vector<Str> a_topics)
 	{
-		// BSFixedString хранит строки в общем пуле без учёта регистра: движок уже
-		// держит "Dialogue", и объявленное скриптом "dialogue" возвращается из
-		// пула с чужим написанием. Сравнивать темы после этого нельзя, поэтому
-		// приводим их к нижнему регистру на входе - имя темы наше, не движка.
+		// BSFixedString keeps strings in one shared pool without regard to case: the
+		// engine already holds "Dialogue", so a "dialogue" declared by a script comes
+		// back out of the pool in somebody else's spelling. Topics cannot be compared
+		// after that, so they are lowered on the way in - the name of a topic is ours,
+		// not the engine's.
 		auto topics = ToStrings(a_topics);
 		for (auto& t : topics) {
 			std::transform(t.begin(), t.end(), t.begin(),
@@ -53,7 +55,7 @@ namespace Envoy
 		SubscriptionRegistry::Get().Subscribe(a_ns.c_str(), topics);
 		std::string joined;
 		for (const auto& t : topics) { joined += joined.empty() ? t : ", " + t; }
-		SKSE::log::info("участник {} подписался на темы: {}", a_ns.c_str(), joined);
+		SKSE::log::info("participant {} subscribed to topics: {}", a_ns.c_str(), joined);
 	}
 
 	void PapyrusApi::Unsubscribe(Tag, Str a_ns)
@@ -69,17 +71,18 @@ namespace Envoy
 	void PapyrusApi::Declare(Tag, Str a_ns, std::int32_t a_costClass, bool a_revocable)
 	{
 		SubscriptionRegistry::Get().Declare(a_ns.c_str(), a_costClass, a_revocable);
-		SKSE::log::info("участник {} объявил себя: {}, {}", a_ns.c_str(),
-			a_costClass >= 1 ? "дорогой" : "обратимый",
-			a_revocable ? "умеет отменить" : "отменить не умеет");
+		SKSE::log::info("participant {} declared itself: {}, {}", a_ns.c_str(),
+			a_costClass >= 1 ? "expensive" : "reversible",
+			a_revocable ? "can undo" : "cannot undo");
 	}
 
 	void PapyrusApi::RegisterVocabulary(Tag, Str a_ns, std::vector<Str> a_phrases)
 	{
 		const auto phrases = ToStrings(a_phrases);
 		SubscriptionRegistry::Get().SetVocabulary(a_ns.c_str(), phrases);
-		SKSE::log::info("участник {} объявил словарь: {} фраз", a_ns.c_str(), phrases.size());
-		// Словарь нужен той стороне, которая слушает: пусть адаптеры узнают сразу.
+		SKSE::log::info("participant {} declared a vocabulary: {} phrases", a_ns.c_str(), phrases.size());
+		// The side that listens is the one that needs the vocabulary: let the adapters
+		// hear about it straight away.
 		AdapterHost::Get().SendVocabulary(SubscriptionRegistry::Get().MergedVocabulary());
 	}
 
@@ -180,13 +183,13 @@ namespace Envoy
 	{
 		auto item = UtteranceStore::Get().Find(a_id);
 		if (!item) {
-			SKSE::log::info("участник {} спросил совпадение по реплике {} - реплики нет", a_ns.c_str(), a_id);
+			SKSE::log::info("participant {} asked about the match on utterance {} - no such utterance", a_ns.c_str(), a_id);
 			return 0.0f;
 		}
 		const auto match = SubscriptionRegistry::Get().Match(a_ns.c_str(), item->text);
-		// Самая важная строка журнала: она доказывает, что событие дошло до скрипта.
-		// Без неё "скрипт промолчал" и "событие не дошло" неразличимы.
-		SKSE::log::info("участник {} спросил совпадение по реплике {}: {:.2f} на фразе \"{}\"",
+		// The most important line in the log: it proves the event reached the script.
+		// Without it "the script kept quiet" and "the event never arrived" look alike.
+		SKSE::log::info("participant {} asked about the match on utterance {}: {:.2f} on the phrase \"{}\"",
 			a_ns.c_str(), a_id, match.score, match.phrase);
 		return match.score;
 	}
@@ -200,10 +203,11 @@ namespace Envoy
 	void PapyrusApi::Bid(Tag, std::int32_t a_id, Str a_ns, float a_confidence, std::int32_t a_costClass,
 		bool a_greedy)
 	{
-		// Какую фразу узнал заявитель, мост выясняет сам, а не верит на слово:
-		// словари принадлежат ему, и от этого ответа зависит разбор ничьей.
-		// Пустая фраза означала бы "неизвестно", и любая ничья кончалась бы
-		// отказом всем - поэтому она же и в журнале, чтобы молчание было видно.
+		// Which phrase the bidder recognised is worked out by the bridge rather than
+		// taken on trust: the vocabularies belong to it, and sorting out a tie hangs on
+		// this answer. An empty phrase would mean "unknown", and every tie would end in
+		// a refusal to everybody - which is why it is in the log too, so that the
+		// silence is visible.
 		auto        stored = UtteranceStore::Get().Find(a_id);
 		std::string phrase;
 		if (stored) {
@@ -213,17 +217,18 @@ namespace Envoy
 		const bool accepted = UtteranceStore::Get().AddBid(a_id,
 			BidRecord{ a_ns.c_str(), a_confidence, a_costClass, a_greedy, phrase });
 
-		// Отличить "подписчик промолчал" от "подписчик опоздал" по журналу иначе
-		// нечем, а разница решающая: в первом случае до него не дошло событие,
-		// во втором - окно ставок короче, чем задержка Papyrus.
-		SKSE::log::info("ставка {} за реплику {}: уверенность {:.2f}, {}, на фразе \"{}\", через {} мс{}",
-			a_ns.c_str(), a_id, a_confidence, a_greedy ? "жадная" : "делится", phrase,
-			stored ? stored->MsSinceOffer() : -1, accepted ? "" : " - ОПОЗДАЛА, торги закрыты");
+		// There is no other way to tell "the subscriber kept quiet" from "the subscriber
+		// was late" out of the log, and the difference decides everything: in the first
+		// case the event never reached it, in the second the bid window is shorter than
+		// Papyrus's own delay.
+		SKSE::log::info("bid by {} on utterance {}: confidence {:.2f}, {}, on the phrase \"{}\", after {} ms{}",
+			a_ns.c_str(), a_id, a_confidence, a_greedy ? "greedy" : "sharing", phrase,
+			stored ? stored->MsSinceOffer() : -1, accepted ? "" : " - TOO LATE, bidding is closed");
 	}
 
 	void PapyrusApi::Done(Tag, std::int32_t a_id, Str a_ns, bool a_succeeded)
 	{
-		SKSE::log::debug("реплика {}: {} отчитался, успех={}", a_id, a_ns.c_str(), a_succeeded);
+		SKSE::log::debug("utterance {}: {} reported back, success={}", a_id, a_ns.c_str(), a_succeeded);
 	}
 
 	RE::BSFixedString PapyrusApi::GetWinner(Tag, std::int32_t a_id)
@@ -295,9 +300,9 @@ namespace Envoy
 		return item ? RE::BSFixedString{ item->topic } : RE::BSFixedString{};
 	}
 
-	// Снимок мира. Пока в нём только то, что опубликовали скриптовые поставщики:
-	// ядро и внешние поставщики появятся отдельно, и до тех пор их ключи честно
-	// отвечают "спросить некому", а не подставляют ложь.
+	// The snapshot of the world. So far it holds only what the script providers have
+	// published: the core and the outside providers arrive separately, and until then
+	// their keys honestly answer "nobody to ask" instead of making something up.
 
 	bool PapyrusApi::WonPrevious(Tag, Str a_ns)
 	{
@@ -307,6 +312,15 @@ namespace Envoy
 	float PapyrusApi::SecondsSinceWin(Tag, Str a_ns)
 	{
 		return UtteranceStore::Get().SecondsSinceWin(a_ns.c_str());
+	}
+
+	// The line the key stands for, in the language the game runs in. The engine
+	// resolves a $-string on its own only when the whole string is shown as it is;
+	// a line glued together out of a translated part and a number, and text that is
+	// never shown at all - a subscriber's vocabulary - have to come through here.
+	RE::BSFixedString PapyrusApi::Translate(Tag, Str a_key)
+	{
+		return RE::BSFixedString{ Loc::Get(a_key.c_str()) };
 	}
 
 	bool PapyrusApi::Register(RE::BSScript::IVirtualMachine* a_vm)
@@ -382,7 +396,9 @@ namespace Envoy
 		a_vm->RegisterFunction("SetSource", kScriptName, SetSource);
 		a_vm->RegisterFunction("ReloadSettings", kScriptName, ReloadSettings);
 
-		SKSE::log::info("Papyrus: скрипт {} зарегистрирован", kScriptName);
+		a_vm->RegisterFunction("Translate", kScriptName, Translate);
+
+		SKSE::log::info("Papyrus: script {} registered", kScriptName);
 		return true;
 	}
 }

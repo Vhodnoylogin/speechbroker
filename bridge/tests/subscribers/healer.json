@@ -1,5 +1,5 @@
 {
-  "_": "Дорогое, но НЕ жадное. До него дорогой класс и жадность встречались только вместе, в test.magic, и разделить их было нечем: непонятно, какое из двух свойств дало исход. Здесь высокий порог есть, а исключительности нет - лечение можно делать вдвоём.",
+  "_": "Expensive but NOT greedy. Before it, the expensive class and greed met only together, in test.magic, and there was nothing to separate them with: which of the two properties produced the outcome was unclear. Here the high threshold is there and the exclusivity is not - healing can be done by two at once.",
   "namespace": "test.healer",
   "topics": [
     "world",

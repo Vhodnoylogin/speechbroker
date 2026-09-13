@@ -1,5 +1,5 @@
 {
-  "_": "Единственный подписчик канала. Канал - тема, которую выбирают раньше всех прочих: сказанное в канал не смотрит ни на бой, ни на открытое меню. До сих пор эта ветка выбора темы не исполнялась ни разу, то есть была написана и не проверена.",
+  "_": "The only subscriber of a channel. A channel is a topic chosen before all the others: what is said into a channel looks neither at combat nor at an open menu. Until now this branch of the topic choice had never once been taken, which is to say it was written and never checked.",
   "namespace": "test.radio",
   "topics": [
     "channel"

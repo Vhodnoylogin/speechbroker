@@ -1,10 +1,11 @@
 ﻿Scriptname EnvoyQuest extends Quest
-{Носитель мода: поднимается при старте игры и замыкает круг самопроверки.
+{The carrier of the mod: it comes up when the game starts and closes the loop of the self-test.
 
- Вопрос "доходят ли события моста до скриптов Papyrus" из C++ не решается: мост
- видит только свою сторону. Поэтому квест-носитель ловит Envoy_Ping и зовёт Pong
- обратно. Ответ или его отсутствие мост записывает в свой журнал, и прогону
- больше не нужен журнал Papyrus, чтобы это выяснить.}
+ The question "do the events of the bridge reach the Papyrus scripts" cannot be
+ settled from C++: the bridge sees only its own side. So the carrier quest catches
+ Envoy_Ping and calls Pong back. The answer, or the lack of one, is written by the
+ bridge into its own log, and a test run no longer needs the Papyrus log to find
+ this out.}
 
 Event OnInit()
     RegisterForModEvent("Envoy_Ready", "OnEnvoyReady")
@@ -22,11 +23,11 @@ EndEvent
 
 Function OnGameReload()
     if !Envoy.IsAvailable()
-        Debug.Trace("[Envoy] мост недоступен: плагин не загрузился")
+        Debug.Trace("[Envoy] the bridge is unavailable: the plugin did not load")
         return
     endIf
-    Debug.Trace("[Envoy] контракт версии " + Envoy.GetInterfaceVersion())
-    ; Подписка на Envoy_Ping оформлена выше и переживает сохранение, поэтому
-    ; звонок можно посылать сразу: ловить его уже есть кому.
+    Debug.Trace("[Envoy] contract version " + Envoy.GetInterfaceVersion())
+    ; The subscription to Envoy_Ping is set up above and outlives a save, so the
+    ; ring can be sent straight away: there is already somebody to catch it.
     Envoy.SelfTest()
 EndFunction

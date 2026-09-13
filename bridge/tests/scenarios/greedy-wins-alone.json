@@ -1,5 +1,5 @@
 {
-  "note": "победил жадный - результат достаётся ему одному, делящийся остаётся ни с чем",
+  "note": "the greedy one won - the result goes to it alone, the sharing one is left with nothing",
   "state": {"core.context.menuOpen": false, "core.player.inCombat": false},
   "providers": ["core"],
   "utterance": {"id": 10, "text": "открой карту", "score": 0.90, "margin": 0.30, "final": true, "channel": ""},

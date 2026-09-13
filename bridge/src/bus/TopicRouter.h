@@ -7,12 +7,13 @@ namespace Envoy
 {
 	struct Utterance;
 
-	// Тема выбирается по факту состояния игры, а не по смыслу фразы: реплика,
-	// сказанная вне окна диалога, до подписчиков диалога не дойдёт никогда.
+	// The topic is chosen by the fact of the state of the game, not by the sense
+	// of the phrase: an utterance made outside the dialogue window will never
+	// reach the dialogue subscribers.
 	class TopicRouter
 	{
 	public:
-		// Вызывать только из главного потока: читает состояние игры.
+		// Call from the main thread only: it reads the state of the game.
 		static std::string Pick(const Utterance& a_utterance);
 		static std::string EventName(const std::string& a_topic);
 	};

@@ -1,9 +1,9 @@
-# Консольный хост проверки: то же ядро, но без игры.
+# The console host for checks: the same core, but without the game.
 #
-# Цель нарочно НЕ связана с CommonLibSSE. Это и есть сторож правила «ядро
-# не знает об игре»: стоит включению <SKSE/...> или <RE/...> снова появиться
-# в src/core или src/bus, и хост перестанет собираться. Нарушить правило
-# молча станет нельзя.
+# The target is deliberately NOT linked against CommonLibSSE. That is the guard
+# of the rule "the core knows nothing about the game": let an include of
+# <SKSE/...> or <RE/...> appear again in src/core or src/bus and the host stops
+# building. Breaking the rule silently becomes impossible.
 add_executable(envoy-host host.cpp)
 
 target_link_libraries(envoy-host PRIVATE envoy-core)
