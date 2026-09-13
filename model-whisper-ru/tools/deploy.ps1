@@ -36,23 +36,31 @@ $mod = Join-Path $dist $d.modName
 $targetDir = Join-Path $mod ($d.targetRel -replace '/', '\')
 New-Item -ItemType Directory -Force $targetDir | Out-Null
 
-# Листок кладётся как есть, но если на этой машине служба лежит не внутри мода,
-# её путь подставляется из build.local.json. В git этот файл не попадает: путь
-# к чужому каталогу верен только здесь и публикации не подлежит.
-$doc = Get-Content -LiteralPath $descriptor -Raw | ConvertFrom-Json
+# Листок кладётся как есть - править его нельзя. Адаптер отказывается запускать
+# что-либо за пределами папки моделей, поэтому абсолютный путь к службе в листке
+# был бы просто отклонён. Служба этой машины подставляется иначе: рядом с листком
+# заводится запускатель whisper-ru\run.cmd, а путь для него берётся из
+# build.local.json, которого в git нет.
+Copy-Item -LiteralPath $descriptor -Destination $targetDir -Force
+
 $localPath = Join-Path $root 'config\build.local.json'
 if (Test-Path -LiteralPath $localPath) {
     $local = Get-Content -LiteralPath $localPath -Raw | ConvertFrom-Json
     if ($local.service) {
-        $doc.autoStart.exec       = $local.service.exec
-        $doc.autoStart.args       = @($local.service.args)
-        $doc.autoStart.workingDir = $local.service.dir
-        "  служба берётся из build.local.json: $($local.service.exec)"
+        $runDir = Join-Path $targetDir 'whisper-ru'
+        New-Item -ItemType Directory -Force $runDir | Out-Null
+        $passed = ($local.service.args | ForEach-Object { '"' + $_ + '"' }) -join ' '
+        # %* передаёт дальше доводы адаптера: --parent-pid и --envoy-token.
+        $run = @(
+            '@echo off'
+            ('"{0}" {1} %*' -f $local.service.exec, $passed)
+        )
+        [IO.File]::WriteAllLines((Join-Path $runDir 'run.cmd'), $run, $enc)
+        "  запускатель собран из build.local.json: $($local.service.exec)"
     }
 } else {
-    Write-Warning "build.local.json нет - в листке останутся пути внутрь мода, а службы там нет. Для прогона на этой машине заведи его."
+    Write-Warning "build.local.json нет - запускателя whisper-ru\run.cmd не будет, и служба сама не поднимется. Для прогона на этой машине заведи его."
 }
-$doc | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $targetDir (Split-Path -Leaf $descriptor)) -Encoding utf8
 
 # Если мод-модель везёт свою службу, она лежит рядом с листком и уезжает целиком.
 $serviceDir = Expand-Path $d.serviceDir
