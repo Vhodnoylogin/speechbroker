@@ -59,8 +59,10 @@ as UTF-8 in `localization/` and turned into what the game reads by `tools/build-
 the same script writes `src/core/LocStrings.h`, the baseline compiled into the plugin, so a missing
 file shows text rather than bare keys.
 
-English ships inside the mod. Every other language is a mod of its own holding a single
-`Interface\Translations` folder, so adding a language means adding a mod and nothing else.
+Every language the module carries goes inside the mod, the source one and the translations alike:
+a translation is a part of the module and not a mod to install beside it. Adding a language means
+adding a file to `localization/` and laying the mod out again - nothing is registered anywhere, the
+engine reads every `Envoy*_<language>.txt` it finds.
 
 **The log is translated along with everything else** - not one of its lines is written in the
 code. Two things stay as they are. The recognised speech: what a person said is data and not a

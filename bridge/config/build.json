@@ -33,10 +33,7 @@
     "localization": {
       "name": "Envoy",
       "base": "english",
-      "source": "{root}/localization",
-      "languageMods": {
-        "russian": "Envoy Framework - Russian"
-      }
+      "source": "{root}/localization"
     },
     "sdkName": "Envoy Framework - SDK",
     "sdkLayout": {
