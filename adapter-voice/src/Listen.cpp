@@ -205,6 +205,7 @@ namespace Voice
 			client.set_read_timeout(timeout + config.listenGraceSec, 0);
 			const auto path = "/listen?since=" + std::to_string(since) +
 			                  "&timeout=" + std::to_string(timeout);
+			client.set_default_headers({ { Service::kPass, a_model.token } });
 			auto res = client.Get(path);
 			if (!res || res->status != 200) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(config.retryDelayMs));
@@ -218,7 +219,13 @@ namespace Voice
 					PushResult(a_model, item);
 				}
 			} catch (const std::exception& e) {
+				// Пауза здесь обязательна. На пути "не 200" она была, а на пути
+				// "200 с неразобранным телом" - нет, и чужая программа, занявшая
+				// порт и отвечающая мгновенно, разгоняла этот цикл до предела:
+				// ядро под нагрузкой и тысячи строк в журнал в секунду, прямо
+				// во время игры.
 				SKSE::log::warn("модель {}: ответ не разобран - {}", a_model.id, e.what());
+				std::this_thread::sleep_for(std::chrono::milliseconds(config.retryDelayMs));
 			}
 		}
 	}

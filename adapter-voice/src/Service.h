@@ -27,6 +27,12 @@ namespace Voice
 		const Model&    Settings() const { return _model; }
 		const Endpoint& Where() const { return _where; }
 
+		// Имя заголовка, которым адаптер предъявляет службе секрет сессии.
+		// Его обязан нести КАЖДЫЙ запрос, иначе правило защищает рукопожатие,
+		// а не разговор. Сам httplib в этот заголовок не тянем нарочно: он
+		// подключает windows.h, а CommonLibSSE обязан увидеть его первым.
+		static constexpr const char* kPass = "X-Envoy-Token";
+
 		// /health ответил 200.
 		bool Alive() const;
 

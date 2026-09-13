@@ -55,6 +55,7 @@ namespace Voice
 	{
 		httplib::Client client(_where.host, _where.port);
 		client.set_connection_timeout(Config::Get().healthTimeoutSec, 0);
+		client.set_default_headers({ { kPass, _model.token } });
 		auto res = client.Get("/health");
 		return res && res->status == 200;
 	}
@@ -71,7 +72,13 @@ namespace Voice
 			return;
 		}
 
-		std::string command = "\"" + start.exec + "\"";
+		// CreateProcessW не умеет запускать .cmd и .bat напрямую - это не
+		// программы, а доводы для cmd.exe. Мод-модель почти всегда привозит
+		// именно такой запускатель: он короткий, его видно глазами и он
+		// переживает переезд игры на другой диск.
+		const auto  script = start.exec.ends_with(".cmd") || start.exec.ends_with(".bat");
+		std::string command = script ? "cmd.exe /c \"" + start.exec + "\"" :
+		                               "\"" + start.exec + "\"";
 		for (const auto& arg : start.args) {
 			command += " \"" + arg + "\"";
 		}
@@ -84,6 +91,13 @@ namespace Voice
 		if (!start.parentPidArg.empty()) {
 			command += " " + start.parentPidArg + " " + std::to_string(::GetCurrentProcessId());
 		}
+
+		// Секрет этой сессии. Служба, которая его проверяет, не станет отвечать
+		// чужой программе и не примет от неё текст на озвучку; служба, которая
+		// о нём не знает, довод не заметит - доводов, которых она не понимает,
+		// она не разбирает вовсе. Поэтому правило вводится без разрыва
+		// совместимости, а не когда-нибудь потом.
+		command += " --envoy-token " + _model.token;
 
 		auto wideDir = Widen(start.workingDir);
 		STARTUPINFOW startup{};

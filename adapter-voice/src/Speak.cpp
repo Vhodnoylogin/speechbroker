@@ -30,6 +30,7 @@ namespace Voice
 		const auto&     ep = service.Where();
 		httplib::Client client(ep.host, ep.port);
 		client.set_read_timeout(config.sayTimeoutSec, 0);
+		client.set_default_headers({ { Service::kPass, model->token } });
 		nlohmann::json payload{ { "text", a_text } };
 		auto           res = client.Post("/say", payload.dump(), "application/json");
 

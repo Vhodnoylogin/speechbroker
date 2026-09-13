@@ -101,7 +101,7 @@ set_target_properties(EnvoyVoiceAdapter PROPERTIES OUTPUT_NAME "EnvoyVoiceAdapte
 
 target_compile_definitions(EnvoyVoiceAdapter PRIVATE
     PLUGIN_NAME="EnvoyVoiceAdapter"
-    PLUGIN_AUTHOR="Claude"
+    PLUGIN_AUTHOR="Vhodnoylogin"
     PLUGIN_VERSION="${PROJECT_VERSION}"
 )
 
