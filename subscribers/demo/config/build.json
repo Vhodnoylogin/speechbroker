@@ -14,7 +14,7 @@
     "modsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods",
     "modName": "Envoy Framework - Demo Subscriber",
     "bridgeMod": "Envoy Framework",
-    "sdk": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Envoy Framework/SDK",
+    "sdk": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Envoy Framework - SDK/papyrus",
     "version": "0.1.0",
     "indexScript": "D:/Skyrim VR Modding/Claude Code/Skyrim VR/index/update-index.ps1",
     "indexOwner": "chat-envoy-demo",
