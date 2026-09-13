@@ -50,7 +50,7 @@ Function Register()
     RegisterForModEvent("Envoy_Speech_Dialogue", "OnHeard")
     RegisterForModEvent("Envoy_Award", "OnAward")
     RegisterForModEvent("Envoy_Denied", "OnDenied")
-    Debug.Trace("[Envoy] the sharing one declared itself, a vocabulary of " + words.Length + " phrases")
+    Debug.Trace("[Envoy] " + Envoy.Translate("$ENVOYDEMO_SHARING") + " " + Envoy.Translate("$ENVOYDEMO_DECLARED") + " " + words.Length + " " + Envoy.Translate("$ENVOYDEMO_PHRASES"))
 EndFunction
 
 ; The string of an event is always empty - the event only wakes. The text, the
@@ -61,10 +61,10 @@ Event OnHeard(string asEventName, string asEmpty, float afId, Form akSender)
     int id = afId as int
     float mine = Envoy.GetVocabularyScore(id, NS)
     if mine <= 0.5
-        Debug.Trace("[Envoy] sharing [" + id + "]: not mine (" + mine + ")")
+        Debug.Trace("[Envoy] " + Envoy.Translate("$ENVOYDEMO_SHARING") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_NOT_MINE") + " (" + mine + ")")
         return
     endIf
-    Debug.Trace("[Envoy] sharing [" + id + "]: bidding " + mine)
+    Debug.Trace("[Envoy] " + Envoy.Translate("$ENVOYDEMO_SHARING") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_BIDS") + " " + mine)
     Debug.Notification(Envoy.Translate("$ENVOYDEMO_SHARED") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_BIDS") + " " + mine)
     Envoy.Bid(id, NS, mine, 0, false)
 EndEvent
@@ -73,7 +73,7 @@ Event OnAward(string asEventName, string asEmpty, float afId, Form akSender)
     int id = afId as int
     if Envoy.IsWinner(id, NS)
         int winners = Envoy.GetWinners(id).Length
-        Debug.Trace("[Envoy] sharing [" + id + "]: got it, winners " + winners)
+        Debug.Trace("[Envoy] " + Envoy.Translate("$ENVOYDEMO_SHARED") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_GOT_IT") + " " + winners)
         Debug.Notification(Envoy.Translate("$ENVOYDEMO_SHARED") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_GOT_IT") + " " + winners)
         Debug.MessageBox(Envoy.Translate("$ENVOYDEMO_SHARED_WON") + "\n\n" + Envoy.Translate("$ENVOYDEMO_UTTERANCE") + " " + id + ": " + Envoy.GetText(id) + "\n\n" + Envoy.Translate("$ENVOYDEMO_WINNERS_TOTAL") + " " + winners + ".\n" + Envoy.Translate("$ENVOYDEMO_SHARED_WON_WHY"))
     endIf
@@ -83,7 +83,7 @@ Event OnDenied(string asEventName, string asEmpty, float afId, Form akSender)
     int id = afId as int
     string why = Envoy.GetDenyReason(id, NS)
     if why != ""
-        Debug.Trace("[Envoy] sharing [" + id + "]: refused - " + why)
+        Debug.Trace("[Envoy] " + Envoy.Translate("$ENVOYDEMO_SHARING") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_REFUSED") + " - " + why)
         Debug.Notification(Envoy.Translate("$ENVOYDEMO_SHARED") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_REFUSED"))
         Debug.MessageBox(Envoy.Translate("$ENVOYDEMO_SHARED_DENIED") + "\n\n" + Envoy.Translate("$ENVOYDEMO_UTTERANCE") + " " + id + ": " + Envoy.GetText(id) + "\n\n" + Envoy.Translate("$ENVOYDEMO_REASON") + ": " + why)
     endIf

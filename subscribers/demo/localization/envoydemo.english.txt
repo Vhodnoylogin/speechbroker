@@ -36,3 +36,7 @@ $ENVOYDEMO_SHARED_DENIED	THE SHARING ONE WAS REFUSED
 $ENVOYDEMO_WORD_DOOR	close the door
 $ENVOYDEMO_WORD_RADIOCHECK	radio check
 $ENVOYDEMO_WORD_AROUND	what is around
+$ENVOYDEMO_NO_BRIDGE	Envoy: no bridge.\n\nThe Envoy.dll plugin did not load - see Envoy.log.
+$ENVOYDEMO_NOT_MINE	not mine
+$ENVOYDEMO_DECLARED	declared itself, a vocabulary of
+$ENVOYDEMO_PHRASES	phrases

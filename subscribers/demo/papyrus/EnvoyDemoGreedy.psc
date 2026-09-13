@@ -52,7 +52,7 @@ Function Register()
     RegisterForModEvent("Envoy_Speech_World", "OnHeard")
     RegisterForModEvent("Envoy_Award", "OnAward")
     RegisterForModEvent("Envoy_Denied", "OnDenied")
-    Debug.Trace("[Envoy] the greedy one declared itself, a vocabulary of " + words.Length + " phrases")
+    Debug.Trace("[Envoy] " + Envoy.Translate("$ENVOYDEMO_GREEDY") + " " + Envoy.Translate("$ENVOYDEMO_DECLARED") + " " + words.Length + " " + Envoy.Translate("$ENVOYDEMO_PHRASES"))
 EndFunction
 
 ; The string of an event is always empty - the event only wakes. The text, the
@@ -65,10 +65,10 @@ Event OnHeard(string asEventName, string asEmpty, float afId, Form akSender)
     if mine <= 0.5
         ; Somebody else utterance. We keep quiet on screen on purpose - see the
         ; explanation in the header.
-        Debug.Trace("[Envoy] greedy [" + id + "]: not mine (" + mine + ")")
+        Debug.Trace("[Envoy] " + Envoy.Translate("$ENVOYDEMO_GREEDY") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_NOT_MINE") + " (" + mine + ")")
         return
     endIf
-    Debug.Trace("[Envoy] greedy [" + id + "]: bidding " + mine)
+    Debug.Trace("[Envoy] " + Envoy.Translate("$ENVOYDEMO_GREEDY") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_BIDS") + " " + mine)
     Debug.Notification(Envoy.Translate("$ENVOYDEMO_GREEDY") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_BIDS") + " " + mine)
     Envoy.Bid(id, NS, mine, 0, true)
 EndEvent
@@ -76,7 +76,7 @@ EndEvent
 Event OnAward(string asEventName, string asEmpty, float afId, Form akSender)
     int id = afId as int
     if Envoy.IsWinner(id, NS)
-        Debug.Trace("[Envoy] greedy [" + id + "]: TOOK IT")
+        Debug.Trace("[Envoy] " + Envoy.Translate("$ENVOYDEMO_GREEDY") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_TOOK_IT"))
         Debug.Notification(Envoy.Translate("$ENVOYDEMO_GREEDY") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_TOOK_IT"))
         Debug.MessageBox(Envoy.Translate("$ENVOYDEMO_GREEDY_WON") + "\n\n" + Envoy.Translate("$ENVOYDEMO_UTTERANCE") + " " + id + ": " + Envoy.GetText(id) + "\n\n" + Envoy.Translate("$ENVOYDEMO_GREEDY_WON_WHY"))
     endIf
@@ -86,7 +86,7 @@ Event OnDenied(string asEventName, string asEmpty, float afId, Form akSender)
     int id = afId as int
     string why = Envoy.GetDenyReason(id, NS)
     if why != ""
-        Debug.Trace("[Envoy] greedy [" + id + "]: refused - " + why)
+        Debug.Trace("[Envoy] " + Envoy.Translate("$ENVOYDEMO_GREEDY") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_REFUSED") + " - " + why)
         Debug.Notification(Envoy.Translate("$ENVOYDEMO_GREEDY") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_REFUSED"))
         Debug.MessageBox(Envoy.Translate("$ENVOYDEMO_GREEDY_DENIED") + "\n\n" + Envoy.Translate("$ENVOYDEMO_UTTERANCE") + " " + id + ": " + Envoy.GetText(id) + "\n\n" + Envoy.Translate("$ENVOYDEMO_REASON") + ": " + why)
     endIf

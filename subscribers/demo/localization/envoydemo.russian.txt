@@ -31,3 +31,7 @@ $ENVOYDEMO_SHARED_DENIED	ДЕЛЯЩЕМУСЯ ОТКАЗАНО
 $ENVOYDEMO_WORD_DOOR	закрой дверь
 $ENVOYDEMO_WORD_RADIOCHECK	проверка связи
 $ENVOYDEMO_WORD_AROUND	что вокруг
+$ENVOYDEMO_NO_BRIDGE	Envoy: моста нет.\n\nПлагин Envoy.dll не загрузился - смотри Envoy.log.
+$ENVOYDEMO_NOT_MINE	не моё
+$ENVOYDEMO_DECLARED	объявился, словарь из
+$ENVOYDEMO_PHRASES	фраз

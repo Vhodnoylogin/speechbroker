@@ -34,8 +34,13 @@ EndEvent
 Function Register()
     heardOnce = false
     if !Envoy.IsAvailable()
+        ; These two are the only lines here written out rather than taken from a
+        ; key, and for two different reasons. The trace cannot go through
+        ; Envoy.Translate, because the plugin that would translate it is exactly
+        ; what did not load. The dialogue can: the engine resolves a $-string
+        ; shown whole out of the translation file by itself, with no plugin.
         Debug.Trace("[Envoy] no bridge: the plugin did not load")
-        Debug.MessageBox("Envoy: no bridge.\n\nThe Envoy.dll plugin did not load - see Envoy.log.")
+        Debug.MessageBox("$ENVOYDEMO_NO_BRIDGE")
         return
     endIf
     RegisterForModEvent("Envoy_Speech_Any", "OnAny")

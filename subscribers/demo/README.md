@@ -1,5 +1,7 @@
 # Envoy Framework - Demo Subscriber
 
+*In Russian: [README.ru.md](README.ru.md). English is the source language; the other is a translation.*
+
 The Envoy test listener: three Papyrus quests showing how a mod takes part in making sense of
 speech and how the bridge settles an argument between participants.
 
