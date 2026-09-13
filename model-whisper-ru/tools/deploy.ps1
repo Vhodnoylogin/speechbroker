@@ -1,16 +1,18 @@
-﻿# Раскладка мод-модели в mods\. Все пути и имена - в config/build.json.
+﻿# Laying a model mod out into mods\. Every path and name is in config/build.json.
 #
-#   tools\deploy.ps1            показать, что будет сделано
-#   tools\deploy.ps1 -Apply     выполнить
+#   tools\deploy.ps1            show what would be done
+#   tools\deploy.ps1 -Apply     do it
 #
-# Мод-модель - отдельный модуль и НЕ программа: ни микрофона, ни порта, ни
-# запускаемого файла в ней нет. Она везёт модель - листок и файлы весов.
-# Контракт листка - в adapter-voice\contract\envoy-voice-model.md.
+# A model mod is a module of its own and NOT a program: there is no microphone
+# in it, no port and no file to run. It carries a model - a listing and the
+# files of the weights. The contract of the listing is in
+# adapter-voice\contract\envoy-voice-model.md.
 #
-# Веса этой модели на нашей машине лежат в чужом модуле (ветка voice), и копировать
-# гигабайты в сборку незачем: раскладка ставит на них связку каталогов по
-# config\build.local.json, которого в git нет. У человека, скачавшего мод, веса
-# лежат внутри мода, и связка не понадобится.
+# The weights of this model live in another module on this machine (the voice
+# branch), and there is no point copying gigabytes into the build: the lay-out
+# puts junctions on them according to config\build.local.json, which is not in
+# git. For somebody who downloaded the mod the weights lie inside the mod and no
+# junction is needed.
 param([switch]$Apply, [switch]$NoIndex)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -19,17 +21,17 @@ $d    = $cfg.deploy
 $enc  = New-Object Text.UTF8Encoding($false)
 
 $game = @(Get-Process -Name SkyrimVR,SkyrimSE -ErrorAction SilentlyContinue)
-if ($game.Count) { throw "Игра запущена ($($game.Name -join ', ')) - раскладка запрещена" }
+if ($game.Count) { throw "The game is running ($($game.Name -join ', ')) - laying out is not allowed" }
 
 function Expand-Path([string]$p) { $p.Replace('{root}', $root) }
 
 $adapter = Join-Path $d.modsRoot $d.adapterMod
 if (-not (Test-Path -LiteralPath $adapter)) {
-    Write-Warning "адаптер '$($d.adapterMod)' в сборке не найден - листки положить можно, но читать их будет некому"
+    Write-Warning "the adapter '$($d.adapterMod)' was not found in the build - the listings can be put down, but there will be nobody to read them"
 }
 
 $listings = Join-Path $root 'models'
-if (-not (Test-Path -LiteralPath $listings)) { throw "папка с листками не найдена: $listings" }
+if (-not (Test-Path -LiteralPath $listings)) { throw "the folder of listings was not found: $listings" }
 
 $dist = Join-Path $root 'dist'
 Remove-Item -LiteralPath $dist -Recurse -Force -ErrorAction SilentlyContinue
@@ -38,13 +40,14 @@ $rel = $d.targetRel -replace '/', '\'
 $targetDir = Join-Path $mod $rel
 New-Item -ItemType Directory -Force $targetDir | Out-Null
 
-# Листки кладутся как есть - править их нечем и незачем: ни путей чужой машины,
-# ни адресов в них нет по самому устройству контракта.
+# The listings are put down as they are - there is nothing to correct in them
+# and no reason to: by the very shape of the contract there are neither paths
+# of another machine nor addresses in them.
 Get-ChildItem -LiteralPath $listings -Filter '*.json' -File | ForEach-Object {
     Copy-Item -LiteralPath $_.FullName -Destination $targetDir -Force
 }
 
-# Лицензия и перечень заимствованного едут внутри мода.
+# The licence and the list of what was borrowed ride inside the mod.
 if ($d.docs) {
     foreach ($f in $d.docs) { Copy-Item -LiteralPath (Expand-Path $f) -Destination $mod -Force }
 }
@@ -57,16 +60,16 @@ $meta = @(
     "newestVersion=$($d.version)"
     'category="0,"'
     'installationFile='
-    "notes=Модели распознавания и синтеза русской речи для адаптера Envoy. Требует мода $($d.adapterMod)."
+    "notes=Models of Russian speech recognition and synthesis for the Envoy adapter. Needs the mod $($d.adapterMod)."
     ''
     '[installedFiles]'
     'size=0'
 )
 [IO.File]::WriteAllLines((Join-Path $mod 'meta.ini'), $meta, $enc)
 
-'--- будет разложено ---'
-'  {0,-46} {1} файлов' -f $d.modName, @(Get-ChildItem -LiteralPath $mod -Recurse -File).Count
-if (-not $Apply) { ''; 'сухой прогон - добавь -Apply'; return }
+'--- to be laid out ---'
+'  {0,-46} {1} files' -f $d.modName, @(Get-ChildItem -LiteralPath $mod -Recurse -File).Count
+if (-not $Apply) { ''; 'dry run - add -Apply'; return }
 
 $target = Join-Path $d.modsRoot $d.modName
 New-Item -ItemType Directory -Force $target | Out-Null
@@ -86,11 +89,12 @@ Get-ChildItem -LiteralPath $mod -Recurse -File | ForEach-Object {
         $same++
     }
 }
-'  разложено: {0} - новых {1}, обновлено {2}, без изменений {3}' -f $d.modName, $added, $updated, $same
+'  laid out: {0} - new {1}, updated {2}, unchanged {3}' -f $d.modName, $added, $updated, $same
 
-# Веса. На этой машине - связкой каталогов на настоящее место, чтобы не копировать
-# гигабайты в сборку. Связка снимается через Directory::Delete: Remove-Item над
-# связкой рискует уйти в цель и вычистить сами веса.
+# The weights. On this machine, as a junction to the real place, so as not to
+# copy gigabytes into the build. A junction is taken down through
+# Directory::Delete: Remove-Item over a junction risks walking into the target
+# and wiping the weights themselves.
 $localPath = Join-Path $root 'config\build.local.json'
 if (Test-Path -LiteralPath $localPath) {
     $local = Get-Content -LiteralPath $localPath -Raw | ConvertFrom-Json
@@ -100,7 +104,7 @@ if (Test-Path -LiteralPath $localPath) {
                 Where-Object { (Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json).id -eq $entry.Name } |
                 Select-Object -First 1
             if (-not $listing) {
-                Write-Warning "листка для модели '$($entry.Name)' нет - связку не ставлю"
+                Write-Warning "there is no listing for the model '$($entry.Name)' - not putting a junction down"
                 continue
             }
             $weights = (Get-Content -LiteralPath $listing.FullName -Raw | ConvertFrom-Json).weights
@@ -109,11 +113,11 @@ if (Test-Path -LiteralPath $localPath) {
             if (-not (Test-Path -LiteralPath $parent)) { New-Item -ItemType Directory -Force $parent | Out-Null }
             if (Test-Path -LiteralPath $link) { [System.IO.Directory]::Delete($link, $false) }
             New-Item -ItemType Junction -Path $link -Target $entry.Value | Out-Null
-            '  веса {0}: связка на {1}' -f $entry.Name, $entry.Value
+            '  weights {0}: junction to {1}' -f $entry.Name, $entry.Value
         }
     }
 } else {
-    Write-Warning "build.local.json нет - весов в моде не будет, и служба не найдёт моделей. Для прогона на этой машине заведи его."
+    Write-Warning "there is no build.local.json - there will be no weights in the mod and the service will find no models. Make one for a run on this machine."
 }
 
 if (-not $NoIndex) {

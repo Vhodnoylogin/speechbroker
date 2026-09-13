@@ -1,8 +1,8 @@
 {
-  "_": "Листок мод-модели для EnvoyVoiceAdapter. Контракт - adapter-voice/contract/envoy-voice-model.md. Ни адреса, ни программы здесь нет и быть не может: микрофон принадлежит адаптеру, а это - только модель.",
+  "_": "The listing of a model mod for EnvoyVoiceAdapter. The contract is adapter-voice/contract/envoy-voice-model.md. There is neither an address nor a program here and there cannot be: the microphone belongs to the adapter, and this is only a model.",
 
   "id": "whisper-ru-turbo",
-  "name": "Whisper large-v3-turbo, русский",
+  "name": "Whisper large-v3-turbo, Russian",
   "enabled": true,
   "class": "accurate",
   "provides": "asr,tts",

@@ -1,8 +1,8 @@
 {
-  "_": "Вторая модель того же мода: черновая. Она отдаёт быстрый ответ, который точная потом уточняет. Два класса - это две записи, а не настройка адаптера.",
+  "_": "The second model of the same mod: the draft one. It gives a quick answer which the accurate one refines afterwards. Two classes are two listings, not a setting of the adapter.",
 
   "id": "whisper-ru-small",
-  "name": "Whisper small, русский",
+  "name": "Whisper small, Russian",
   "enabled": true,
   "class": "fast",
   "provides": "asr",

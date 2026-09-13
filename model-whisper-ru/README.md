@@ -1,61 +1,60 @@
-# Мод-модель: Whisper RU
+# A model mod: Whisper RU
 
-Две модели для `EnvoyVoiceAdapter` — распознавание и синтез русской речи
-на Whisper: точная `large-v3-turbo` и черновая `small`.
+Two models for `EnvoyVoiceAdapter` - recognition and synthesis of Russian speech on Whisper: the
+accurate `large-v3-turbo` and the draft `small`.
 
-Это **отдельный модуль и отдельный мод в сборке**, и в нём нет ни строчки кода.
-Мод-модель — не программа: она не слушает микрофон, не открывает портов и ничего
-не запускает. Она везёт **модель**: файлы весов и листок, который говорит, как
-модель зовут, что она умеет и где лежат её файлы.
+This is a **module of its own and a mod of its own in the build**, and there is not a line of code
+in it. A model mod is not a program: it does not listen to the microphone, it opens no ports and it
+starts nothing. It carries a **model**: the files of the weights and a listing that says what the
+model is called, what it can do and where its files lie.
 
-Это же и образец: любой человек может выпустить свою модель, скопировав эту папку
-и поправив один файл.
+It is also a sample: anybody can release a model of their own by copying this folder and correcting
+one file.
 
-Что такое Envoy целиком — в [описании модуля](../README.md).
-Контракт листка — в [adapter-voice/contract/envoy-voice-model.md](../adapter-voice/contract/envoy-voice-model.md).
+What Envoy is as a whole is in the [description of the module](../README.md).
+The contract of a listing is in [adapter-voice/contract/envoy-voice-model.md](../adapter-voice/contract/envoy-voice-model.md).
 
-## Кто чем владеет
+## Who owns what
 
-    микрофон  ->  адаптер      служба внутри его мода, поднимается сама
-    веса      ->  этот мод     листок и файлы модели
-    текст     ->  мост         аукцион между подписчиками
+    the microphone  ->  the adapter    its service, inside its mod, comes up by itself
+    the weights     ->  this mod       the listing and the files of the model
+    the text        ->  the bridge     the auction between the subscribers
 
-Отсюда порядок установки, обратный зависимости: мост, адаптер, модель.
-Запускать отдельно ничего не нужно — адаптер поднимает свою службу сам.
+Hence the order of installing, the reverse of the dependency: the bridge, the adapter, the model.
+There is nothing to start separately - the adapter brings its service up itself.
 
-## Что внутри
+## What is inside
 
-    models/whisper-ru.json        точная модель: large-v3-turbo
-    models/whisper-ru-small.json  черновая: small, отдаёт быстрый ответ
-    config/build.json             имена и пути раскладки
-    tools/deploy.ps1              положить в mods\
-    tools/package.ps1             упаковать в архив и поставить через MO2
+    models/whisper-ru.json        the accurate model: large-v3-turbo
+    models/whisper-ru-small.json  the draft one: small, gives a quick answer
+    config/build.json             the names and the paths of the lay-out
+    tools/deploy.ps1              put it into mods\
+    tools/package.ps1             pack it into an archive and install through MO2
 
-Две модели в одном моде — не обязанность, а удобство: «быстрая плюс точная»
-работает и двумя разными модами. Черновая отдаёт ответ сразу, точная его потом
-уточняет; мост об этом знает и не считает их двумя разными репликами.
+Two models in one mod is a convenience, not a duty: "a fast one plus an accurate one" works as two
+different mods as well. The draft one gives an answer at once and the accurate one refines it
+afterwards; the bridge knows about this and does not count them as two different utterances.
 
-## Веса лежат внутри своего мода
+## The weights lie inside their own mod
 
-В листке путь **относительный**, и считается он от папки листка:
+In a listing the path is **relative**, and it is taken from the folder of the listing:
 
 ```json
 "weights": "whisper-ru-turbo/large-v3-turbo"
 ```
 
-Служба откажется грузить веса за пределами папки моделей: ни абсолютного пути,
-ни выхода через `..`. Листок — пятнадцать строк json, положить его может любой
-мод, и без этого правила «мод-модель» была бы способом заставить службу читать
-что угодно на диске.
+The service will refuse to load weights outside the folder of models: neither an absolute path nor
+a way out through `..`. A listing is fifteen lines of json, any mod can put one down, and without
+this rule a "model mod" would be a way of making the service read anything on the disk.
 
-Ни адреса, ни программы в листке нет — их некуда написать. Всё это свойства
-службы адаптера, и решает их адаптер.
+There is neither an address nor a program in a listing - there is nowhere to write them. All of
+that is a property of the service of the adapter, and the adapter settles it.
 
-## Веса на этой машине: build.local.json
+## The weights on this machine: build.local.json
 
-У нас веса лежат в чужом модуле (ветка `voice`), и копировать гигабайты в сборку
-незачем. Раскладка ставит на них **связку каталогов** по `config/build.local.json`,
-которого в репозитории нет:
+Here the weights live in another module (the `voice` branch), and there is no point copying
+gigabytes into the build. The lay-out puts **junctions** on them according to
+`config/build.local.json`, which is not in the repository:
 
 ```json
 {
@@ -66,30 +65,37 @@
 }
 ```
 
-Ключ — это `id` модели из листка; куда поставить связку, раскладка берёт из его
-же ключа `weights`. Для службы разницы нет: она видит путь внутри мода.
+The key is the `id` of the model out of its listing; where to put the junction the lay-out takes
+from the `weights` key of that same listing. To the service there is no difference: it sees a path
+inside the mod.
 
-Файла нет — раскладка предупредит, весов в моде не будет, и служба моделей
-не найдёт. Когда мод поедет людям, веса лягут прямо в `models/<id>/`, и связка
-не понадобится.
+If the file is missing the lay-out warns, there will be no weights in the mod, and the service will
+find no models. When the mod goes out to people the weights lie straight in `models/<id>/` and no
+junction is needed.
 
-## Как выпустить свою модель
+## Text on screen
 
-1. Скопировать эту папку под своим именем.
-2. В `models/<своё>.json` поменять `id`, `name`, `language`, `provides` и `weights`.
-3. Положить файлы модели в `models/<id>/` рядом с листком.
-4. В `config/build.json` поменять `modName`.
+There is none: a model mod shows nothing to the player. The only line that reaches a human eye is
+the `name` field of a listing, which the adapter writes into its log - and the log stays English,
+like every other log in Envoy.
 
-Менять в адаптере не надо ничего: он читает папку целиком и берёт то, что нашёл.
-Два листка с одним `id` — ошибка; адаптер возьмёт первый по имени файла и скажет
-об этом в журнал.
+## How to release a model of your own
 
-## Раскладка
+1. Copy this folder under a name of your own.
+2. In `models/<yours>.json` change `id`, `name`, `language`, `provides` and `weights`.
+3. Put the files of the model into `models/<id>/` next to the listing.
+4. In `config/build.json` change `modName`.
+
+Nothing has to be changed in the adapter: it reads the whole folder and takes what it found. Two
+listings with one `id` are a mistake; the adapter takes the first by file name and says so in the
+log.
+
+## The lay-out
 
 ```
-tools\deploy.ps1            показать, что будет сделано
-tools\deploy.ps1 -Apply     положить в mods\
-tools\package.ps1 -Apply    упаковать и поставить через MO2
+tools\deploy.ps1            show what would be done
+tools\deploy.ps1 -Apply     put it into mods\
+tools\package.ps1 -Apply    pack it and install through MO2
 ```
 
-Только при закрытой игре.
+Only with the game closed.
