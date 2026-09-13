@@ -1,0 +1,14 @@
+{
+  "_": "Вторая модель того же мода: черновая. Она отдаёт быстрый ответ, который точная потом уточняет. Два класса - это две записи, а не настройка адаптера.",
+
+  "id": "whisper-ru-small",
+  "name": "Whisper small, русский",
+  "enabled": true,
+  "class": "fast",
+  "provides": "asr",
+  "language": "ru",
+
+  "weights": "whisper-ru-small/small",
+  "device": "cuda",
+  "budgetMs": 700
+}

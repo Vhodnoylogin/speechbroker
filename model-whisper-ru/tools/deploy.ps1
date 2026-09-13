@@ -3,13 +3,14 @@
 #   tools\deploy.ps1            показать, что будет сделано
 #   tools\deploy.ps1 -Apply     выполнить
 #
-# Мод-модель - отдельный модуль: ни исходников адаптера, ни исходников моста
-# здесь нет. Всё, что она делает, - кладёт один листок в папку, которую читает
-# адаптер. Контракт листка - в adapter-voice\contract\envoy-voice-model.md.
+# Мод-модель - отдельный модуль и НЕ программа: ни микрофона, ни порта, ни
+# запускаемого файла в ней нет. Она везёт модель - листок и файлы весов.
+# Контракт листка - в adapter-voice\contract\envoy-voice-model.md.
 #
-# Служба этой модели живёт на ветке voice и в поставку не входит: поэтому
-# в листке стоят относительные пути внутрь мода, а путь к службе на ЭТОЙ машине
-# берётся из config\build.local.json, которого в git нет.
+# Веса этой модели на нашей машине лежат в чужом модуле (ветка voice), и копировать
+# гигабайты в сборку незачем: раскладка ставит на них связку каталогов по
+# config\build.local.json, которого в git нет. У человека, скачавшего мод, веса
+# лежат внутри мода, и связка не понадобится.
 param([switch]$Apply, [switch]$NoIndex)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -24,53 +25,26 @@ function Expand-Path([string]$p) { $p.Replace('{root}', $root) }
 
 $adapter = Join-Path $d.modsRoot $d.adapterMod
 if (-not (Test-Path -LiteralPath $adapter)) {
-    Write-Warning "адаптер '$($d.adapterMod)' в сборке не найден - листок положить можно, но читать его будет некому"
+    Write-Warning "адаптер '$($d.adapterMod)' в сборке не найден - листки положить можно, но читать их будет некому"
 }
 
-$descriptor = Expand-Path $d.descriptor
-if (-not (Test-Path -LiteralPath $descriptor)) { throw "листок модели не найден: $descriptor" }
+$listings = Join-Path $root 'models'
+if (-not (Test-Path -LiteralPath $listings)) { throw "папка с листками не найдена: $listings" }
 
 $dist = Join-Path $root 'dist'
 Remove-Item -LiteralPath $dist -Recurse -Force -ErrorAction SilentlyContinue
 $mod = Join-Path $dist $d.modName
-$targetDir = Join-Path $mod ($d.targetRel -replace '/', '\')
+$rel = $d.targetRel -replace '/', '\'
+$targetDir = Join-Path $mod $rel
 New-Item -ItemType Directory -Force $targetDir | Out-Null
 
-# Листок кладётся как есть - править его нельзя. Адаптер отказывается запускать
-# что-либо за пределами папки моделей, поэтому абсолютный путь к службе в листке
-# был бы просто отклонён. Служба этой машины подставляется иначе: рядом с листком
-# заводится запускатель whisper-ru\run.cmd, а путь для него берётся из
-# build.local.json, которого в git нет.
-Copy-Item -LiteralPath $descriptor -Destination $targetDir -Force
-
-$localPath = Join-Path $root 'config\build.local.json'
-if (Test-Path -LiteralPath $localPath) {
-    $local = Get-Content -LiteralPath $localPath -Raw | ConvertFrom-Json
-    if ($local.service) {
-        $runDir = Join-Path $targetDir 'whisper-ru'
-        New-Item -ItemType Directory -Force $runDir | Out-Null
-        $passed = ($local.service.args | ForEach-Object { '"' + $_ + '"' }) -join ' '
-        # %* передаёт дальше доводы адаптера: --parent-pid и --envoy-token.
-        $run = @(
-            '@echo off'
-            ('"{0}" {1} %*' -f $local.service.exec, $passed)
-        )
-        [IO.File]::WriteAllLines((Join-Path $runDir 'run.cmd'), $run, $enc)
-        "  запускатель собран из build.local.json: $($local.service.exec)"
-    }
-} else {
-    Write-Warning "build.local.json нет - запускателя whisper-ru\run.cmd не будет, и служба сама не поднимется. Для прогона на этой машине заведи его."
+# Листки кладутся как есть - править их нечем и незачем: ни путей чужой машины,
+# ни адресов в них нет по самому устройству контракта.
+Get-ChildItem -LiteralPath $listings -Filter '*.json' -File | ForEach-Object {
+    Copy-Item -LiteralPath $_.FullName -Destination $targetDir -Force
 }
 
-# Если мод-модель везёт свою службу, она лежит рядом с листком и уезжает целиком.
-$serviceDir = Expand-Path $d.serviceDir
-if (Test-Path -LiteralPath $serviceDir) {
-    Copy-Item -LiteralPath $serviceDir -Destination $targetDir -Recurse -Force
-}
-
-# Лицензия и перечень заимствованного едут в каждый мод. Человек, распаковавший
-# архив, обязан найти их внутри: страницу, с которой он качал, он больше
-# не откроет, а условия шести чужих проектов требуют, чтобы текст был в поставке.
+# Лицензия и перечень заимствованного едут внутри мода.
 if ($d.docs) {
     foreach ($f in $d.docs) { Copy-Item -LiteralPath (Expand-Path $f) -Destination $mod -Force }
 }
@@ -83,7 +57,7 @@ $meta = @(
     "newestVersion=$($d.version)"
     'category="0,"'
     'installationFile='
-    "notes=Модель для адаптера Envoy: распознавание и синтез русской речи. Требует мода $($d.adapterMod)."
+    "notes=Модели распознавания и синтеза русской речи для адаптера Envoy. Требует мода $($d.adapterMod)."
     ''
     '[installedFiles]'
     'size=0'
@@ -98,8 +72,8 @@ $target = Join-Path $d.modsRoot $d.modName
 New-Item -ItemType Directory -Force $target | Out-Null
 $added = 0; $updated = 0; $same = 0
 Get-ChildItem -LiteralPath $mod -Recurse -File | ForEach-Object {
-    $rel = $_.FullName.Substring($mod.Length).TrimStart('\')
-    $dst = Join-Path $target $rel
+    $leaf = $_.FullName.Substring($mod.Length).TrimStart('\')
+    $dst = Join-Path $target $leaf
     $dir = Split-Path -Parent $dst
     if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force $dir | Out-Null }
     if (-not (Test-Path -LiteralPath $dst)) {
@@ -113,6 +87,34 @@ Get-ChildItem -LiteralPath $mod -Recurse -File | ForEach-Object {
     }
 }
 '  разложено: {0} - новых {1}, обновлено {2}, без изменений {3}' -f $d.modName, $added, $updated, $same
+
+# Веса. На этой машине - связкой каталогов на настоящее место, чтобы не копировать
+# гигабайты в сборку. Связка снимается через Directory::Delete: Remove-Item над
+# связкой рискует уйти в цель и вычистить сами веса.
+$localPath = Join-Path $root 'config\build.local.json'
+if (Test-Path -LiteralPath $localPath) {
+    $local = Get-Content -LiteralPath $localPath -Raw | ConvertFrom-Json
+    if ($local.weights) {
+        foreach ($entry in $local.weights.PSObject.Properties) {
+            $listing = Get-ChildItem -LiteralPath $listings -Filter '*.json' -File |
+                Where-Object { (Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json).id -eq $entry.Name } |
+                Select-Object -First 1
+            if (-not $listing) {
+                Write-Warning "листка для модели '$($entry.Name)' нет - связку не ставлю"
+                continue
+            }
+            $weights = (Get-Content -LiteralPath $listing.FullName -Raw | ConvertFrom-Json).weights
+            $link = Join-Path (Join-Path $target $rel) ($weights -replace '/', '\')
+            $parent = Split-Path -Parent $link
+            if (-not (Test-Path -LiteralPath $parent)) { New-Item -ItemType Directory -Force $parent | Out-Null }
+            if (Test-Path -LiteralPath $link) { [System.IO.Directory]::Delete($link, $false) }
+            New-Item -ItemType Junction -Path $link -Target $entry.Value | Out-Null
+            '  веса {0}: связка на {1}' -f $entry.Name, $entry.Value
+        }
+    }
+} else {
+    Write-Warning "build.local.json нет - весов в моде не будет, и служба не найдёт моделей. Для прогона на этой машине заведи его."
+}
 
 if (-not $NoIndex) {
     & $d.indexScript -Owner $d.indexOwner -Mods $d.modName -Note "Envoy voice model deploy $($d.version)"

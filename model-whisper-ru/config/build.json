@@ -8,14 +8,13 @@
     "indexOwner": "chat-envoy-model",
     "downloadsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/downloads",
     "sevenZip": "C:/Program Files/7-Zip/7z.exe",
-    "descriptor": "{root}/models/whisper-ru.json",
-    "serviceDir": "{root}/models/whisper-ru",
     "targetRel": "SKSE/Plugins/envoy/adapters/voice/models",
     "bridgeUrl": "http://127.0.0.1:8930",
     "bridgeToken": "D:/Skyrim VR Modding/MO2/plugins/mo2aibridge/mo2aibridge-token.txt",
     "docs": [
       "{root}/../LICENSE",
       "{root}/../THIRD-PARTY-NOTICES.md"
-    ]
+    ],
+    "listings": "{root}/models"
   }
 }
