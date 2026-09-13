@@ -45,8 +45,11 @@ namespace Voice
 			out.parentPidArg = a_doc.value("parentPidArg", out.parentPidArg);
 			out.waitSec = a_doc.value("waitSec", out.waitSec);
 			out.pollSec = a_doc.value("pollSec", out.pollSec);
+			// Доводы не трогаем. Их разрешает сама служба от своей рабочей
+			// папки, а среди них бывают не пути вовсе: "--port", "8931".
+			// Разрешение превратило бы такой довод в путь и сломало запуск.
 			for (const auto& arg : a_doc.value("args", nlohmann::json::array())) {
-				out.args.push_back(Resolve(arg.get<std::string>(), a_base));
+				out.args.push_back(arg.get<std::string>());
 			}
 			return out;
 		}
