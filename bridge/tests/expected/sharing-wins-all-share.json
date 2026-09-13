@@ -1,0 +1,2 @@
+{"topic": "world", "offered": ["SharedA", "SharedB", "Greedy"], "winner": "SharedA",
+ "winners": ["SharedA", "SharedB"], "denied": ["Greedy"]}

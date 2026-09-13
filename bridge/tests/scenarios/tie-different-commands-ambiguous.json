@@ -1,0 +1,46 @@
+{
+  "note": "те же ставки до сотой, но узнали РАЗНОЕ: реплику можно понять двояко, и оба понимания равно правдоподобны. Делать по ней что-либо - значит угадывать.",
+  "state": {
+    "core.context.menuOpen": false,
+    "core.player.inCombat": false
+  },
+  "providers": [
+    "core"
+  ],
+  "utterance": {
+    "id": 15,
+    "text": "открой",
+    "score": 0.88,
+    "margin": 0.02,
+    "final": true,
+    "channel": ""
+  },
+  "subscribers": [
+    {
+      "ns": "Doors",
+      "topics": [
+        "world"
+      ],
+      "active": true,
+      "bid": {
+        "confidence": 0.96,
+        "costClass": 0,
+        "greedy": false,
+        "phrase": "открой дверь"
+      }
+    },
+    {
+      "ns": "Maps",
+      "topics": [
+        "world"
+      ],
+      "active": true,
+      "bid": {
+        "confidence": 0.96,
+        "costClass": 0,
+        "greedy": false,
+        "phrase": "открой карту"
+      }
+    }
+  ]
+}

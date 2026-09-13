@@ -1,0 +1,11 @@
+{
+  "note": "открыт диалог - мод заклинаний не получает предложение вообще",
+  "state": {"core.context.menuOpen": true, "core.context.menuName": "Dialogue Menu",
+            "core.player.inCombat": false},
+  "providers": ["core"],
+  "utterance": {"id": 3, "text": "я согласен помочь", "score": 0.71, "margin": 0.10, "final": true, "channel": ""},
+  "subscribers": [
+    {"ns": "MySpells", "topics": ["world", "combat"], "active": true, "bid": {"confidence": 0.99, "costClass": 1}},
+    {"ns": "DialogueVoice", "topics": ["dialogue"], "active": true, "bid": {"confidence": 0.62, "costClass": 0}}
+  ]
+}

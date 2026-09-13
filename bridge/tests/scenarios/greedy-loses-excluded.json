@@ -1,0 +1,10 @@
+{
+  "note": "жадный уверен почти так же, но проиграл - и потому не получает ничего",
+  "state": {"core.context.menuOpen": false, "core.player.inCombat": false},
+  "providers": ["core"],
+  "utterance": {"id": 12, "text": "кто здесь", "score": 0.85, "margin": 0.20, "final": true, "channel": ""},
+  "subscribers": [
+    {"ns": "Shared", "topics": ["world"], "active": true, "bid": {"confidence": 0.86, "costClass": 0, "greedy": false}},
+    {"ns": "Greedy", "topics": ["world"], "active": true, "bid": {"confidence": 0.80, "costClass": 0, "greedy": true}}
+  ]
+}

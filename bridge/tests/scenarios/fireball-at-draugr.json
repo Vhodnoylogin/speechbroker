@@ -1,0 +1,11 @@
+{
+  "note": "бой, цель враждебна - мод заклинаний уверенно ставит и берёт реплику",
+  "state": {"core.context.menuOpen": false, "core.player.inCombat": true,
+            "core.target.lookedHostile": true, "core.actors.hostileCount": 3},
+  "providers": ["core"],
+  "utterance": {"id": 1, "text": "фаербол", "score": 0.93, "margin": 0.22, "final": true, "channel": ""},
+  "subscribers": [
+    {"ns": "MySpells", "topics": ["world", "combat"], "active": true, "bid": {"confidence": 0.90, "costClass": 1}},
+    {"ns": "DialogueVoice", "topics": ["dialogue"], "active": true, "bid": null}
+  ]
+}

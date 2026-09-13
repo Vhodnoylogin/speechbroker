@@ -1,0 +1,10 @@
+{
+  "note": "та же фраза, но рядом только спутник и оружие убрано - мод сам решил не ставить",
+  "state": {"core.context.menuOpen": false, "core.player.inCombat": false,
+            "core.target.lookedHostile": false, "core.actors.hostileCount": 0},
+  "providers": ["core"],
+  "utterance": {"id": 2, "text": "фаербол", "score": 0.93, "margin": 0.22, "final": true, "channel": ""},
+  "subscribers": [
+    {"ns": "MySpells", "topics": ["world", "combat"], "active": true, "bid": null}
+  ]
+}

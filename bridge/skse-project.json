@@ -1,0 +1,13 @@
+{
+  "Name": "Envoy",
+  "Author": "Claude",
+  "Description": "Envoy Framework - bridge between Skyrim and external models",
+  "Version": "0.1.0",
+  "Template": "papyrus-native",
+  "TargetVersions": [
+    0,
+    1
+  ],
+  "OutputDirectory": "build",
+  "PapyrusFunctions": []
+}

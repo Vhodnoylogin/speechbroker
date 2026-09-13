@@ -1,0 +1,11 @@
+{
+  "note": "победил делящийся - жадный выбывает целиком, результат делят все оставшиеся",
+  "state": {"core.context.menuOpen": false, "core.player.inCombat": false},
+  "providers": ["core"],
+  "utterance": {"id": 11, "text": "что вокруг", "score": 0.88, "margin": 0.25, "final": true, "channel": ""},
+  "subscribers": [
+    {"ns": "SharedA", "topics": ["world"], "active": true, "bid": {"confidence": 0.90, "costClass": 0, "greedy": false}},
+    {"ns": "SharedB", "topics": ["world"], "active": true, "bid": {"confidence": 0.70, "costClass": 0, "greedy": false}},
+    {"ns": "Greedy",  "topics": ["world"], "active": true, "bid": {"confidence": 0.60, "costClass": 0, "greedy": true}}
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "note": "одну команду просят двое, и оба требуют её себе. Уступать некому, порядок в настройках не задан - не делает никто.",
+  "state": {
+    "core.context.menuOpen": false,
+    "core.player.inCombat": false
+  },
+  "providers": [
+    "core"
+  ],
+  "utterance": {
+    "id": 16,
+    "text": "проверка связи",
+    "score": 0.88,
+    "margin": 0.3,
+    "final": true,
+    "channel": ""
+  },
+  "subscribers": [
+    {
+      "ns": "GreedyA",
+      "topics": [
+        "world"
+      ],
+      "active": true,
+      "bid": {
+        "confidence": 0.96,
+        "costClass": 0,
+        "greedy": true,
+        "phrase": "проверка связи"
+      }
+    },
+    {
+      "ns": "GreedyB",
+      "topics": [
+        "world"
+      ],
+      "active": true,
+      "bid": {
+        "confidence": 0.96,
+        "costClass": 0,
+        "greedy": true,
+        "phrase": "проверка связи"
+      }
+    }
+  ]
+}

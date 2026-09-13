@@ -1,0 +1,54 @@
+{
+  "note": "тот же спор об одной команде, но игрок расставил порядок. Прямое указание старше любых наших правил, и жадный побеждает.",
+  "config": {
+    "auction": {
+      "priority": [
+        "DemoGreedy",
+        "DemoShared"
+      ]
+    }
+  },
+  "state": {
+    "core.context.menuOpen": false,
+    "core.player.inCombat": false
+  },
+  "providers": [
+    "core"
+  ],
+  "utterance": {
+    "id": 17,
+    "text": "проверка связи",
+    "score": 0.88,
+    "margin": 0.3,
+    "final": true,
+    "channel": ""
+  },
+  "subscribers": [
+    {
+      "ns": "DemoGreedy",
+      "topics": [
+        "world"
+      ],
+      "active": true,
+      "bid": {
+        "confidence": 0.96,
+        "costClass": 0,
+        "greedy": true,
+        "phrase": "проверка связи"
+      }
+    },
+    {
+      "ns": "DemoShared",
+      "topics": [
+        "world"
+      ],
+      "active": true,
+      "bid": {
+        "confidence": 0.96,
+        "costClass": 0,
+        "greedy": false,
+        "phrase": "проверка связи"
+      }
+    }
+  ]
+}

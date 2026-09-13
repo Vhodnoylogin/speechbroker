@@ -1,0 +1,10 @@
+{
+  "note": "победил жадный - результат достаётся ему одному, делящийся остаётся ни с чем",
+  "state": {"core.context.menuOpen": false, "core.player.inCombat": false},
+  "providers": ["core"],
+  "utterance": {"id": 10, "text": "открой карту", "score": 0.90, "margin": 0.30, "final": true, "channel": ""},
+  "subscribers": [
+    {"ns": "Greedy", "topics": ["world"], "active": true, "bid": {"confidence": 0.90, "costClass": 0, "greedy": true}},
+    {"ns": "Shared", "topics": ["world"], "active": true, "bid": {"confidence": 0.60, "costClass": 0, "greedy": false}}
+  ]
+}

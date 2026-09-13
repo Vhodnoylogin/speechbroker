@@ -1,0 +1,16 @@
+{
+  "_": "Где играть каждую запись. Состояние игры звуком не задаётся: одна и та же фраза в бою и в диалоге уходит разным подписчикам, и выбрать это должен сценарий, а не микрофон. Записи, здесь не названные, играются в мире.",
+
+  "fireball-ru":     { "combat": true },
+  "fireball-en":     { "combat": true },
+  "english":         { "combat": true },
+  "whisper":         { "combat": true },
+  "prefix-pause":    { "combat": true },
+  "prefix-command":  { "combat": true },
+  "two-owners":      { "combat": true },
+  "ambiguous":       { "combat": true },
+  "near-miss":       { "combat": true },
+  "cancel":          { "combat": true },
+  "cmd-retreat":     { "combat": true },
+  "cmd-cover":       { "combat": true }
+}

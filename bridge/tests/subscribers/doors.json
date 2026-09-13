@@ -1,0 +1,15 @@
+{
+  "_": "Обычный мод-исполнитель: узкий словарь, обратимые действия.",
+  "namespace": "test.doors",
+  "topics": [
+    "world"
+  ],
+  "vocabulary": [
+    "закрой дверь",
+    "запри на замок",
+    "открой дверь"
+  ],
+  "cost": "reversible",
+  "greedy": false,
+  "revocable": true
+}

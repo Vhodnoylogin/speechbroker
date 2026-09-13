@@ -1,0 +1,9 @@
+{
+  "note": "расслышано плохо - аукцион даже не начинается",
+  "state": {"core.context.menuOpen": false, "core.player.inCombat": false},
+  "providers": ["core"],
+  "utterance": {"id": 6, "text": "фае бол", "score": 0.30, "margin": 0.02, "final": true, "channel": ""},
+  "subscribers": [
+    {"ns": "MySpells", "topics": ["world"], "active": true, "bid": {"confidence": 0.99, "costClass": 1}}
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "note": "живой спор из прогона 04.09: оба узнали \"проверка связи\" на 0.96. Уверенность их не разведёт никогда, а двусмысленности нет - фраза одна. Делает тот, кто делится; жадный выбывает по собственному условию.",
+  "state": {
+    "core.context.menuOpen": false,
+    "core.player.inCombat": false
+  },
+  "providers": [
+    "core"
+  ],
+  "utterance": {
+    "id": 14,
+    "text": "проверка связи",
+    "score": 0.88,
+    "margin": 0.3,
+    "final": true,
+    "channel": ""
+  },
+  "subscribers": [
+    {
+      "ns": "DemoGreedy",
+      "topics": [
+        "world"
+      ],
+      "active": true,
+      "bid": {
+        "confidence": 0.96,
+        "costClass": 0,
+        "greedy": true,
+        "phrase": "проверка связи"
+      }
+    },
+    {
+      "ns": "DemoShared",
+      "topics": [
+        "world"
+      ],
+      "active": true,
+      "bid": {
+        "confidence": 0.96,
+        "costClass": 0,
+        "greedy": false,
+        "phrase": "проверка связи"
+      }
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "note": "явный канал перебивает всё: фраза уходит только тому, кто на него подписан",
+  "state": {"core.context.menuOpen": false, "core.player.inCombat": true},
+  "providers": ["core"],
+  "utterance": {"id": 7, "text": "что тут происходит", "score": 0.88, "margin": 0.30, "final": true, "channel": "assistant"},
+  "subscribers": [
+    {"ns": "MySpells", "topics": ["world", "combat"], "active": true, "bid": {"confidence": 0.99, "costClass": 1}},
+    {"ns": "ClaudeLink", "topics": ["channel:assistant"], "active": true, "bid": {"confidence": 0.95, "costClass": 0}}
+  ]
+}

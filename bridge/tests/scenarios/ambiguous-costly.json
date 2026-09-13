@@ -1,0 +1,10 @@
+{
+  "note": "две дорогие ставки почти вровень и приоритет не задан - не делает никто",
+  "state": {"core.context.menuOpen": false, "core.player.inCombat": false},
+  "providers": ["core"],
+  "utterance": {"id": 4, "text": "удар", "score": 0.80, "margin": 0.04, "final": true, "channel": ""},
+  "subscribers": [
+    {"ns": "MySpells", "topics": ["world"], "active": true, "bid": {"confidence": 0.86, "costClass": 1}},
+    {"ns": "OtherMod", "topics": ["world"], "active": true, "bid": {"confidence": 0.80, "costClass": 1}}
+  ]
+}

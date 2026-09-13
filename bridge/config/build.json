@@ -1,0 +1,37 @@
+{
+  "creationKit": "D:/SteamLibrary/steamapps/common/Skyrim Special Edition",
+  "papyrusFlags": "TESV_Papyrus_Flags.flg",
+  "imports": [
+    "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Skyrim Script Extender for VR (SKSEVR)/Scripts/Source",
+    "{creationKit}/Data/Source/Scripts",
+    "{root}/papyrus"
+  ],
+  "papyrusSource": "{root}/papyrus",
+  "papyrusOutput": "{root}/build/pex",
+  "optimize": true,
+  "deploy": {
+    "modsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods",
+    "modName": "Envoy Framework",
+    "version": "0.1.0",
+    "indexScript": "D:/Skyrim VR Modding/Claude Code/Skyrim VR/index/update-index.ps1",
+    "indexOwner": "chat-envoy-bridge",
+    "downloadsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/downloads",
+    "sevenZip": "C:/Program Files/7-Zip/7z.exe",
+    "bridgeUrl": "http://127.0.0.1:8930",
+    "bridgeToken": "D:/Skyrim VR Modding/MO2/plugins/mo2aibridge/mo2aibridge-token.txt",
+    "scripts": [
+      "Envoy",
+      "EnvoyQuest"
+    ],
+    "esp": "Envoy.esp",
+    "dll": "{root}/build/Release/Envoy.dll",
+    "defaultConfig": "{root}/config/envoy.default.json",
+    "sdk": [
+      "{root}/contract/envoy-adapter.h",
+      "{root}/contract/envoy-abi.h",
+      "{root}/papyrus/Envoy.psc",
+      "{root}/contract/envoy-keys.md",
+      "{root}/contract/envoy-papyrus.md"
+    ]
+  }
+}
