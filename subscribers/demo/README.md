@@ -38,9 +38,10 @@ and the lines behind the keys live in `localization/`, from where they are built
 `Interface\Translations\EnvoyDemo_<language>.txt`.
 
 That is not tidiness. A subscriber registers the phrases the player is going to **say**, and they
-have to be in the language of the installed model. English is the source language and ships inside
-this mod; Russian is a mod of its own, `Envoy Framework - Demo Subscriber - Russian`, holding a
-single folder. Changing the language means switching a mod, not editing a script.
+have to be in the language of the installed model. English is the source language, Russian stands
+beside it, and both go inside this mod: a translation is a part of the module. Changing the
+language means changing the `language` key of the bridge or the language of the game, not editing
+a script.
 
 The Russian table holds exactly the three phrases the live recordings were made with, so that the
 scenarios in `bridge/tests` and this module say the same words.

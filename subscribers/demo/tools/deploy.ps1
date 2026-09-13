@@ -51,34 +51,19 @@ if ($loc) {
              --name $loc.name --base $loc.base --no-header | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "building the translations failed with code $LASTEXITCODE" }
 
+    # Every language goes inside the mod, the source one and the translations
+    # alike: a translation belongs to the module and is not a mod to install
+    # beside it. The engine reads the file that matches the language of the game.
     $into = Join-Path $mod 'Interface\Translations'
     New-Item -ItemType Directory -Force $into | Out-Null
-    Copy-Item -LiteralPath (Join-Path $built "$($loc.name)_$($loc.base).txt") -Destination $into -Force
-
-    foreach ($lang in $loc.languageMods.PSObject.Properties) {
-        $file = Join-Path $built "$($loc.name)_$($lang.Name).txt"
-        if (-not (Test-Path -LiteralPath $file)) {
-            Write-Warning "no table for $($lang.Name) - the mod $($lang.Value) will not be built"
-            continue
-        }
-        $langMod = Join-Path $dist $lang.Value
-        New-Item -ItemType Directory -Force (Join-Path $langMod 'Interface\Translations') | Out-Null
-        Copy-Item -LiteralPath $file -Destination (Join-Path $langMod 'Interface\Translations') -Force
-
-        $langMeta = @(
-            '[General]'
-            'gameName=SkyrimSE'
-            'modid=0'
-            "version=$($d.version)"
-            "newestVersion=$($d.version)"
-            'category="0,"'
-            'installationFile='
-            "notes=The Envoy demo subscribers - $($lang.Name) text and vocabulary. Put it below the subscribers."
-            ''
-            '[installedFiles]'
-            'size=0'
-        )
-        [IO.File]::WriteAllLines((Join-Path $langMod 'meta.ini'), $langMeta, $enc)
+    $tables = @(Get-ChildItem -LiteralPath $built -Filter "$($loc.name)_*.txt" -File)
+    if (-not $tables) { throw "no tables were built in $built" }
+    foreach ($table in $tables) {
+        Copy-Item -LiteralPath $table.FullName -Destination $into -Force
+    }
+    $baseTable = Join-Path $into "$($loc.name)_$($loc.base).txt"
+    if (-not (Test-Path -LiteralPath $baseTable)) {
+        throw "the table of the source language $($loc.base) is missing - the mod would show bare keys"
     }
 }
 
