@@ -1,0 +1,23 @@
+{
+  "_": "Листок мод-модели для EnvoyVoiceAdapter. Контракт - adapter-voice/contract/envoy-voice-model.md. Пути относительные: они считаются от папки этого файла, поэтому мод работает у любого человека и не знает, на каком диске стоит игра.",
+
+  "id": "whisper-ru",
+  "name": "Whisper large-v3-turbo, русский",
+  "enabled": true,
+  "class": "accurate",
+  "provides": "asr,tts",
+
+  "url": "http://127.0.0.1:8931",
+  "language": "ru",
+  "listenTimeoutSec": 30,
+
+  "autoStart": {
+    "enabled": true,
+    "exec": "whisper-ru/run.cmd",
+    "args": [],
+    "workingDir": "whisper-ru",
+    "waitSec": 240,
+    "pollSec": 1,
+    "parentPidArg": "--parent-pid"
+  }
+}

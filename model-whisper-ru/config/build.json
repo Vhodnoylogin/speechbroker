@@ -1,0 +1,17 @@
+{
+  "deploy": {
+    "modsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods",
+    "modName": "Envoy Framework - Voice Model - Whisper RU",
+    "adapterMod": "Envoy Framework - Voice Adapter",
+    "version": "0.1.0",
+    "indexScript": "D:/Skyrim VR Modding/Claude Code/Skyrim VR/index/update-index.ps1",
+    "indexOwner": "chat-envoy-model",
+    "downloadsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/downloads",
+    "sevenZip": "C:/Program Files/7-Zip/7z.exe",
+    "descriptor": "{root}/models/whisper-ru.json",
+    "serviceDir": "{root}/models/whisper-ru",
+    "targetRel": "SKSE/Plugins/envoy/adapters/voice/models",
+    "bridgeUrl": "http://127.0.0.1:8930",
+    "bridgeToken": "D:/Skyrim VR Modding/MO2/plugins/mo2aibridge/mo2aibridge-token.txt"
+  }
+}
