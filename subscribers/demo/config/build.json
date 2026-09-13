@@ -15,6 +15,15 @@
     "modName": "Envoy Framework - Demo Subscriber",
     "bridgeMod": "Envoy Framework",
     "sdk": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Envoy Framework - SDK/papyrus",
+    "sdkTools": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Envoy Framework - SDK/tools",
+    "localization": {
+      "name": "EnvoyDemo",
+      "base": "english",
+      "source": "{root}/localization",
+      "languageMods": {
+        "russian": "Envoy Framework - Demo Subscriber - Russian"
+      }
+    },
     "version": "0.1.0",
     "indexScript": "D:/Skyrim VR Modding/Claude Code/Skyrim VR/index/update-index.ps1",
     "indexOwner": "chat-envoy-demo",

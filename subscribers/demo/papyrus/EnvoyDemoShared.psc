@@ -1,19 +1,24 @@
 ﻿Scriptname EnvoyDemoShared extends Quest
-{Делящийся подписчик: не требует исключительности.
+{The sharing subscriber: it does not demand exclusivity.
 
- Словарь нарочно пересекается с жадным на фразе "проверка связи" - на ней и видно
- всё правило целиком:
+ Its vocabulary deliberately overlaps the greedy one on the radio-check phrase, and
+ on that phrase the whole rule shows at once:
 
-   скажи "закрой дверь"   - её знает только жадный, он берёт реплику себе;
-   скажи "что вокруг"     - её знает только делящийся, он берёт её без спора;
-   скажи "проверка связи" - её знают оба. Кто увереннее, тот и решает судьбу:
-                            победил жадный - делящийся остаётся ни с чем,
-                            победил делящийся - жадный выбывает, потому что
-                            сам просил "мне одному или никак".
+   say the door phrase        - only the greedy one knows it, it takes the utterance;
+   say the look-around phrase - only the sharing one knows it, it takes it unopposed;
+   say the radio-check phrase - both know it. Whoever is more confident decides the
+                                fate of the utterance: if the greedy one won, the
+                                sharing one is left with nothing; if the sharing one
+                                won, the greedy one drops out, because it asked for
+                                "mine alone or not at all" itself.
 
- Об отклике - то же, что у жадного: на чужие реплики на экране не отвечаем,
- потому что надписи Skyrim выводит по одной раз в пять секунд и очередь отстаёт
- на минуты; решающие моменты показываются диалогом.}
+ About the response - the same as for the greedy one: we do not answer the
+ utterances of others on screen, because Skyrim shows notices one at a time every
+ five seconds and the queue falls minutes behind; the decisive moments are shown
+ with a dialogue.
+
+ The vocabulary comes from Envoy.Translate as well: the phrases have to be in the
+ language the player actually speaks, which is the language of the installed model.}
 
 string Property NS = "DemoShared" AutoReadOnly
 
@@ -37,29 +42,30 @@ Function Register()
     Envoy.Subscribe(NS, topics)
 
     string[] words = new string[2]
-    words[0] = "что вокруг"
-    words[1] = "проверка связи"
+    words[0] = Envoy.Translate("$ENVOYDEMO_WORD_AROUND")
+    words[1] = Envoy.Translate("$ENVOYDEMO_WORD_RADIOCHECK")
     Envoy.RegisterVocabulary(NS, words)
 
     RegisterForModEvent("Envoy_Speech_World", "OnHeard")
     RegisterForModEvent("Envoy_Speech_Dialogue", "OnHeard")
     RegisterForModEvent("Envoy_Award", "OnAward")
     RegisterForModEvent("Envoy_Denied", "OnDenied")
-    Debug.Trace("[Envoy] делящийся объявился, словарь из " + words.Length + " фраз")
+    Debug.Trace("[Envoy] the sharing one declared itself, a vocabulary of " + words.Length + " phrases")
 EndFunction
 
-; Строка события всегда пуста - событие только будит. Текст, тема и итог
-; читаются из моста по номеру: точная модель может уточнить реплику уже после
-; рассылки, и копия в событии разошлась бы с тем, что мост считает истиной.
+; The string of an event is always empty - the event only wakes. The text, the
+; topic and the outcome are read from the bridge by number: the accurate model may
+; refine an utterance after the broadcast, and a copy inside the event would part
+; company with what the bridge holds to be true.
 Event OnHeard(string asEventName, string asEmpty, float afId, Form akSender)
     int id = afId as int
     float mine = Envoy.GetVocabularyScore(id, NS)
     if mine <= 0.5
-        Debug.Trace("[Envoy] делящийся [" + id + "]: не моё (" + mine + ")")
+        Debug.Trace("[Envoy] sharing [" + id + "]: not mine (" + mine + ")")
         return
     endIf
-    Debug.Trace("[Envoy] делящийся [" + id + "]: ставлю " + mine)
-    Debug.Notification("делящийся [" + id + "]: ставлю " + mine)
+    Debug.Trace("[Envoy] sharing [" + id + "]: bidding " + mine)
+    Debug.Notification(Envoy.Translate("$ENVOYDEMO_SHARED") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_BIDS") + " " + mine)
     Envoy.Bid(id, NS, mine, 0, false)
 EndEvent
 
@@ -67,9 +73,9 @@ Event OnAward(string asEventName, string asEmpty, float afId, Form akSender)
     int id = afId as int
     if Envoy.IsWinner(id, NS)
         int winners = Envoy.GetWinners(id).Length
-        Debug.Trace("[Envoy] делящийся [" + id + "]: получил, победителей " + winners)
-        Debug.Notification("делящийся [" + id + "]: получил, победителей " + winners)
-        Debug.MessageBox("ДЕЛЯЩИЙСЯ ПОЛУЧИЛ РЕПЛИКУ\n\nРеплика " + id + ": " + Envoy.GetText(id) + "\n\nПобедителей всего: " + winners + ".\nОн делится, поэтому жадный выбыл целиком - тот требовал исключительности.")
+        Debug.Trace("[Envoy] sharing [" + id + "]: got it, winners " + winners)
+        Debug.Notification(Envoy.Translate("$ENVOYDEMO_SHARED") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_GOT_IT") + " " + winners)
+        Debug.MessageBox(Envoy.Translate("$ENVOYDEMO_SHARED_WON") + "\n\n" + Envoy.Translate("$ENVOYDEMO_UTTERANCE") + " " + id + ": " + Envoy.GetText(id) + "\n\n" + Envoy.Translate("$ENVOYDEMO_WINNERS_TOTAL") + " " + winners + ".\n" + Envoy.Translate("$ENVOYDEMO_SHARED_WON_WHY"))
     endIf
 EndEvent
 
@@ -77,8 +83,8 @@ Event OnDenied(string asEventName, string asEmpty, float afId, Form akSender)
     int id = afId as int
     string why = Envoy.GetDenyReason(id, NS)
     if why != ""
-        Debug.Trace("[Envoy] делящийся [" + id + "]: отказ - " + why)
-        Debug.Notification("делящийся [" + id + "]: отказ")
-        Debug.MessageBox("ДЕЛЯЩЕМУСЯ ОТКАЗАНО\n\nРеплика " + id + ": " + Envoy.GetText(id) + "\n\nПричина: " + why)
+        Debug.Trace("[Envoy] sharing [" + id + "]: refused - " + why)
+        Debug.Notification(Envoy.Translate("$ENVOYDEMO_SHARED") + " [" + id + "]: " + Envoy.Translate("$ENVOYDEMO_REFUSED"))
+        Debug.MessageBox(Envoy.Translate("$ENVOYDEMO_SHARED_DENIED") + "\n\n" + Envoy.Translate("$ENVOYDEMO_UTTERANCE") + " " + id + ": " + Envoy.GetText(id) + "\n\n" + Envoy.Translate("$ENVOYDEMO_REASON") + ": " + why)
     endIf
 EndEvent
