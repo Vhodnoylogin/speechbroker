@@ -1,5 +1,7 @@
 # Envoy - the in-game API
 
+*In Russian: [envoy-papyrus.ru.md](envoy-papyrus.ru.md). English is the source language; the other is a translation.*
+
 Contract version **3** - the same number `Envoy.GetInterfaceVersion()` returns.
 The declarations are in `Envoy.psc`.
 

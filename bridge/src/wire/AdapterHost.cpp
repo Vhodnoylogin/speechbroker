@@ -91,7 +91,7 @@ namespace Envoy
 		// older than us - we work by its version and do not read fields that were not
 		// in it. Newer - refused: there is no telling what it will send.
 		if (a_info.contract < 1 || a_info.contract > EnvoyAPI::kInterfaceVersion) {
-			SKSE::log::error("adapter {}: contract version {}, the bridge understands 1 to {}",
+			Log::Error("$ENVOY_LOG_ADAPTER_VERSION_REFUSED",
 				a_info.id, a_info.contract, EnvoyAPI::kInterfaceVersion);
 			return false;
 		}
@@ -112,7 +112,7 @@ namespace Envoy
 		}
 		Dispatch(pending);
 
-		SKSE::log::info("adapter registered: {} ({}), contract {}",
+		Log::Info("$ENVOY_LOG_ADAPTER_REGISTERED",
 			a_info.id, Safe(a_info.name), a_info.contract);
 
 		const auto phrases = SubscriptionRegistry::Get().MergedVocabulary();
@@ -132,7 +132,7 @@ namespace Envoy
 			pending = RecomputeSources();
 		}
 		Dispatch(pending);
-		SKSE::log::info("adapter left: {}", a_id);
+		Log::Info("$ENVOY_LOG_ADAPTER_LEFT", a_id);
 	}
 
 	std::unordered_map<std::string, std::string> AdapterHost::Choose(
@@ -196,10 +196,13 @@ namespace Envoy
 			out.user = entry.second.user;
 			out.kind = EnvoyAPI::kJobListen;
 			out.active = active;
-			out.text = active ? "made the source: " + role : "somebody else was made the source";
+			out.text = active
+			                  ? fmt::format(fmt::runtime(Loc::Get("$ENVOY_ADAPTER_MADE_SOURCE")), role)
+			                  : Loc::Get("$ENVOY_ADAPTER_OTHER_SOURCE");
 			pending.push_back(std::move(out));
 
-			SKSE::log::info("adapter {}: {}", entry.first, active ? "source" : "in reserve");
+			Log::Info("$ENVOY_LOG_ADAPTER_ROLE", entry.first,
+				Loc::Get(active ? "$ENVOY_WORD_SOURCE" : "$ENVOY_WORD_IN_RESERVE"));
 		}
 
 		return pending;
@@ -251,22 +254,22 @@ namespace Envoy
 			// The words themselves only if the person allowed it. Otherwise the log keeps
 			// the number and the model, which still make a diagnosis possible.
 			if (Log::ShowSpeech()) {
-				SKSE::log::info("utterance {} refined by adapter {} ({}): {}",
+				Log::Info("$ENVOY_LOG_REFINED_TEXT",
 					a_in.refinesId, Safe(a_adapterId), utterance.engine, utterance.text);
 			} else {
-				SKSE::log::info("utterance {} refined by adapter {} ({})",
+				Log::Info("$ENVOY_LOG_REFINED",
 					a_in.refinesId, Safe(a_adapterId), utterance.engine);
-				SKSE::log::debug("utterance {}: {}", a_in.refinesId, utterance.text);
+				Log::Debug("$ENVOY_LOG_UTTERANCE_TEXT", a_in.refinesId, utterance.text);
 			}
 			return a_in.refinesId;
 		}
 
 		const auto id = UtteranceStore::Get().Add(std::move(utterance));
 		if (Log::ShowSpeech()) {
-			SKSE::log::info("utterance {} from adapter {}: {}", id, Safe(a_adapterId), Safe(a_in.text));
+			Log::Info("$ENVOY_LOG_UTTERANCE_FROM_TEXT", id, Safe(a_adapterId), Safe(a_in.text));
 		} else {
-			SKSE::log::info("utterance {} from adapter {}", id, Safe(a_adapterId));
-			SKSE::log::debug("utterance {}: {}", id, Safe(a_in.text));
+			Log::Info("$ENVOY_LOG_UTTERANCE_FROM", id, Safe(a_adapterId));
+			Log::Debug("$ENVOY_LOG_UTTERANCE_TEXT", id, Safe(a_in.text));
 		}
 
 		// Absorption before taking in: if the new piece has swallowed a held one, that
@@ -383,7 +386,7 @@ namespace Envoy
 
 			auto source = _sources.find("tts");
 			if (source == _sources.end()) {
-				SKSE::log::warn("nobody to speak it: there is no tts source");
+				Log::Warn("$ENVOY_LOG_NO_TTS");
 				return 0;
 			}
 			auto adapter = _adapters.find(source->second);
@@ -406,7 +409,7 @@ namespace Envoy
 		}
 		Dispatch(pending);
 
-		SKSE::log::info("speech {} -> adapter {}: {}", speechId, target, a_text);
+		Log::Info("$ENVOY_LOG_SPEECH_SENT", speechId, target, a_text);
 		return speechId;
 	}
 
@@ -439,7 +442,7 @@ namespace Envoy
 			// that answers "llm".
 			auto source = _sources.find(a_service);
 			if (source == _sources.end()) {
-				SKSE::log::warn("nobody to ask: there is no {} source", a_service);
+				Log::Warn("$ENVOY_LOG_NO_SERVICE", a_service);
 				return 0;
 			}
 			auto adapter = _adapters.find(source->second);
@@ -461,7 +464,7 @@ namespace Envoy
 		}
 		Dispatch(pending);
 
-		SKSE::log::info("request {} to {} -> adapter {}", requestId, a_service, target);
+		Log::Info("$ENVOY_LOG_REQUEST_SENT", requestId, a_service, target);
 		return requestId;
 	}
 
@@ -486,8 +489,8 @@ namespace Envoy
 			std::scoped_lock lock(_mutex);
 			_answers[a_requestId] = Safe(a_payload);
 		}
-		SKSE::log::info("answer {} from adapter {}: {}", a_requestId, Safe(a_adapterId),
-			a_ok ? "success" : "failure");
+		Log::Info("$ENVOY_LOG_ANSWER", a_requestId, Safe(a_adapterId),
+			Loc::Get(a_ok ? "$ENVOY_WORD_SUCCESS" : "$ENVOY_WORD_FAILURE"));
 
 		// Through the seams of the core rather than straight to SKSE: a seam has a
 		// fallback path with a warning, a direct call has a silent loss.
@@ -504,7 +507,7 @@ namespace Envoy
 			std::scoped_lock lock(_mutex);
 			_speechResults[a_speechId] = how;
 		}
-		SKSE::log::info("speech {} at adapter {}: {}", a_speechId, Safe(a_adapterId), how);
+		Log::Info("$ENVOY_LOG_SPEECH_DONE", a_speechId, Safe(a_adapterId), how);
 
 		MainThread::Post([a_speechId]() {
 			Events::Send("Envoy_SpeechDone", "", static_cast<float>(a_speechId));

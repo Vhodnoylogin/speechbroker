@@ -1,8 +1,14 @@
 #pragma once
 
+#include "Loc.h"
+
+#include <spdlog/spdlog.h>
+
+#include <exception>
 #include <filesystem>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace Envoy
 {
@@ -18,9 +24,15 @@ namespace Envoy
 	// player's words live here and not only in the settings file - otherwise the
 	// menu would change one thing and the log would obey another.
 	//
-	// The lines themselves stay English and are not translated. They travel into
-	// other people's bug reports, and a log in a language the author cannot read
-	// is a log nobody can answer.
+	// The lines themselves are translated like everything else the module puts
+	// out. Not one of them is written in the code: a line is a key, and the text
+	// behind it lives in the same translation files the window on screen uses.
+	// The one thing that stays as it came is the recognised speech - translating
+	// what a person said is meaningless, it is data and not a message.
+	//
+	// The placeholders are numbered, {0} and {1} rather than a bare {}, because
+	// another language puts the words in another order and a translator has to be
+	// able to move them.
 	class Log
 	{
 	public:
@@ -47,5 +59,51 @@ namespace Envoy
 		// in the log folder, and they were warned about it nowhere.
 		static bool ShowSpeech();
 		static void SetShowSpeech(bool a_show);
+
+		// One line of the log, by key.
+		//
+		// A pattern comes out of a file anybody may edit, so a wrong number of
+		// placeholders in it is a question of when and not of whether. It must not
+		// silence the line: a mod that cannot be diagnosed is worse than one whose
+		// log reads badly, so a broken pattern falls back to the bare key.
+		template <class... Args>
+		static void Say(spdlog::level::level_enum a_level, const char* a_key, Args&&... a_args)
+		{
+			try {
+				spdlog::log(a_level, fmt::runtime(Loc::Get(a_key)), std::forward<Args>(a_args)...);
+			} catch (const std::exception&) {
+				spdlog::log(a_level, "{}", a_key);
+			}
+		}
+
+		template <class... Args>
+		static void Trace(const char* a_key, Args&&... a_args)
+		{
+			Say(spdlog::level::trace, a_key, std::forward<Args>(a_args)...);
+		}
+
+		template <class... Args>
+		static void Debug(const char* a_key, Args&&... a_args)
+		{
+			Say(spdlog::level::debug, a_key, std::forward<Args>(a_args)...);
+		}
+
+		template <class... Args>
+		static void Info(const char* a_key, Args&&... a_args)
+		{
+			Say(spdlog::level::info, a_key, std::forward<Args>(a_args)...);
+		}
+
+		template <class... Args>
+		static void Warn(const char* a_key, Args&&... a_args)
+		{
+			Say(spdlog::level::warn, a_key, std::forward<Args>(a_args)...);
+		}
+
+		template <class... Args>
+		static void Error(const char* a_key, Args&&... a_args)
+		{
+			Say(spdlog::level::err, a_key, std::forward<Args>(a_args)...);
+		}
 	};
 }

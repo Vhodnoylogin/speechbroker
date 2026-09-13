@@ -52,8 +52,12 @@ namespace Envoy
 		const auto& settings = Settings::Get();
 		Log::SetLevel(settings.logLevel);
 		Log::SetShowSpeech(settings.logSpeechText);
-		SKSE::log::info("settings reread, log: level {}, the words of the player {}",
-			Log::Level(), settings.logSpeechText ? "written down" : "not written down");
+		Log::Info("$ENVOY_LOG_SETTINGS_REREAD", Log::Level(),
+			Loc::Get(settings.logSpeechText ? "$ENVOY_WORD_WRITTEN_DOWN"
+			                                : "$ENVOY_WORD_NOT_WRITTEN_DOWN"));
+		// And what exactly was reread, in full: at load this line is said by the
+		// plugin, and here by whoever asked for the reread.
+		Settings::Report();
 	}
 
 	std::int32_t PapyrusApi::Say(Tag, Str a_text, Str a_voice, std::int32_t a_priority)
@@ -89,7 +93,7 @@ namespace Envoy
 	{
 		const auto token = ++g_pingToken;
 		g_pongHeard.store(false);
-		SKSE::log::info("self-test of delivery: token {}, ringing in 2 s", token);
+		Log::Info("$ENVOY_LOG_SELFTEST_START", token);
 
 		// The ring is deliberately put off. A script subscribes to Envoy_Ping in the
 		// same line where it asks for the self-test, and an instant broadcast would
@@ -98,7 +102,7 @@ namespace Envoy
 		Scheduler::Get().After(std::chrono::seconds(2), [token]() {
 			MainThread::Post([token]() {
 				g_pingSentAt.store(std::chrono::steady_clock::now());
-				SKSE::log::info("self-test of delivery: sending Envoy_Ping, token {}", token);
+				Log::Info("$ENVOY_LOG_SELFTEST_PING", token);
 				Events::Send("Envoy_Ping", "", static_cast<float>(token));
 			});
 		});
@@ -108,8 +112,7 @@ namespace Envoy
 		// taken up with waiting.
 		Scheduler::Get().After(std::chrono::seconds(7), [token]() {
 			if (!g_pongHeard.load()) {
-				SKSE::log::error("self-test of delivery: no answer on token {} within 5 s - "
-				                 "the events of the bridge DO NOT REACH the Papyrus scripts", token);
+				Log::Error("$ENVOY_LOG_SELFTEST_FAILED", token);
 			}
 		});
 	}
@@ -119,7 +122,6 @@ namespace Envoy
 		g_pongHeard.store(true);
 		const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
 			std::chrono::steady_clock::now() - g_pingSentAt.load()).count();
-		SKSE::log::info("self-test of delivery: the answer on token {} came in {} ms - "
-		                "the events of the bridge do reach the Papyrus scripts", a_token, ms);
+		Log::Info("$ENVOY_LOG_SELFTEST_OK", a_token, ms);
 	}
 }

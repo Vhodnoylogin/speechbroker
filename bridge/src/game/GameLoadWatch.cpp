@@ -1,4 +1,5 @@
 #include "GameLoadWatch.h"
+#include "core/Log.h"
 
 #include "core/Events.h"
 #include "envoy-adapter.h"
@@ -17,12 +18,11 @@ namespace Envoy
 	{
 		auto* holder = RE::ScriptEventSourceHolder::GetSingleton();
 		if (!holder) {
-			SKSE::log::error("the holder of the game events is unavailable: "
-			                 "there will be nobody to call the participants after a load");
+			Log::Error("$ENVOY_LOG_LOADWATCH_NO_HOLDER");
 			return false;
 		}
 		holder->AddEventSink<RE::TESLoadGameEvent>(std::addressof(Get()));
-		SKSE::log::info("watching for a game load through the own event of the engine");
+		Log::Info("$ENVOY_LOG_LOADWATCH_ON");
 		return true;
 	}
 
@@ -30,7 +30,7 @@ namespace Envoy
 		RE::BSTEventSource<RE::TESLoadGameEvent>*)
 	{
 		Events::Send("Envoy_Ready", "", static_cast<float>(EnvoyAPI::kInterfaceVersion));
-		SKSE::log::info("game loaded: calling the participants to declare themselves again");
+		Log::Info("$ENVOY_LOG_LOADWATCH_LOADED");
 		return RE::BSEventNotifyControl::kContinue;
 	}
 }

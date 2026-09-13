@@ -5,6 +5,7 @@
 #include "bus/SubscriptionRegistry.h"
 #include "bus/UtteranceStore.h"
 #include "core/Loc.h"
+#include "core/Log.h"
 #include "wire/AdapterHost.h"
 
 #include <algorithm>
@@ -55,7 +56,7 @@ namespace Envoy
 		SubscriptionRegistry::Get().Subscribe(a_ns.c_str(), topics);
 		std::string joined;
 		for (const auto& t : topics) { joined += joined.empty() ? t : ", " + t; }
-		SKSE::log::info("participant {} subscribed to topics: {}", a_ns.c_str(), joined);
+		Log::Info("$ENVOY_LOG_SUBSCRIBED", a_ns.c_str(), joined);
 	}
 
 	void PapyrusApi::Unsubscribe(Tag, Str a_ns)
@@ -71,16 +72,16 @@ namespace Envoy
 	void PapyrusApi::Declare(Tag, Str a_ns, std::int32_t a_costClass, bool a_revocable)
 	{
 		SubscriptionRegistry::Get().Declare(a_ns.c_str(), a_costClass, a_revocable);
-		SKSE::log::info("participant {} declared itself: {}, {}", a_ns.c_str(),
-			a_costClass >= 1 ? "expensive" : "reversible",
-			a_revocable ? "can undo" : "cannot undo");
+		Log::Info("$ENVOY_LOG_DECLARED", a_ns.c_str(),
+			Loc::Get(a_costClass >= 1 ? "$ENVOY_WORD_EXPENSIVE" : "$ENVOY_WORD_REVERSIBLE"),
+			Loc::Get(a_revocable ? "$ENVOY_WORD_CAN_UNDO" : "$ENVOY_WORD_CANNOT_UNDO"));
 	}
 
 	void PapyrusApi::RegisterVocabulary(Tag, Str a_ns, std::vector<Str> a_phrases)
 	{
 		const auto phrases = ToStrings(a_phrases);
 		SubscriptionRegistry::Get().SetVocabulary(a_ns.c_str(), phrases);
-		SKSE::log::info("participant {} declared a vocabulary: {} phrases", a_ns.c_str(), phrases.size());
+		Log::Info("$ENVOY_LOG_VOCABULARY", a_ns.c_str(), phrases.size());
 		// The side that listens is the one that needs the vocabulary: let the adapters
 		// hear about it straight away.
 		AdapterHost::Get().SendVocabulary(SubscriptionRegistry::Get().MergedVocabulary());
@@ -183,13 +184,13 @@ namespace Envoy
 	{
 		auto item = UtteranceStore::Get().Find(a_id);
 		if (!item) {
-			SKSE::log::info("participant {} asked about the match on utterance {} - no such utterance", a_ns.c_str(), a_id);
+			Log::Info("$ENVOY_LOG_MATCH_NO_UTTERANCE", a_ns.c_str(), a_id);
 			return 0.0f;
 		}
 		const auto match = SubscriptionRegistry::Get().Match(a_ns.c_str(), item->text);
 		// The most important line in the log: it proves the event reached the script.
 		// Without it "the script kept quiet" and "the event never arrived" look alike.
-		SKSE::log::info("participant {} asked about the match on utterance {}: {:.2f} on the phrase \"{}\"",
+		Log::Info("$ENVOY_LOG_MATCH",
 			a_ns.c_str(), a_id, match.score, match.phrase);
 		return match.score;
 	}
@@ -221,14 +222,15 @@ namespace Envoy
 		// was late" out of the log, and the difference decides everything: in the first
 		// case the event never reached it, in the second the bid window is shorter than
 		// Papyrus's own delay.
-		SKSE::log::info("bid by {} on utterance {}: confidence {:.2f}, {}, on the phrase \"{}\", after {} ms{}",
-			a_ns.c_str(), a_id, a_confidence, a_greedy ? "greedy" : "sharing", phrase,
-			stored ? stored->MsSinceOffer() : -1, accepted ? "" : " - TOO LATE, bidding is closed");
+		Log::Info("$ENVOY_LOG_BID", a_ns.c_str(), a_id, a_confidence,
+			Loc::Get(a_greedy ? "$ENVOY_WORD_GREEDY" : "$ENVOY_WORD_SHARING"), phrase,
+			stored ? stored->MsSinceOffer() : -1,
+			accepted ? "" : Loc::Get("$ENVOY_WORD_TOO_LATE"));
 	}
 
 	void PapyrusApi::Done(Tag, std::int32_t a_id, Str a_ns, bool a_succeeded)
 	{
-		SKSE::log::debug("utterance {}: {} reported back, success={}", a_id, a_ns.c_str(), a_succeeded);
+		Log::Debug("$ENVOY_LOG_DONE", a_id, a_ns.c_str(), a_succeeded);
 	}
 
 	RE::BSFixedString PapyrusApi::GetWinner(Tag, std::int32_t a_id)
@@ -398,7 +400,7 @@ namespace Envoy
 
 		a_vm->RegisterFunction("Translate", kScriptName, Translate);
 
-		SKSE::log::info("Papyrus: script {} registered", kScriptName);
+		Log::Info("$ENVOY_LOG_PAPYRUS_REGISTERED", kScriptName);
 		return true;
 	}
 }

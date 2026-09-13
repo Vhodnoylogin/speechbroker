@@ -55,7 +55,7 @@ namespace Envoy
 			for (int i = 0; i < static_cast<int>(std::size(kLevels)); ++i) {
 				if (ImGuiMCP::RadioButton(kLevels[i], &chosen, i)) {
 					Log::SetLevel(kLevels[i]);
-					SKSE::log::info("log level switched from the menu: {}", kLevels[i]);
+					Log::Info("$ENVOY_LOG_MENU_LEVEL", kLevels[i]);
 				}
 				if (i + 1 < static_cast<int>(std::size(kLevels))) {
 					ImGuiMCP::SameLine();
@@ -67,8 +67,8 @@ namespace Envoy
 			bool speech = Log::ShowSpeech();
 			if (ImGuiMCP::Checkbox(Loc::Get("$ENVOY_LOG_SPEECH"), &speech)) {
 				Log::SetShowSpeech(speech);
-				SKSE::log::info("writing the player's words to the log switched from the menu: {}",
-					speech ? "on" : "off");
+				Log::Info("$ENVOY_LOG_MENU_SPEECH",
+					Loc::Get(speech ? "$ENVOY_WORD_ON" : "$ENVOY_WORD_OFF"));
 			}
 			ImGuiMCP::TextUnformatted(Loc::Get("$ENVOY_LOG_SPEECH_HELP"));
 
@@ -80,8 +80,7 @@ namespace Envoy
 	void MenuPanel::Install()
 	{
 		if (!SKSEMenuFramework::IsInstalled()) {
-			SKSE::log::info("SKSE Menu Framework is not installed, so there is no window in the "
-			                "game; the log is still set from the file");
+			Log::Info("$ENVOY_LOG_MENU_ABSENT");
 			return;
 		}
 		// The section keeps the name of the mod on purpose: a player hunting for
@@ -89,6 +88,6 @@ namespace Envoy
 		// not for a translation of it.
 		SKSEMenuFramework::SetSection("Envoy");
 		SKSEMenuFramework::AddSectionItem(Loc::Get("$ENVOY_MENU_LOG"), RenderLog);
-		SKSE::log::info("bridge window added to the mod menu");
+		Log::Info("$ENVOY_LOG_MENU_ADDED");
 	}
 }

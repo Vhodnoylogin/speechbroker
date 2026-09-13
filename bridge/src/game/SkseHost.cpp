@@ -1,4 +1,5 @@
 #include "SkseHost.h"
+#include "core/Log.h"
 
 #include "ModEventBus.h"
 
@@ -16,7 +17,7 @@ namespace Envoy
 
 		// No task interface, so we do it on the spot. Worse than the main thread, but
 		// better than silently losing the work.
-		SKSE::log::warn("the SKSE task interface is unavailable, the work was done on the spot");
+		Log::Warn("$ENVOY_LOG_NO_TASK_INTERFACE");
 		a_task();
 	}
 
@@ -57,6 +58,6 @@ namespace Envoy
 		GameState::Install(&state);
 		Events::Install(&events);
 
-		SKSE::log::info("the seams of the core are wired to the game: tasks, state, events");
+		Log::Info("$ENVOY_LOG_SEAMS_WIRED");
 	}
 }

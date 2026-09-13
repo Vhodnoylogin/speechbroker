@@ -73,7 +73,7 @@ namespace
 		case SKSE::MessagingInterface::kInputLoaded:  return "kInputLoaded";
 		case SKSE::MessagingInterface::kNewGame:      return "kNewGame";
 		case SKSE::MessagingInterface::kDataLoaded:   return "kDataLoaded";
-		default:                                      return "unknown";
+		default:                                      return Envoy::Loc::Get("$ENVOY_WORD_UNKNOWN");
 		}
 	}
 
@@ -83,7 +83,7 @@ namespace
 			return;
 		}
 
-		SKSE::log::info("SKSE message: {} ({})", MessageName(a_message->type), a_message->type);
+		Envoy::Log::Info("$ENVOY_LOG_SKSE_MESSAGE", MessageName(a_message->type), a_message->type);
 
 		// The interface is handed out the way HIGGS and PLANCK hand theirs out: by
 		// broadcasting an SKSE message. Adapters are ordinary plugins, they catch
@@ -92,7 +92,7 @@ namespace
 			auto* api = static_cast<EnvoyAPI::IEnvoy*>(&Envoy::AdapterHost::Get());
 			SKSE::GetMessagingInterface()->Dispatch(EnvoyAPI::kMessageInterface, &api,
 				static_cast<std::uint32_t>(sizeof(api)), nullptr);
-			SKSE::log::info("bridge interface broadcast to the adapters");
+			Envoy::Log::Info("$ENVOY_LOG_INTERFACE_BROADCAST");
 		}
 
 		// The bridge learns about a game being loaded from the engine, not from
@@ -144,13 +144,21 @@ extern "C" __declspec(dllexport) bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadIn
 
 	// Parsed settings rather than the raw document: the in-game menu and
 	// ReloadSettings read the same fields, and the value has to be one.
+	//
+	// The order of these three is not a matter of taste. The settings hold the
+	// level of the log, so they are read first and say nothing while they do it.
+	// The log is set up next, because the translation reports whether it loaded.
+	// And only then are the settings named out loud, in the language the player
+	// reads.
 	const auto& settings = Envoy::Settings::Get();
 	Envoy::Log::Init(settings.logLevel, logFile, settings.logMaxSizeKb);
 	Envoy::Log::SetShowSpeech(settings.logSpeechText);
 
-	// Text on screen. Loaded once, before anything can draw: changing the language
-	// needs the game restarted, which is what the engine demands of itself too.
+	// All the text of the module. Loaded once, before anything can draw or speak:
+	// changing the language needs the game restarted, which is what the engine
+	// demands of itself too.
 	Envoy::Loc::Load(kTranslations, ResolveLanguage(settings.language));
+	Envoy::Settings::Report();
 
 	// Up to this line the core answers its own three questions: work is done on
 	// the spot, nothing happens in the game, events go to the log. Here the game
@@ -165,12 +173,13 @@ extern "C" __declspec(dllexport) bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadIn
 	// used to print the "interfaceVersion" field out of the settings file, where a
 	// stale 1 had been sitting for ages: two different numbers under one name, and
 	// the wrong one reached the log. Sorting out the run of 07.09 started here.
-	SKSE::log::info("{} v{} loaded, contract version {}", PLUGIN_NAME, PLUGIN_VERSION,
+	Envoy::Log::Info("$ENVOY_LOG_PLUGIN_LOADED", PLUGIN_NAME, PLUGIN_VERSION,
 		EnvoyAPI::kInterfaceVersion);
-	SKSE::log::info("{}: {}", Envoy::Config::Describe(config.Source()), config.Path().string());
+	Envoy::Log::Info("$ENVOY_LOG_CONFIG_SOURCE",
+		Envoy::Loc::Get(Envoy::Config::Describe(config.Source())), config.Path().string());
 
 	if (!config.Error().empty()) {
-		SKSE::log::warn("settings: {}", config.Error());
+		Envoy::Log::Warn("$ENVOY_LOG_CONFIG_ERROR", config.Error());
 	}
 
 	if (auto* papyrus = SKSE::GetPapyrusInterface()) {

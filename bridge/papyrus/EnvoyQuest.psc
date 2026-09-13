@@ -23,10 +23,13 @@ EndEvent
 
 Function OnGameReload()
     if !Envoy.IsAvailable()
+        ; The one line of this mod that is written out in English. It says the
+        ; plugin did not load, and the plugin is the thing that translates: calling
+        ; Envoy.Translate here would be calling a native that is not registered.
         Debug.Trace("[Envoy] the bridge is unavailable: the plugin did not load")
         return
     endIf
-    Debug.Trace("[Envoy] contract version " + Envoy.GetInterfaceVersion())
+    Debug.Trace("[Envoy] " + Envoy.Translate("$ENVOY_QUEST_CONTRACT") + " " + Envoy.GetInterfaceVersion())
     ; The subscription to Envoy_Ping is set up above and outlives a save, so the
     ; ring can be sent straight away: there is already somebody to catch it.
     Envoy.SelfTest()

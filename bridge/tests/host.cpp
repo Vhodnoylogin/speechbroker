@@ -23,6 +23,7 @@
 #include "bus/UtteranceStore.h"
 #include "core/Config.h"
 #include "core/GameState.h"
+#include "core/Loc.h"
 #include "core/Log.h"
 #include "core/MainThread.h"
 #include "core/Scheduler.h"
@@ -615,6 +616,12 @@ int main(int argc, char** argv)
 	}
 
 	Envoy::Log::ToConsole("info");
+
+	// The text of the module, out of the set compiled into it: there is no folder
+	// of translations next to the host and no need for one. The point is that the
+	// report reads as sentences rather than as a list of keys - a check is read by
+	// a person, and one whose report needs decoding proves nothing.
+	Envoy::Loc::Load({}, "english");
 
 	auto& config = Envoy::Config::Get();
 	config.Load(configFile);

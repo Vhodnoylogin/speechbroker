@@ -31,6 +31,17 @@ namespace Envoy
 		static const Settings& Get();
 		static void            Reload();
 
+		// Names in the log what was actually read. Kept apart from Read because the
+		// settings are read before the translation is loaded - the log level comes
+		// out of them, and the log has to exist before anything can be said. So
+		// whoever loaded the translation says this afterwards.
+		//
+		// There are more keys in the file than the bridge reads today: the rest are
+		// points of extension and by sight they are indistinguishable from working
+		// settings. Naming the ones that were read out loud is what keeps somebody
+		// from turning a knob that is connected to nothing and never finding out.
+		static void            Report();
+
 		std::int32_t bidWindowMs{ 750 };
 		// How much risk we are willing to carry when handing an utterance over.
 		// What is configured is the tolerance, not the completeness threshold: the

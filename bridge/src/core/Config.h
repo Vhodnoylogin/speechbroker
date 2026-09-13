@@ -50,7 +50,10 @@ namespace Envoy
 			}
 		}
 
-		static std::string_view Describe(Origin a_origin);
+		// The KEY of the line, not the line itself: it is written into the log by
+		// whoever asked, and by then the translation is loaded. Config is read
+		// before that and can resolve nothing.
+		static const char* Describe(Origin a_origin);
 
 	private:
 		Config() = default;

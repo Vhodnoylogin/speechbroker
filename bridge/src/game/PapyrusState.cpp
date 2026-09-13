@@ -1,6 +1,7 @@
 #include "PapyrusApi.h"
 
 #include "bus/StateStore.h"
+#include "core/Log.h"
 
 #include <SKSE/SKSE.h>
 
@@ -61,7 +62,7 @@ namespace Envoy
 	void PapyrusApi::DeclareKey(Tag, Str a_key, Str a_type, float a_ttlSec, Str a_description)
 	{
 		if (!StateStore::Get().Declare(a_key.c_str(), a_type.c_str(), a_ttlSec, a_description.c_str())) {
-			SKSE::log::warn("key {} refused: empty name or a namespace of somebody else", a_key.c_str());
+			Log::Warn("$ENVOY_LOG_KEY_REFUSED", a_key.c_str());
 		}
 	}
 

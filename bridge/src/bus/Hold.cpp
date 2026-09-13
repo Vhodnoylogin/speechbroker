@@ -1,4 +1,5 @@
 #include "Hold.h"
+#include "core/Loc.h"
 
 #include "SubscriptionRegistry.h"
 #include "Utterance.h"
@@ -35,7 +36,7 @@ namespace Envoy
 		}
 
 		if (decision.audience == 0) {
-			decision.reason = "the room is empty - nobody to hold it for";
+			decision.reason = Loc::Get("$ENVOY_REASON_ROOM_EMPTY");
 			return decision;
 		}
 
@@ -43,8 +44,7 @@ namespace Envoy
 		decision.risk = unsure * decision.damage;
 		decision.hold = decision.risk > settings.holdTolerance;
 
-		decision.reason = fmt::format(
-			"completeness {:.2f}, {} in the room, cost of a mistake {:.2f}, risk {:.2f} against a tolerance of {:.2f}",
+		decision.reason = fmt::format(fmt::runtime(Loc::Get("$ENVOY_REASON_HOLD_WEIGHED")),
 			a_utterance.complete, decision.audience, decision.damage, decision.risk,
 			settings.holdTolerance);
 		return decision;

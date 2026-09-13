@@ -2,7 +2,8 @@
 
 #include "Config.h"
 
-#include <spdlog/spdlog.h>
+#include "Loc.h"
+#include "Log.h"
 
 #include <algorithm>
 
@@ -100,22 +101,17 @@ namespace Envoy
 		language           = cfg.Value<std::string>("/language").value_or(language);
 
 		_read = true;
+	}
 
-		// There are more keys in the file than the bridge reads today: the rest are
-		// points of extension, and by sight they are indistinguishable from working
-		// settings. So the ones that were read are named out loud - otherwise
-		// somebody tuning the thing turns a knob that is connected to nothing and
-		// never finds out.
-		spdlog::info(
-			"settings read: bid window {} ms, utterance threshold {:.2f}, "
-			"confidence {:.2f}/{:.2f}, margin {:.2f}/{:.2f}, sharing takes a tie: {}, "
-			"{} participants in the order, kept {:.0f} s and at most {} utterances, "
-			"hold tolerance {:.2f}, cost of a mistake {:.2f}/{:.2f}/{:.2f}, "
-			"ceiling {}/{}/{} ms",
-			bidWindowMs, minUtteranceScore, _minConfidence[0], _minConfidence[1],
-			_minMargin[0], _minMargin[1], sharedWinsTie ? "yes" : "no", _priority.size(),
-			utteranceTtlSec, utteranceMaxStored, holdTolerance,
-			_holdWeight[0], _holdWeight[1], _holdWeight[2],
-			_holdCeilingMs[0], _holdCeilingMs[1], _holdCeilingMs[2]);
+	void Settings::Report()
+	{
+		const auto& s = Instance();
+		Log::Info("$ENVOY_LOG_SETTINGS_READ",
+			s.bidWindowMs, s.minUtteranceScore, s._minConfidence[0], s._minConfidence[1],
+			s._minMargin[0], s._minMargin[1],
+			Loc::Get(s.sharedWinsTie ? "$ENVOY_WORD_ON" : "$ENVOY_WORD_OFF"), s._priority.size(),
+			s.utteranceTtlSec, s.utteranceMaxStored, s.holdTolerance,
+			s._holdWeight[0], s._holdWeight[1], s._holdWeight[2],
+			s._holdCeilingMs[0], s._holdCeilingMs[1], s._holdCeilingMs[2]);
 	}
 }

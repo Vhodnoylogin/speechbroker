@@ -42,7 +42,8 @@
     "sdkLayout": {
       "cpp": [
         "{root}/contract/envoy-adapter.h",
-        "{root}/contract/envoy-abi.h"
+        "{root}/contract/envoy-abi.h",
+        "{root}/contract/envoy-loc.h"
       ],
       "papyrus": [
         "{root}/papyrus/Envoy.psc",
@@ -50,7 +51,9 @@
       ],
       "docs": [
         "{root}/contract/envoy-papyrus.md",
-        "{root}/contract/envoy-keys.md"
+        "{root}/contract/envoy-papyrus.ru.md",
+        "{root}/contract/envoy-keys.md",
+        "{root}/contract/envoy-keys.ru.md"
       ],
       "localization": [
         "{root}/localization/envoy.english.txt",

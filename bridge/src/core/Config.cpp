@@ -12,14 +12,14 @@ namespace Envoy
 		return instance;
 	}
 
-	std::string_view Config::Describe(Origin a_origin)
+	const char* Config::Describe(Origin a_origin)
 	{
 		switch (a_origin) {
-		case Origin::Created: return "settings file created from the built-in set";
-		case Origin::Merged:  return "settings file topped up with the new keys";
-		case Origin::File:    return "settings file read";
-		case Origin::Broken:  return "settings file does not parse, running on the built-in values";
-		default:              return "running on the built-in values";
+		case Origin::Created: return "$ENVOY_CFG_CREATED";
+		case Origin::Merged:  return "$ENVOY_CFG_MERGED";
+		case Origin::File:    return "$ENVOY_CFG_FILE";
+		case Origin::Broken:  return "$ENVOY_CFG_BROKEN";
+		default:              return "$ENVOY_CFG_BASELINE";
 		}
 	}
 

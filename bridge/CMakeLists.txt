@@ -113,6 +113,10 @@ add_library(envoy-core STATIC ${ENVOY_CORE_SOURCES} ${ENVOY_CORE_HEADERS})
 target_include_directories(envoy-core PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_BINARY_DIR}/generated"
+    # envoy-loc.h reads the translation files, and the core needs it as much as an
+    # adapter does. It is pure standard library: taking the contract folder in here
+    # brings nothing of the game with it.
+    "${CMAKE_CURRENT_SOURCE_DIR}/contract"
 )
 
 target_link_libraries(envoy-core PUBLIC

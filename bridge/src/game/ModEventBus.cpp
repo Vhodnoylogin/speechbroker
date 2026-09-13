@@ -1,4 +1,5 @@
 #include "ModEventBus.h"
+#include "core/Log.h"
 
 #include <RE/Skyrim.h>
 #include <SKSE/SKSE.h>
@@ -18,10 +19,9 @@ namespace Envoy
 		static std::once_flag once;
 		std::call_once(once, [source] {
 			if (source) {
-				SKSE::log::info("Papyrus event delivery is ready");
+				Log::Info("$ENVOY_LOG_EVENTS_READY");
 			} else {
-				SKSE::log::error("Papyrus event delivery is unavailable: "
-				                 "not one event will reach the scripts");
+				Log::Error("$ENVOY_LOG_EVENTS_UNAVAILABLE");
 			}
 		});
 

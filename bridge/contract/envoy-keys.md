@@ -1,5 +1,7 @@
 # Envoy - the space of snapshot keys
 
+*In Russian: [envoy-keys.ru.md](envoy-keys.ru.md). English is the source language; the other is a translation.*
+
 A key describes **the question, not the way it is answered**. `core.target.looked` is "what the
 attention of the player is pointed at": in a flat game that is a ray from the camera, in VR from
 the gaze or the hand. One question, different implementations.

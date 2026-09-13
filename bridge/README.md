@@ -1,5 +1,7 @@
 # Envoy - the bridge
 
+*In Russian: [README.ru.md](README.ru.md). English is the source language; the other is a translation.*
+
 The heart of Envoy: an SKSE plugin that takes recognised speech from the adapters, picks a topic
 for it, plays it out between the mods that subscribed and sends an event to the winner. About the
 microphone, the models and HTTP it knows nothing - that is the business of the adapter.
@@ -60,10 +62,16 @@ file shows text rather than bare keys.
 English ships inside the mod. Every other language is a mod of its own holding a single
 `Interface\Translations` folder, so adding a language means adding a mod and nothing else.
 
-Two things are deliberately **not** translated. The log stays English: its lines travel into other
-people's bug reports. And the five level names in the menu - `trace`, `debug`, `info`, `warning`,
-`error` - stay as they are, because they are the values of the `log.level` key and a person reading
-the window has to be able to type what they see into the settings file.
+**The log is translated along with everything else** - not one of its lines is written in the
+code. Two things stay as they are. The recognised speech: what a person said is data and not a
+message, and translating it would be meaningless. And the five level names in the menu - `trace`,
+`debug`, `info`, `warning`, `error` - because they are the values of the `log.level` key, and a
+person reading the window has to be able to type what they see into the settings file.
+
+The placeholders in a line are numbered, `{0}` and `{1}` rather than a bare `{}`, because another
+language puts the words in another order and a translator has to be able to move them. A wrong
+number of them does not silence the line: a broken pattern falls back to printing the bare key,
+because a mod that cannot be diagnosed is worse than one whose log reads badly.
 
 A subscriber gets at the same table through `Envoy.Translate`. It is wanted for two things the
 engine cannot do by itself: a line glued together out of a translated part and a number, and text

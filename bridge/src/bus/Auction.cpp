@@ -1,4 +1,6 @@
 #include "Auction.h"
+#include "core/Loc.h"
+#include "core/Log.h"
 
 #include "TopicRouter.h"
 #include "UtteranceStore.h"
@@ -21,8 +23,8 @@ namespace Envoy
 		Result result;
 
 		const char* stranger = a_top.phrase.empty()
-		                           ? "the command of the winner is unknown - the prize is not shared"
-		                           : "recognised a different command - this one is not its own";
+		                           ? Loc::Get("$ENVOY_REASON_WINNER_UNKNOWN_COMMAND")
+		                           : Loc::Get("$ENVOY_REASON_OTHER_COMMAND");
 
 		for (const auto& bid : a_survivors) {
 			const bool same = bid.ns == a_top.ns ||
@@ -30,7 +32,7 @@ namespace Envoy
 			if (!same) {
 				result.denied[bid.ns] = stranger;
 			} else if (bid.greedy) {
-				result.denied[bid.ns] = "lost, and refused to share";
+				result.denied[bid.ns] = Loc::Get("$ENVOY_REASON_LOST_AND_GREEDY");
 			} else {
 				result.winners.push_back(bid.ns);
 			}
@@ -59,7 +61,7 @@ namespace Envoy
 			if (bid.confidence >= Settings::Get().MinConfidence(bid.costClass)) {
 				survivors.push_back(bid);
 			} else {
-				a_result.denied[bid.ns] = "confidence below the threshold of its class";
+				a_result.denied[bid.ns] = Loc::Get("$ENVOY_REASON_BELOW_THRESHOLD");
 			}
 		}
 		return survivors;
@@ -111,7 +113,7 @@ namespace Envoy
 			}
 		}
 		if (best != Settings::kNoPriority && count == 1) {
-			return Exclusive(chosen->ns, "the bids are indistinguishable, the argument was settled by the order from the settings",
+			return Exclusive(chosen->ns, Loc::Get("$ENVOY_REASON_PRIORITY"),
 				a_survivors);
 		}
 
@@ -120,7 +122,7 @@ namespace Envoy
 		// ambiguous utterance: it can be understood two ways and both readings are
 		// equally plausible. Doing anything at all about it amounts to guessing.
 		if (!SameCommand(tied)) {
-			result.reason = "the phrase was understood differently and with equal confidence - the utterance is ambiguous";
+			result.reason = Loc::Get("$ENVOY_REASON_AMBIGUOUS");
 			for (const auto& bid : a_survivors) {
 				result.denied[bid.ns] = result.reason;
 			}
@@ -140,12 +142,12 @@ namespace Envoy
 			// recognised something else gets no prize even if it passed the threshold.
 			auto shared = Share(a_survivors, tied.front());
 			if (!shared.winners.empty()) {
-				shared.reason = "several ask for one command and no order is set - it is done by those that share";
+				shared.reason = Loc::Get("$ENVOY_REASON_SHARED_TAKES_TIE");
 				return shared;
 			}
 		}
 
-		result.reason = "several ask for one command and all demand it for themselves - nobody does it";
+		result.reason = Loc::Get("$ENVOY_REASON_ALL_GREEDY");
 		for (const auto& bid : a_survivors) {
 			result.denied[bid.ns] = result.reason;
 		}
@@ -157,7 +159,7 @@ namespace Envoy
 		Result result;
 
 		if (_utterance.score < Settings::Get().minUtteranceScore) {
-			result.reason = "the utterance was heard below the threshold";
+			result.reason = Loc::Get("$ENVOY_REASON_UTTERANCE_TOO_WEAK");
 			for (const auto& bid : _utterance.bids) {
 				result.denied[bid.ns] = result.reason;
 			}
@@ -169,13 +171,13 @@ namespace Envoy
 		// 04.09 that line was given to 34 utterances out of 36, and not one of them
 		// had any bids.
 		if (_utterance.bids.empty()) {
-			result.reason = "nobody bid";
+			result.reason = Loc::Get("$ENVOY_REASON_NO_BIDS");
 			return result;
 		}
 
 		auto survivors = Survivors(result);
 		if (survivors.empty()) {
-			result.reason = "not one bid passed the confidence threshold";
+			result.reason = Loc::Get("$ENVOY_REASON_NO_BID_PASSED");
 			return result;
 		}
 
@@ -196,12 +198,12 @@ namespace Envoy
 		if (survivors.size() > 1 && top.confidence - survivors[1].confidence < need) {
 			verdict = BreakTie(survivors, need);
 		} else if (top.greedy) {
-			verdict = Exclusive(top.ns, "the winner is greedy - the result goes to it alone", survivors);
+			verdict = Exclusive(top.ns, Loc::Get("$ENVOY_REASON_GREEDY_WON"), survivors);
 		} else {
 			verdict = Share(survivors, top);
 			verdict.reason = verdict.winners.size() > 1
-			                     ? "the winner shares - the result went to everybody that recognised the same command"
-			                     : "the winner shares, but there is nobody to share with";
+			                     ? Loc::Get("$ENVOY_REASON_SHARED_WON")
+			                     : Loc::Get("$ENVOY_REASON_SHARED_ALONE");
 		}
 
 		// Those who dropped out on the threshold were never in the circle of the
@@ -244,7 +246,7 @@ namespace Envoy
 		const auto verdict = Hold::Judge(item);
 		if (!verdict.hold) {
 			if (verdict.audience > 0) {
-				spdlog::info("utterance {} handed over at once: {}", a_id, verdict.reason);
+				Log::Info("$ENVOY_LOG_HANDED_AT_ONCE", a_id, verdict.reason);
 			}
 			Offer(a_id);
 			return;
@@ -253,7 +255,7 @@ namespace Envoy
 		item.held = true;
 		item.holdReason = verdict.reason;
 		UtteranceStore::Get().Update(a_id, item);
-		spdlog::info("utterance {} IS HELD: {}", a_id, verdict.reason);
+		Log::Info("$ENVOY_LOG_HELD", a_id, verdict.reason);
 
 		// The ceiling is not the main path but insurance. Usually the hold ends
 		// earlier: either the continuation arrives and the fragment is thrown away
@@ -262,7 +264,7 @@ namespace Envoy
 		if (verdict.ceilingMs > 0) {
 			Scheduler::Get().After(std::chrono::milliseconds(verdict.ceilingMs), [a_id]() {
 				MainThread::Post([a_id]() {
-					Auctioneer::Get().Release(a_id, "the ceiling of the length class ran out");
+					Auctioneer::Get().Release(a_id, Loc::Get("$ENVOY_REASON_CEILING"));
 				});
 			});
 		}
@@ -282,7 +284,7 @@ namespace Envoy
 		auto item = *stored;
 		item.held = false;
 		UtteranceStore::Get().Update(a_id, item);
-		spdlog::info("utterance {} let go: {}", a_id, a_why);
+		Log::Info("$ENVOY_LOG_LET_GO", a_id, a_why);
 		Offer(a_id);
 	}
 
@@ -303,7 +305,7 @@ namespace Envoy
 			if (wasHeld) {
 				// Held, and rightly so: the phrase went on and the fragment never went
 				// anywhere. This is the case the whole thing was built for.
-				spdlog::info("utterance {} thrown away unannounced: it was absorbed by {}",
+				Log::Info("$ENVOY_LOG_DROPPED",
 					older, a_newId);
 				continue;
 			}
@@ -316,7 +318,7 @@ namespace Envoy
 				for (const auto& winner : item.winners) {
 					who += who.empty() ? winner : ", " + winner;
 				}
-				spdlog::warn("utterance {} had been handed over ({}) and was absorbed by utterance {} - revoking",
+				Log::Warn("$ENVOY_LOG_REVOKED",
 					older, who, a_newId);
 				Events::Send("Envoy_Revoked", "", static_cast<float>(older));
 			}
@@ -371,13 +373,13 @@ namespace Envoy
 			outcome += outcome.empty() ? winner : ", " + winner;
 		}
 		if (outcome.empty()) {
-			outcome = "nobody";
+			outcome = Loc::Get("$ENVOY_WORD_NOBODY");
 		}
 
 		UtteranceStore::Get().SetOutcome(a_id, result.winners, result.denied,
 			outcome + " - " + result.reason);
 
-		spdlog::info("utterance {} topic {} bids {} -> {} ({})", a_id, stored->topic,
+		Log::Info("$ENVOY_LOG_SETTLED", a_id, stored->topic,
 			stored->bids.size(), outcome, result.reason);
 
 		// One broadcast per outcome rather than per recipient: there is no name in the

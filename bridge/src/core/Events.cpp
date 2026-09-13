@@ -1,4 +1,5 @@
 #include "Events.h"
+#include "Log.h"
 
 #include <spdlog/spdlog.h>
 
@@ -17,10 +18,10 @@ namespace Envoy
 				float a_number) override
 			{
 				if (a_string.empty()) {
-					spdlog::info("event {} raised, utterance {}", a_event,
+					Log::Info("$ENVOY_LOG_EVENT_UTTERANCE", a_event,
 						static_cast<int>(a_number));
 				} else {
-					spdlog::info("event {} raised, string '{}', number {}", a_event,
+					Log::Info("$ENVOY_LOG_EVENT_FULL", a_event,
 						a_string, a_number);
 				}
 			}
