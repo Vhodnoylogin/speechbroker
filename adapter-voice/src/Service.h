@@ -16,15 +16,17 @@ namespace Voice
 		static Endpoint Parse(const std::string& a_url);
 	};
 
-	// Служба одной модели: жива ли она и как её поднять, если нет.
-	// Чужой процесс никогда не убивает: если служба уже отвечает, к ней
-	// просто подключаются.
+	// Служба адаптера: жива ли она и как её поднять, если нет. Она одна на игру
+	// и лежит внутри мода адаптера.
+	//
+	// Чужой процесс никогда не убивает: если служба уже отвечает, к ней просто
+	// подключаются. Человек мог поднять её сам - например, заранее, чтобы модель
+	// успела загрузиться до входа в игру.
 	class Service
 	{
 	public:
-		explicit Service(const Model& a_model);
+		Service();
 
-		const Model&    Settings() const { return _model; }
 		const Endpoint& Where() const { return _where; }
 
 		// Имя заголовка, которым адаптер предъявляет службе секрет сессии.
@@ -36,11 +38,11 @@ namespace Voice
 		// /health ответил 200.
 		bool Alive() const;
 
-		// Поднимает службу по autoStart и ждёт, пока она ответит на /health.
+		// Поднимает службу и ждёт, пока она ответит на /health.
 		void Launch() const;
 
 	private:
-		const Model& _model;
-		Endpoint     _where;
+		const ServiceSettings& _settings;
+		Endpoint               _where;
 	};
 }

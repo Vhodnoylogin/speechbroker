@@ -25,7 +25,8 @@ namespace Voice
 	namespace
 	{
 		// Связь между результатами разных моделей и перевод номеров между
-		// службой и мостом. Одно состояние на все потоки опроса, под одним замком.
+		// службой и мостом. Состояние одно, под одним замком: поток опроса
+		// теперь один, но озвучка ходит из своего, и замок остаётся нужен.
 		//
 		// Пока у источника звука нет общего номера куска, результаты разных моделей
 		// связываются по времени: точный ответ, пришедший вскоре после
@@ -36,12 +37,12 @@ namespace Voice
 		// адаптер - единственный, кто знает обе стороны, и держать эту карту
 		// где-либо ещё значило бы заставить одну из сторон знать про другую.
 		//
-		// Перевод - отдельный на модель. Счётчик номеров у каждой службы свой,
+		// Перевод - отдельный на модель. Счётчик кусков у каждой модели свой,
 		// и при двух моделях сразу - «быстрая плюс точная», ради чего адаптер
 		// и заведён, - их номера сталкивались бы в одной карте: запись одной
-		// службы перекрывала бы запись другой, а «старейшей» считалась бы
-		// та, чей счётчик меньше. Поглощение всегда ссылается на куски той же
-		// службы, так что чужую карту искать не надо.
+		// перекрывала бы запись другой, а «старейшей» считалась бы та, чей
+		// счётчик меньше. Поглощение всегда ссылается на куски той же модели,
+		// так что чужую карту искать не надо.
 		class Correlation
 		{
 		public:
@@ -78,10 +79,11 @@ namespace Voice
 				return 0;
 			}
 
-			void Remember(const Model& a_model, std::int32_t a_serviceId, std::int32_t a_bridgeId)
+			void Remember(const std::string& a_modelId, bool a_fast, std::int32_t a_serviceId,
+				std::int32_t a_bridgeId)
 			{
 				std::scoped_lock lock(_lock);
-				if (a_model.fast) {
+				if (a_fast) {
 					_lastPreliminary = a_bridgeId;
 					_lastPreliminaryAt = std::chrono::steady_clock::now();
 				}
@@ -94,7 +96,7 @@ namespace Voice
 				// растут, так что в упорядоченной карте старейший всегда первый.
 				// Предел ноль и меньше - без предела.
 				if (a_serviceId != 0) {
-					auto& map = _serviceToBridge[a_model.id];
+					auto& map = _serviceToBridge[a_modelId];
 					map[a_serviceId] = a_bridgeId;
 					const auto limit = Config::Get().idMapLimit;
 					while (limit > 0 && map.size() > static_cast<std::size_t>(limit)) {
@@ -113,7 +115,7 @@ namespace Voice
 
 		Correlation g_correlation;
 
-		void PushResult(const Model& a_model, const nlohmann::json& a_item)
+		void PushResult(const nlohmann::json& a_item)
 		{
 			auto& bridge = Bridge::Get();
 			if (!bridge.Ready()) {
@@ -123,16 +125,27 @@ namespace Voice
 			const auto text = a_item.value("text", std::string{});
 			const auto engine = a_item.value("engine", std::string{});
 
+			// Кто узнал реплику, говорит служба; черновик это или окончательный
+			// ответ, знает листок этой модели. Неизвестное имя - не молчаливый
+			// случай: значит, служба грузит модель, о которой в сборке нет мода,
+			// и разбираться с этим надо глазами.
+			const auto* model = Config::Get().Find(engine);
+			if (!model) {
+				SKSE::log::warn("служба вернула ответ модели «{}», которой нет среди "
+				                "установленных - считаю окончательным", engine);
+			}
+			const bool fast = model && model->fast;
+
 			EnvoyAPI::UtteranceIn in{};
 			in.text = text.c_str();
-			in.language = a_model.language.c_str();
+			in.language = model ? model->language.c_str() : "";
 			in.engine = engine.c_str();
 			in.channel = "";
 			in.score = a_item.value("score", 0.0f);
 			in.margin = a_item.value("margin", 0.0f);
 			in.latencyMs = a_item.value("ms", 0);
 			in.durationMs = 0;
-			in.isFinal = !a_model.fast;
+			in.isFinal = !fast;
 
 			// --- третья версия контракта ----------------------------------------
 			// Служба на новом движке отдаёт не целую фразу после молчания, а куски
@@ -147,25 +160,25 @@ namespace Voice
 
 			std::vector<std::int32_t> swallowed;
 			if (a_item.contains("supersedes")) {
-				swallowed = g_correlation.Translate(a_model.id, a_item["supersedes"]);
+				swallowed = g_correlation.Translate(engine, a_item["supersedes"]);
 			}
 			if (!swallowed.empty()) {
 				in.supersedes = swallowed.data();
 				in.supersedesCount = static_cast<std::int32_t>(swallowed.size());
 			}
 
-			if (!a_model.fast) {
+			if (!fast) {
 				in.refinesId = g_correlation.TakePreliminary(
 					std::chrono::milliseconds(Config::Get().correlateMs));
 			}
 
 			const auto id = bridge.PushUtterance(in);
 			if (id == 0) {
-				SKSE::log::warn("мост не принял реплику от модели {}", a_model.id);
+				SKSE::log::warn("мост не принял реплику от модели {}", engine);
 				return;
 			}
 
-			g_correlation.Remember(a_model, a_item.value("id", 0), id);
+			g_correlation.Remember(engine, fast, a_item.value("id", 0), id);
 
 			if (!swallowed.empty()) {
 				SKSE::log::info("реплика {} поглощает {} прежних, завершённость {:.2f}",
@@ -174,19 +187,19 @@ namespace Voice
 		}
 	}
 
-	void PollModel(const Model& a_model)
+	void PollService()
 	{
 		const auto&   config = Config::Get();
-		const Service service(a_model);
+		const Service service;
 		const auto&   ep = service.Where();
-		const auto    timeout = a_model.listenTimeoutSec;
+		const auto    timeout = config.service.listenTimeoutSec;
 		int           since = 0;
 
 		// Два разных исхода, и в журнале они обязаны различаться: иначе по нему
 		// не понять, проверили мы самостоятельный запуск службы или подключились
 		// к поднятой заранее руками.
 		if (service.Alive()) {
-			SKSE::log::info("модель {}: уже поднята, подключаюсь к ней", a_model.id);
+			SKSE::log::info("служба уже поднята, подключаюсь к ней");
 		} else {
 			service.Launch();
 		}
@@ -205,7 +218,7 @@ namespace Voice
 			client.set_read_timeout(timeout + config.listenGraceSec, 0);
 			const auto path = "/listen?since=" + std::to_string(since) +
 			                  "&timeout=" + std::to_string(timeout);
-			client.set_default_headers({ { Service::kPass, a_model.token } });
+			client.set_default_headers({ { Service::kPass, config.service.token } });
 			auto res = client.Get(path);
 			if (!res || res->status != 200) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(config.retryDelayMs));
@@ -216,7 +229,7 @@ namespace Voice
 				auto body = nlohmann::json::parse(res->body);
 				for (const auto& item : body.value("utterances", nlohmann::json::array())) {
 					since = std::max(since, item.value("id", 0));
-					PushResult(a_model, item);
+					PushResult(item);
 				}
 			} catch (const std::exception& e) {
 				// Пауза здесь обязательна. На пути "не 200" она была, а на пути
@@ -224,7 +237,7 @@ namespace Voice
 				// порт и отвечающая мгновенно, разгоняла этот цикл до предела:
 				// ядро под нагрузкой и тысячи строк в журнал в секунду, прямо
 				// во время игры.
-				SKSE::log::warn("модель {}: ответ не разобран - {}", a_model.id, e.what());
+				SKSE::log::warn("ответ службы не разобран - {}", e.what());
 				std::this_thread::sleep_for(std::chrono::milliseconds(config.retryDelayMs));
 			}
 		}

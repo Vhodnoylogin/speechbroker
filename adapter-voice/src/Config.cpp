@@ -14,6 +14,7 @@ namespace Voice
 {
 	namespace
 	{
+		constexpr auto kHome = LR"(Data\SKSE\Plugins\envoy\adapters\voice)";
 		constexpr auto kConfigPath = LR"(Data\SKSE\Plugins\envoy\adapters\voice\envoy-voice.json)";
 
 		// Папка, куда каждый мод-модель кладёт свой листок. Имя файла значения
@@ -22,15 +23,10 @@ namespace Voice
 		// система, и два запуска давали один и тот же порядок.
 		constexpr auto kModelsDir = LR"(Data\SKSE\Plugins\envoy\adapters\voice\models)";
 
-		// Путь из листка модели считается от папки самого листка. Так мод-модель,
-		// привезшая свою службу, работает у любого человека: ей незачем знать,
-		// на каком диске стоит игра.
-		//
-		// Абсолютный путь и любой выход за папку моделей ОТКЛОНЯЮТСЯ, и это
-		// главная защита всей затеи. Листок - это пятнадцать строк json без
-		// единой библиотеки, положить его в игру может любой мод, а adapter
-		// по нему запускает программу. Без этого правила "мод-модель" была бы
-		// способом запустить что угодно у любого, кто её поставил.
+		// Путь из настроек, если он относительный, считается от папки адаптера,
+		// и выйти за неё нельзя. Адаптер запускает СВОЮ службу, которая едет
+		// внутри его же мода; возможность указать сюда что угодно означала бы,
+		// что подменивший файл настроек запускает у игрока любую программу.
 		//
 		// Пустая строка на выходе означает отказ.
 		std::string ResolveInside(const std::string& a_path, const std::filesystem::path& a_base)
@@ -44,9 +40,9 @@ namespace Voice
 			}
 			const auto full = (a_base / given).lexically_normal();
 			const auto root = a_base.lexically_normal();
-			// lexically_relative даёт ".." в начале ровно тогда, когда путь
-			// ушёл выше корня. Сравнение строк здесь не годится: "models-evil"
-			// начинается с "models".
+			// lexically_relative даёт ".." в начале ровно тогда, когда путь ушёл
+			// выше корня. Сравнение строк здесь не годится: "voice-evil"
+			// начинается с "voice".
 			const auto rel = full.lexically_relative(root);
 			if (rel.empty() || *rel.begin() == "..") {
 				return {};
@@ -54,13 +50,12 @@ namespace Voice
 			return full.string();
 		}
 
-		// Служба обязана жить на этой же машине. Распознанная речь и текст,
-		// который игра просит озвучить, - это всё, что игрок говорит и слышит;
-		// чужой хост в листке означал бы, что установка "голосового мода"
-		// молча включает пересылку сказанного наружу.
+		// Служба обязана жить на этой же машине. Через неё проходит всё, что
+		// игрок говорит и слышит; чужой хост в настройках означал бы, что
+		// установка голосового мода молча включает пересылку сказанного наружу.
 		bool Loopback(const std::string& a_url)
 		{
-			auto rest = a_url;
+			auto       rest = a_url;
 			const auto scheme = rest.find("://");
 			if (scheme != std::string::npos) {
 				rest = rest.substr(scheme + 3);
@@ -73,8 +68,7 @@ namespace Voice
 			if (colon != std::string::npos && rest.find(']') == std::string::npos) {
 				rest = rest.substr(0, colon);
 			}
-			return rest == "127.0.0.1" || rest == "localhost" || rest == "::1" ||
-			       rest == "[::1]";
+			return rest == "127.0.0.1" || rest == "localhost" || rest == "::1" || rest == "[::1]";
 		}
 
 		// Секрет на сессию. Случайность нужна не ради стойкости шифра, а ради
@@ -82,10 +76,10 @@ namespace Voice
 		// программу, занявшую порт.
 		std::string MakeToken()
 		{
-			std::random_device      source;
+			std::random_device                 source;
 			std::uniform_int_distribution<int> digit(0, 15);
-			constexpr char          alphabet[] = "0123456789abcdef";
-			std::string             out;
+			constexpr char                     alphabet[] = "0123456789abcdef";
+			std::string                        out;
 			out.reserve(32);
 			for (int i = 0; i < 32; ++i) {
 				out.push_back(alphabet[digit(source)]);
@@ -93,27 +87,24 @@ namespace Voice
 			return out;
 		}
 
-		// Отказ здесь - это отказ поднимать службу, а не отказ от модели:
-		// служба может быть уже запущена человеком, и тогда модель исправна.
-		std::optional<AutoStart> ReadAutoStart(const nlohmann::json& a_doc,
-			const std::filesystem::path& a_base, const std::string& a_id)
+		std::optional<AutoStart> ReadAutoStart(const nlohmann::json& a_doc)
 		{
-			AutoStart out;
+			const std::filesystem::path home{ kHome };
+			AutoStart                   out;
 			out.enabled = a_doc.value("enabled", out.enabled);
 
 			const auto exec = a_doc.value("exec", std::string{});
-			out.exec = ResolveInside(exec, a_base);
+			out.exec = ResolveInside(exec, home);
 			if (!exec.empty() && out.exec.empty()) {
-				SKSE::log::error("модель {}: exec «{}» выходит за папку моделей - "
-				                 "запускать не буду. Мод-модель вправе запускать только то, "
-				                 "что привезла с собой", a_id, exec);
+				SKSE::log::error("служба: exec «{}» выходит за папку адаптера - запускать не буду",
+					exec);
 				return std::nullopt;
 			}
 
 			const auto dir = a_doc.value("workingDir", std::string{});
-			out.workingDir = ResolveInside(dir, a_base);
+			out.workingDir = ResolveInside(dir, home);
 			if (!dir.empty() && out.workingDir.empty()) {
-				SKSE::log::error("модель {}: workingDir «{}» выходит за папку моделей", a_id, dir);
+				SKSE::log::error("служба: workingDir «{}» выходит за папку адаптера", dir);
 				return std::nullopt;
 			}
 
@@ -122,7 +113,6 @@ namespace Voice
 			out.pollSec = a_doc.value("pollSec", out.pollSec);
 			// Доводы не трогаем. Их разрешает сама служба от своей рабочей
 			// папки, а среди них бывают не пути вовсе: "--port", "8931".
-			// Разрешение превратило бы такой довод в путь и сломало запуск.
 			for (const auto& arg : a_doc.value("args", nlohmann::json::array())) {
 				out.args.push_back(arg.get<std::string>());
 			}
@@ -136,16 +126,11 @@ namespace Voice
 			out.id = a_doc.value("id", out.id);
 			out.name = a_doc.value("name", out.id);
 			out.enabled = a_doc.value("enabled", out.enabled);
-			// У выключенной модели дальше не читаем: кривое поле в записи,
-			// которой не пользуются, не должно останавливать адаптер целиком.
-			// Так было и прежде, когда поля читались в момент использования.
 			if (!out.enabled) {
 				return out;
 			}
 			out.fast = a_doc.value("class", std::string{}) == "fast";
-			out.url = a_doc.value("url", out.url);
 			out.language = a_doc.value("language", out.language);
-			out.token = MakeToken();
 
 			// Что модель умеет, она объявляет сама. Умолчание - только слух:
 			// распознавание есть у всякой модели, ради которой этот адаптер
@@ -153,11 +138,6 @@ namespace Voice
 			const auto provides = a_doc.value("provides", std::string{ "asr" });
 			out.hears = provides.find("asr") != std::string::npos;
 			out.speaks = provides.find("tts") != std::string::npos;
-
-			out.listenTimeoutSec = a_doc.value("listenTimeoutSec", out.listenTimeoutSec);
-			if (a_doc.contains("autoStart")) {
-				out.autoStart = ReadAutoStart(a_doc["autoStart"], a_file.parent_path(), out.id);
-			}
 			return out;
 		}
 
@@ -165,6 +145,10 @@ namespace Voice
 		// листок привозит ЧУЖОЙ мод, и его ошибка не должна лишать человека
 		// моделей, которые в порядке. Своим файлом настроек адаптер по-прежнему
 		// строг - там ошибка наша.
+		//
+		// Веса моделей адаптер не читает и не проверяет: их грузит служба,
+		// и правило «веса лежат внутри своего мода» стережёт она же. Двух
+		// проверяющих у одного правила быть не должно.
 		std::vector<Model> ReadModels()
 		{
 			std::error_code ec;
@@ -196,12 +180,6 @@ namespace Voice
 							file.filename().string());
 						continue;
 					}
-					if (model.enabled && !Loopback(model.url)) {
-						SKSE::log::error("модель {} ({}): url «{}» ведёт не на эту машину - "
-						                 "отклоняю целиком. Через эту службу проходит всё, что "
-						                 "игрок говорит и слышит", model.id, model.source, model.url);
-						continue;
-					}
 					const auto twin = std::find_if(out.begin(), out.end(),
 						[&](const Model& a_seen) { return a_seen.id == model.id; });
 					if (twin != out.end()) {
@@ -230,16 +208,23 @@ namespace Voice
 		return Mutable();
 	}
 
+	const Model* Config::Find(const std::string& a_engineId) const
+	{
+		for (const auto& model : models) {
+			if (model.id == a_engineId) {
+				return &model;
+			}
+		}
+		return nullptr;
+	}
+
 	const Model* Config::SpeakingModel() const
 	{
 		for (const auto& model : models) {
 			if (!model.enabled || !model.speaks) {
 				continue;
 			}
-			if (speakModel.empty()) {
-				return &model;
-			}
-			if (model.id == speakModel) {
+			if (speakModel.empty() || model.id == speakModel) {
 				return &model;
 			}
 		}
@@ -264,6 +249,15 @@ namespace Voice
 			self.adapterId = adapter.value("id", self.adapterId);
 			self.adapterName = adapter.value("name", self.adapterName);
 
+			const auto service = doc.value("service", nlohmann::json::object());
+			self.service.url = service.value("url", self.service.url);
+			self.service.listenTimeoutSec =
+				service.value("listenTimeoutSec", self.service.listenTimeoutSec);
+			if (service.contains("autoStart")) {
+				self.service.autoStart = ReadAutoStart(service["autoStart"]);
+			}
+			self.service.token = MakeToken();
+
 			self.speakModel = doc.value("speakModel", self.speakModel);
 			self.correlateMs = doc.value("correlateMs", self.correlateMs);
 			self.retryDelayMs = doc.value("retryDelayMs", self.retryDelayMs);
@@ -274,6 +268,12 @@ namespace Voice
 			self.idMapLimit = doc.value("idMapLimit", self.idMapLimit);
 		} catch (const std::exception& e) {
 			SKSE::log::error("настройки не разобраны: {}", e.what());
+			return false;
+		}
+
+		if (!Loopback(self.service.url)) {
+			SKSE::log::error("служба по адресу «{}» ведёт не на эту машину - работать не буду",
+				self.service.url);
 			return false;
 		}
 

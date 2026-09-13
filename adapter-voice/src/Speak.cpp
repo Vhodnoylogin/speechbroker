@@ -26,12 +26,15 @@ namespace Voice
 			return;
 		}
 
-		const Service   service(*model);
+		const Service   service;
 		const auto&     ep = service.Where();
 		httplib::Client client(ep.host, ep.port);
 		client.set_read_timeout(config.sayTimeoutSec, 0);
-		client.set_default_headers({ { Service::kPass, model->token } });
-		nlohmann::json payload{ { "text", a_text } };
+		client.set_default_headers({ { Service::kPass, config.service.token } });
+		// Кем говорить, решает адаптер, а не служба: у неё моделей может быть
+		// несколько, и выбор - наше дело, потому что это мы знаем, что объявил
+		// каждый установленный мод.
+		nlohmann::json payload{ { "text", a_text }, { "model", model->id } };
 		auto           res = client.Post("/say", payload.dump(), "application/json");
 
 		const bool ok = res && res->status == 200;

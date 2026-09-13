@@ -46,36 +46,35 @@ namespace Voice
 		return out;
 	}
 
-	Service::Service(const Model& a_model) :
-		_model(a_model),
-		_where(Endpoint::Parse(a_model.url))
+	Service::Service() :
+		_settings(Config::Get().service),
+		_where(Endpoint::Parse(Config::Get().service.url))
 	{}
 
 	bool Service::Alive() const
 	{
 		httplib::Client client(_where.host, _where.port);
 		client.set_connection_timeout(Config::Get().healthTimeoutSec, 0);
-		client.set_default_headers({ { kPass, _model.token } });
+		client.set_default_headers({ { kPass, _settings.token } });
 		auto res = client.Get("/health");
 		return res && res->status == 200;
 	}
 
 	void Service::Launch() const
 	{
-		const auto& id = _model.id;
-		if (!_model.autoStart) {
+		if (!_settings.autoStart) {
 			return;
 		}
-		const auto& start = *_model.autoStart;
+		const auto& start = *_settings.autoStart;
 		if (!start.enabled || start.exec.empty()) {
-			SKSE::log::warn("модель {}: не отвечает, а поднимать её не разрешено", id);
+			SKSE::log::warn("служба не отвечает, а поднимать её не разрешено");
 			return;
 		}
 
 		// CreateProcessW не умеет запускать .cmd и .bat напрямую - это не
-		// программы, а доводы для cmd.exe. Мод-модель почти всегда привозит
-		// именно такой запускатель: он короткий, его видно глазами и он
-		// переживает переезд игры на другой диск.
+		// программы, а доводы для cmd.exe. Адаптер везёт свою службу именно
+		// таким запускателем: он короткий, его видно глазами и он переживает
+		// переезд игры на другой диск.
 		const auto  script = start.exec.ends_with(".cmd") || start.exec.ends_with(".bat");
 		std::string command = script ? "cmd.exe /c \"" + start.exec + "\"" :
 		                               "\"" + start.exec + "\"";
@@ -97,14 +96,14 @@ namespace Voice
 		// о нём не знает, довод не заметит - доводов, которых она не понимает,
 		// она не разбирает вовсе. Поэтому правило вводится без разрыва
 		// совместимости, а не когда-нибудь потом.
-		command += " --envoy-token " + _model.token;
+		command += " --envoy-token " + _settings.token;
 
 		auto wideDir = Widen(start.workingDir);
 		STARTUPINFOW startup{};
 		startup.cb = sizeof(startup);
 		PROCESS_INFORMATION info{};
 
-		SKSE::log::info("модель {}: поднимаю - {}", id, command);
+		SKSE::log::info("служба: поднимаю - {}", command);
 
 		// Служба обязана выйти из объекта задания, в котором MO2 держит игру.
 		// MO2 считает игру запущенной, пока не опустеет всё дерево процессов, а
@@ -120,10 +119,10 @@ namespace Voice
 
 		if (!spawn(CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB)) {
 			const auto why = ::GetLastError();
-			SKSE::log::warn("модель {}: не выпустили из задания (код {}), запускаю внутри него - "
-			                "MO2 будет считать игру запущенной, пока служба жива", id, why);
+			SKSE::log::warn("служба: не выпустили из задания (код {}), запускаю внутри него - "
+			                "MO2 будет считать игру запущенной, пока она жива", why);
 			if (!spawn(CREATE_NO_WINDOW)) {
-				SKSE::log::error("модель {}: запустить не удалось, код {}", id, ::GetLastError());
+				SKSE::log::error("служба: запустить не удалось, код {}", ::GetLastError());
 				return;
 			}
 		}
@@ -134,11 +133,11 @@ namespace Voice
 		                      std::chrono::seconds(start.waitSec);
 		while (std::chrono::steady_clock::now() < deadline) {
 			if (Alive()) {
-				SKSE::log::info("модель {}: поднялась", id);
+				SKSE::log::info("служба поднялась");
 				return;
 			}
 			std::this_thread::sleep_for(std::chrono::seconds(start.pollSec));
 		}
-		SKSE::log::warn("модель {}: не ответила за отведённое время", id);
+		SKSE::log::warn("служба не ответила за отведённое время");
 	}
 }
