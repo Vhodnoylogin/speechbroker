@@ -1,5 +1,7 @@
 # EnvoyVoiceAdapter - the sound and the models
 
+*In Russian: [README.ru.md](README.ru.md). English is the source language; the other is a translation.*
+
 The part of Envoy that answers for the voice: it **owns the microphone**, deals what it hears out
 to the installed models and carries their answers into the bridge.
 
@@ -110,12 +112,19 @@ adapter does not come up at all. Somebody else listing of a model, on the contra
 gently: a listing that does not parse is skipped with a line in the log while the other models
 work. A person who installed three model mods must not be left without all three because of one.
 
-## Text on screen
+## The text of the adapter
 
-The adapter has no window and no notices: everything it says goes into the log, and the log stays
-English on purpose - its lines travel into other people's bug reports. What the player reads is
-said by the bridge and by the subscribers, and it goes through the translation files described in
-the [description of the bridge](../bridge/README.md).
+The adapter has no window and no notices: everything it says goes into the log. The log is
+translated like everything else in Envoy - not one line is written in the code, there are keys
+there, and the text lives in `Interface\Translations\EnvoyVoiceAdapter_<language>.txt`. The
+reading is done by `envoy-loc.h` out of the SDK of the bridge: the adapter is a library of its own
+and writes its first lines before it has met the bridge.
+
+What stays as it came is **the recognised speech**: what a person said is data and not a message,
+and it reaches the log in the language it was said in.
+
+The language comes from the `language` key in `envoy-voice.json`; `auto` is the language of the
+game itself. English ships inside the mod, every other language as a mod of its own.
 
 ## Building
 

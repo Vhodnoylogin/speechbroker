@@ -20,6 +20,7 @@
     }
   },
 
+  "language": "auto",
   "speakModel": "",
 
   "correlateMs": 2500,

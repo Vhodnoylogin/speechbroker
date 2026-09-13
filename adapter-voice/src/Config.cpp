@@ -1,4 +1,5 @@
 #include "Config.h"
+#include "Loc.h"
 
 #include <RE/Skyrim.h>
 #include <SKSE/SKSE.h>
@@ -98,7 +99,7 @@ namespace Voice
 			const auto exec = a_doc.value("exec", std::string{});
 			out.exec = ResolveInside(exec, home);
 			if (!exec.empty() && out.exec.empty()) {
-				SKSE::log::error("service: exec '{}' leaves the folder of the adapter - I will not start it",
+				Loc::Error("$ENVOYVOICE_LOG_EXEC_OUTSIDE",
 					exec);
 				return std::nullopt;
 			}
@@ -106,7 +107,7 @@ namespace Voice
 			const auto dir = a_doc.value("workingDir", std::string{});
 			out.workingDir = ResolveInside(dir, home);
 			if (!dir.empty() && out.workingDir.empty()) {
-				SKSE::log::error("service: workingDir '{}' leaves the folder of the adapter", dir);
+				Loc::Error("$ENVOYVOICE_LOG_WORKDIR_OUTSIDE", dir);
 				return std::nullopt;
 			}
 
@@ -178,20 +179,20 @@ namespace Voice
 					stream >> doc;
 					auto model = ReadModel(doc, file);
 					if (model.id.empty()) {
-						SKSE::log::error("model out of {}: no id key - skipping it",
+						Loc::Error("$ENVOYVOICE_LOG_MODEL_NO_ID",
 							file.filename().string());
 						continue;
 					}
 					const auto twin = std::find_if(out.begin(), out.end(),
 						[&](const Model& a_seen) { return a_seen.id == model.id; });
 					if (twin != out.end()) {
-						SKSE::log::error("model {} is declared twice: {} and {} - taking the first",
+						Loc::Error("$ENVOYVOICE_LOG_MODEL_TWICE",
 							model.id, twin->source, model.source);
 						continue;
 					}
 					out.push_back(std::move(model));
 				} catch (const std::exception& e) {
-					SKSE::log::error("the model out of {} did not parse: {} - skipping it",
+					Loc::Error("$ENVOYVOICE_LOG_MODEL_BROKEN",
 						file.filename().string(), e.what());
 				}
 			}
@@ -237,7 +238,7 @@ namespace Voice
 	{
 		std::error_code ec;
 		if (!std::filesystem::exists(kConfigPath, ec)) {
-			SKSE::log::error("no settings file: {}", std::filesystem::path{ kConfigPath }.string());
+			Loc::Error("$ENVOYVOICE_LOG_NO_SETTINGS", std::filesystem::path{ kConfigPath }.string());
 			return false;
 		}
 
@@ -261,6 +262,7 @@ namespace Voice
 			self.service.token = MakeToken();
 
 			self.speakModel = doc.value("speakModel", self.speakModel);
+			self.language = doc.value("language", self.language);
 			self.correlateMs = doc.value("correlateMs", self.correlateMs);
 			self.retryDelayMs = doc.value("retryDelayMs", self.retryDelayMs);
 			self.healthTimeoutSec = doc.value("healthTimeoutSec", self.healthTimeoutSec);
@@ -269,12 +271,12 @@ namespace Voice
 			self.sayTimeoutSec = doc.value("sayTimeoutSec", self.sayTimeoutSec);
 			self.idMapLimit = doc.value("idMapLimit", self.idMapLimit);
 		} catch (const std::exception& e) {
-			SKSE::log::error("the settings did not parse: {}", e.what());
+			Loc::Error("$ENVOYVOICE_LOG_SETTINGS_BROKEN", e.what());
 			return false;
 		}
 
 		if (!Loopback(self.service.url)) {
-			SKSE::log::error("the service at '{}' does not point at this machine - I will not work",
+			Loc::Error("$ENVOYVOICE_LOG_NOT_LOOPBACK",
 				self.service.url);
 			return false;
 		}

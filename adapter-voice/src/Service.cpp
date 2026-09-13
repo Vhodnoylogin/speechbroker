@@ -1,4 +1,5 @@
 #include "Service.h"
+#include "Loc.h"
 
 #include <RE/Skyrim.h>
 #include <SKSE/SKSE.h>
@@ -67,7 +68,7 @@ namespace Voice
 		}
 		const auto& start = *_settings.autoStart;
 		if (!start.enabled || start.exec.empty()) {
-			SKSE::log::warn("the service does not answer, and starting it is not allowed");
+			Loc::Warn("$ENVOYVOICE_LOG_SERVICE_SILENT_NO_START");
 			return;
 		}
 
@@ -104,7 +105,7 @@ namespace Voice
 		startup.cb = sizeof(startup);
 		PROCESS_INFORMATION info{};
 
-		SKSE::log::info("service: starting it - {}", command);
+		Loc::Info("$ENVOYVOICE_LOG_SERVICE_STARTING", command);
 
 		// The service has to leave the job object MO2 keeps the game in. MO2 counts
 		// the game as running until the whole tree of processes is empty, and the
@@ -121,10 +122,9 @@ namespace Voice
 
 		if (!spawn(CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB)) {
 			const auto why = ::GetLastError();
-			SKSE::log::warn("service: not let out of the job (code {}), starting it inside - "
-			                "MO2 will count the game as running for as long as it lives", why);
+			Loc::Warn("$ENVOYVOICE_LOG_SERVICE_IN_JOB", why);
 			if (!spawn(CREATE_NO_WINDOW)) {
-				SKSE::log::error("service: could not start it, code {}", ::GetLastError());
+				Loc::Error("$ENVOYVOICE_LOG_SERVICE_START_FAILED", ::GetLastError());
 				return;
 			}
 		}
@@ -135,11 +135,11 @@ namespace Voice
 		                      std::chrono::seconds(start.waitSec);
 		while (std::chrono::steady_clock::now() < deadline) {
 			if (Alive()) {
-				SKSE::log::info("the service is up");
+				Loc::Info("$ENVOYVOICE_LOG_SERVICE_UP");
 				return;
 			}
 			std::this_thread::sleep_for(std::chrono::seconds(start.pollSec));
 		}
-		SKSE::log::warn("the service did not answer within the time allowed");
+		Loc::Warn("$ENVOYVOICE_LOG_SERVICE_TIMEOUT");
 	}
 }

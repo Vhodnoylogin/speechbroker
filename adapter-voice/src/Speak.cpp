@@ -1,4 +1,5 @@
 #include "Speak.h"
+#include "Loc.h"
 
 #include "Bridge.h"
 #include "Config.h"
@@ -21,7 +22,7 @@ namespace Voice
 		// settings or the first suitable one was taken is not our concern here.
 		const auto* model = config.SpeakingModel();
 		if (!model) {
-			SKSE::log::warn("speech {}: not one installed model can speak", a_speechId);
+			Loc::Warn("$ENVOYVOICE_LOG_NO_SPEAKER", a_speechId);
 			bridge.PushSpeechDone(a_speechId, false, false);
 			return;
 		}
@@ -38,8 +39,8 @@ namespace Voice
 		auto           res = client.Post("/say", payload.dump(), "application/json");
 
 		const bool ok = res && res->status == 200;
-		SKSE::log::info("speech {} by model {}: {}", a_speechId, model->id,
-			ok ? "said" : "did not work");
+		Loc::Info("$ENVOYVOICE_LOG_SPOKE", a_speechId, model->id,
+			Loc::Get(ok ? "$ENVOYVOICE_WORD_SAID" : "$ENVOYVOICE_WORD_DID_NOT_WORK"));
 		bridge.PushSpeechDone(a_speechId, ok, false);
 	}
 }

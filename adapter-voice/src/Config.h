@@ -93,6 +93,12 @@ namespace Voice
 		std::vector<Model> models;
 		std::string        speakModel;
 
+		// Which language the adapter writes its log in. "auto" is the language the
+		// game runs in. It is a key of its own and not borrowed from the bridge
+		// because the adapter is a DLL of its own and writes its first lines before
+		// it has met the bridge; a player who pins a language does it in both files.
+		std::string        language{ "auto" };
+
 		int correlateMs{ 2500 };     // an accurate answer in this window after a draft counts as its refinement
 		int retryDelayMs{ 2000 };    // the pause after a failed /listen
 		int healthTimeoutSec{ 2 };   // how long to wait for a connection on /health

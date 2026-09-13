@@ -25,6 +25,7 @@
 
 #include "Bridge.h"
 #include "Config.h"
+#include "Loc.h"
 #include "Listen.h"
 #include "Speak.h"
 
@@ -37,6 +38,33 @@
 namespace
 {
 	using namespace Voice;
+
+	// The only path written into the code besides the settings file: where the game
+	// keeps its translations. It is not a setting - the engine fixes it.
+	constexpr auto kTranslations = LR"(Data\Interface\Translations)";
+
+	// Which language to write in. "auto" means the one the game itself runs in.
+	//
+	// Asking the engine rather than reading Skyrim.ini ourselves matters: which of
+	// the several ini files wins is decided by the launcher, by MO2 and by whichever
+	// the player last edited, and the engine has settled all of that by the time we
+	// ask.
+	std::string ResolveLanguage(const std::string& a_asked)
+	{
+		if (!a_asked.empty() && a_asked != "auto") {
+			return a_asked;
+		}
+		if (auto* ini = RE::INISettingCollection::GetSingleton()) {
+			if (auto* setting = ini->GetSetting("sLanguage:General")) {
+				if (setting->GetType() == RE::Setting::Type::kString) {
+					if (const auto* value = setting->GetString(); value && *value) {
+						return value;
+					}
+				}
+			}
+		}
+		return "english";
+	}
 
 	void InitLog()
 	{
@@ -58,11 +86,13 @@ namespace
 		switch (a_job.kind) {
 		case EnvoyAPI::kJobListen:
 			Bridge::Get().SetListening(a_job.active);
-			SKSE::log::info("bridge: {} ({})", a_job.active ? "I am the source" : "I am in reserve",
+			Voice::Loc::Info("$ENVOYVOICE_LOG_BRIDGE_ROLE",
+				Voice::Loc::Get(a_job.active ? "$ENVOYVOICE_WORD_I_AM_SOURCE"
+				                             : "$ENVOYVOICE_WORD_I_AM_RESERVE"),
 				a_job.text ? a_job.text : "");
 			break;
 		case EnvoyAPI::kJobVocabulary:
-			SKSE::log::info("vocabulary of the subscribers: {} phrases", a_job.phraseCount);
+			Voice::Loc::Info("$ENVOYVOICE_LOG_VOCABULARY", a_job.phraseCount);
 			break;
 		case EnvoyAPI::kJobSpeak:
 			if (a_job.text) {
@@ -76,7 +106,7 @@ namespace
 		case EnvoyAPI::kJobAsk:
 			// The voice adapter holds no language models: that capability is declared by
 			// another adapter, and the bridge will send the request there.
-			SKSE::log::info("a request to {} is not addressed to me", a_job.service ? a_job.service : "?");
+			Voice::Loc::Info("$ENVOYVOICE_LOG_NOT_FOR_ME", a_job.service ? a_job.service : "?");
 			break;
 		default:
 			break;
@@ -98,25 +128,25 @@ namespace
 		info.contract = EnvoyAPI::kInterfaceVersion;
 
 		if (!bridge.Register(info, OnJob, nullptr)) {
-			SKSE::log::error("the bridge refused to register us");
+			Voice::Loc::Error("$ENVOYVOICE_LOG_REGISTER_REFUSED");
 			return;
 		}
-		SKSE::log::info("registered at the bridge as {}", config.adapterId);
+		Voice::Loc::Info("$ENVOYVOICE_LOG_REGISTERED", config.adapterId);
 
 		if (config.models.empty()) {
 			// This is not a breakage: a model is installed as a separate mod, and a
 			// person may have installed only the adapter. It has to be said plainly, or a
 			// silent microphone looks like a fault of ours.
-			SKSE::log::warn("not a single model is installed - there is nothing to recognise with. "
-			                "A model is installed as a separate mod and puts its listing "
-			                "into Data/SKSE/Plugins/envoy/adapters/voice/models");
+			Voice::Loc::Warn("$ENVOYVOICE_LOG_NO_MODELS");
 			return;
 		}
 
 		for (const auto& model : config.models) {
-			SKSE::log::info("model {} ({}) out of {}: {}{}", model.id, model.name, model.source,
-				model.enabled ? (model.fast ? "draft" : "accurate") : "switched off",
-				model.speaks ? ", can speak" : "");
+			Voice::Loc::Info("$ENVOYVOICE_LOG_MODEL", model.id, model.name, model.source,
+				Voice::Loc::Get(model.enabled
+				                    ? (model.fast ? "$ENVOYVOICE_WORD_DRAFT" : "$ENVOYVOICE_WORD_ACCURATE")
+				                    : "$ENVOYVOICE_WORD_SWITCHED_OFF"),
+				model.speaks ? Voice::Loc::Get("$ENVOYVOICE_WORD_CAN_SPEAK") : "");
 		}
 
 		// One thread: the microphone belongs to the adapter, its service is its own
@@ -124,8 +154,9 @@ namespace
 		std::thread([]() { PollService(); }).detach();
 		const auto started = std::count_if(config.models.begin(), config.models.end(),
 			[](const Voice::Model& a_model) { return a_model.enabled && a_model.hears; });
-		SKSE::log::info("models declared: {}, declaring to the bridge: {}", started,
-			config.adapterProvides.empty() ? "nothing" : config.adapterProvides);
+		Voice::Loc::Info("$ENVOYVOICE_LOG_DECLARED", started,
+			config.adapterProvides.empty() ? Voice::Loc::Get("$ENVOYVOICE_WORD_NOTHING")
+			                               : config.adapterProvides);
 	}
 
 	void OnMessage(SKSE::MessagingInterface::Message* a_message)
@@ -153,18 +184,16 @@ namespace
 		// happened, because speech did not reach the bridge at all. Compatibility
 		// made from one side is not compatibility.
 		if (bridge.Version() < EnvoyAPI::kInterfaceVersion) {
-			SKSE::log::error("the bridge is older than me: it understands contract version {}, "
-			                 "and I speak {} - I will not work",
+			Voice::Loc::Error("$ENVOYVOICE_LOG_BRIDGE_TOO_OLD",
 				bridge.Version(), EnvoyAPI::kInterfaceVersion);
 			bridge.Detach();
 			return;
 		}
 		if (bridge.Version() > EnvoyAPI::kInterfaceVersion) {
-			SKSE::log::info("the bridge is newer than me: contract version {} against my {} - "
-			                "working by mine, it will not ask me for the new fields",
+			Voice::Loc::Info("$ENVOYVOICE_LOG_BRIDGE_NEWER",
 				bridge.Version(), EnvoyAPI::kInterfaceVersion);
 		}
-		SKSE::log::info("the interface of the bridge received, version {}", bridge.Version());
+		Voice::Loc::Info("$ENVOYVOICE_LOG_INTERFACE_RECEIVED", bridge.Version());
 		Start();
 	}
 }
@@ -193,10 +222,20 @@ extern "C" __declspec(dllexport) bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadIn
 	SKSE::Init(a_skse);
 	InitLog();
 
-	SKSE::log::info("{} v{} loaded", PLUGIN_NAME, PLUGIN_VERSION);
+	// The text first, so that a mistake in the settings is legible. At this point
+	// the language can only be the one the game runs in - the file that could pin
+	// another one has not been read yet - so the table is laid again below if it
+	// turns out to name one.
+	Voice::Loc::Load(kTranslations, ResolveLanguage("auto"));
+
+	Voice::Loc::Info("$ENVOYVOICE_LOG_PLUGIN_LOADED", PLUGIN_NAME, PLUGIN_VERSION);
 	if (!Config::Load()) {
-		SKSE::log::error("I cannot work without settings");
+		Voice::Loc::Error("$ENVOYVOICE_LOG_NO_SETTINGS_FATAL");
 		return true;
+	}
+
+	if (const auto& asked = Config::Get().language; !asked.empty() && asked != "auto") {
+		Voice::Loc::Load(kTranslations, ResolveLanguage(asked));
 	}
 
 	// The bridge broadcasts the interface under its own name - that is what we

@@ -1,4 +1,5 @@
 #include "Listen.h"
+#include "Loc.h"
 
 #include "Bridge.h"
 #include "Service.h"
@@ -64,8 +65,7 @@ namespace Voice
 					if (found != map.end()) {
 						out.push_back(found->second);
 					} else {
-						SKSE::log::warn("model {}: piece {} was not found in the translation - "
-						                "its absorption will not reach the bridge", a_modelId, serviceId);
+						Loc::Warn("$ENVOYVOICE_LOG_PIECE_UNKNOWN", a_modelId, serviceId);
 					}
 				}
 				return out;
@@ -136,8 +136,7 @@ namespace Voice
 			// mod in the build, and that has to be looked at by eye.
 			const auto* model = Config::Get().Find(engine);
 			if (!model) {
-				SKSE::log::warn("the service returned an answer from model '{}', which is not among the "
-				                "installed ones - taking it as final", engine);
+				Loc::Warn("$ENVOYVOICE_LOG_MODEL_UNKNOWN", engine);
 			}
 			const bool fast = model && model->fast;
 
@@ -179,14 +178,14 @@ namespace Voice
 
 			const auto id = bridge.PushUtterance(in);
 			if (id == 0) {
-				SKSE::log::warn("the bridge did not take the utterance from model {}", engine);
+				Loc::Warn("$ENVOYVOICE_LOG_BRIDGE_REFUSED_UTTERANCE", engine);
 				return;
 			}
 
 			g_correlation.Remember(engine, fast, a_item.value("id", 0), id);
 
 			if (!swallowed.empty()) {
-				SKSE::log::info("utterance {} absorbs {} earlier ones, completeness {:.2f}",
+				Loc::Info("$ENVOYVOICE_LOG_ABSORBS",
 					id, swallowed.size(), in.complete);
 			}
 		}
@@ -204,7 +203,7 @@ namespace Voice
 		// there is no telling from it whether we checked that the service starts on
 		// its own or connected to one brought up by hand in advance.
 		if (service.Alive()) {
-			SKSE::log::info("the service is already up, connecting to it");
+			Loc::Info("$ENVOYVOICE_LOG_SERVICE_ALREADY_UP");
 		} else {
 			service.Launch();
 		}
@@ -244,7 +243,7 @@ namespace Voice
 				// that took the port and answered instantly drove this loop to the limit: the
 				// core under load and thousands of lines a second into the log, right in the
 				// middle of play.
-				SKSE::log::warn("the answer of the service did not parse - {}", e.what());
+				Loc::Warn("$ENVOYVOICE_LOG_ANSWER_BROKEN", e.what());
 				std::this_thread::sleep_for(std::chrono::milliseconds(config.retryDelayMs));
 			}
 		}

@@ -1,0 +1,49 @@
+# EnvoyVoiceAdapter - every line the adapter puts out, Russian.
+#
+# Translated from localization/envoyvoiceadapter.english.txt. The numbered
+# placeholders may be reordered freely, but every one of them has to appear.
+
+$ENVOYVOICE_WORD_I_AM_SOURCE	я источник
+$ENVOYVOICE_WORD_I_AM_RESERVE	я в запасе
+$ENVOYVOICE_WORD_DRAFT	черновая
+$ENVOYVOICE_WORD_ACCURATE	точная
+$ENVOYVOICE_WORD_SWITCHED_OFF	выключена
+$ENVOYVOICE_WORD_CAN_SPEAK	, умеет говорить
+$ENVOYVOICE_WORD_NOTHING	ничего
+$ENVOYVOICE_WORD_SAID	сказано
+$ENVOYVOICE_WORD_DID_NOT_WORK	не вышло
+$ENVOYVOICE_LOG_EXEC_OUTSIDE	служба: exec «{0}» выходит за папку адаптера - запускать не буду
+$ENVOYVOICE_LOG_WORKDIR_OUTSIDE	служба: workingDir «{0}» выходит за папку адаптера
+$ENVOYVOICE_LOG_MODEL_NO_ID	модель из {0}: нет ключа id - пропускаю
+$ENVOYVOICE_LOG_MODEL_TWICE	модель {0} объявлена дважды: {1} и {2} - беру первую
+$ENVOYVOICE_LOG_MODEL_BROKEN	модель из {0} не разобрана: {1} - пропускаю
+$ENVOYVOICE_LOG_NO_SETTINGS	нет файла настроек: {0}
+$ENVOYVOICE_LOG_SETTINGS_BROKEN	настройки не разобраны: {0}
+$ENVOYVOICE_LOG_NOT_LOOPBACK	служба по адресу «{0}» ведёт не на эту машину - работать не буду
+$ENVOYVOICE_LOG_PIECE_UNKNOWN	модель {0}: кусок {1} в переводе не найден - его поглощение до моста не дойдёт
+$ENVOYVOICE_LOG_MODEL_UNKNOWN	служба вернула ответ модели «{0}», которой нет среди установленных - считаю окончательным
+$ENVOYVOICE_LOG_BRIDGE_REFUSED_UTTERANCE	мост не принял реплику от модели {0}
+$ENVOYVOICE_LOG_ABSORBS	реплика {0} поглощает {1} прежних, завершённость {2:.2f}
+$ENVOYVOICE_LOG_SERVICE_ALREADY_UP	служба уже поднята, подключаюсь к ней
+$ENVOYVOICE_LOG_ANSWER_BROKEN	ответ службы не разобран - {0}
+$ENVOYVOICE_LOG_BRIDGE_ROLE	мост: {0} ({1})
+$ENVOYVOICE_LOG_VOCABULARY	словарь подписчиков: {0} фраз
+$ENVOYVOICE_LOG_NOT_FOR_ME	запрос к {0} мне не адресован
+$ENVOYVOICE_LOG_REGISTER_REFUSED	мост отказал в регистрации
+$ENVOYVOICE_LOG_REGISTERED	зарегистрирован в мосту как {0}
+$ENVOYVOICE_LOG_NO_MODELS	не установлено ни одной модели - распознавать нечем. Модель ставится отдельным модом и кладёт свой листок в Data/SKSE/Plugins/envoy/adapters/voice/models
+$ENVOYVOICE_LOG_MODEL	модель {0} ({1}) из {2}: {3}{4}
+$ENVOYVOICE_LOG_DECLARED	моделей объявлено: {0}, объявляю мосту: {1}
+$ENVOYVOICE_LOG_BRIDGE_TOO_OLD	мост старше меня: он понимает контракт версии {0}, а я говорю на {1} - работать не буду
+$ENVOYVOICE_LOG_BRIDGE_NEWER	мост новее меня: контракт версии {0} против моих {1} - работаю по своей, новых полей он у меня не спросит
+$ENVOYVOICE_LOG_INTERFACE_RECEIVED	интерфейс моста получен, версия {0}
+$ENVOYVOICE_LOG_PLUGIN_LOADED	{0} v{1} загружен
+$ENVOYVOICE_LOG_NO_SETTINGS_FATAL	без настроек работать не могу
+$ENVOYVOICE_LOG_SERVICE_SILENT_NO_START	служба не отвечает, а поднимать её не разрешено
+$ENVOYVOICE_LOG_SERVICE_STARTING	служба: поднимаю - {0}
+$ENVOYVOICE_LOG_SERVICE_IN_JOB	служба: не выпустили из задания (код {0}), запускаю внутри него - MO2 будет считать игру запущенной, пока она жива
+$ENVOYVOICE_LOG_SERVICE_START_FAILED	служба: запустить не удалось, код {0}
+$ENVOYVOICE_LOG_SERVICE_UP	служба поднялась
+$ENVOYVOICE_LOG_SERVICE_TIMEOUT	служба не ответила за отведённое время
+$ENVOYVOICE_LOG_NO_SPEAKER	озвучка {0}: ни одна установленная модель не умеет говорить
+$ENVOYVOICE_LOG_SPOKE	озвучка {0} моделью {1}: {2}

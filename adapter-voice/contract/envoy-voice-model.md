@@ -1,5 +1,7 @@
 # The contract of a model mod
 
+*In Russian: [envoy-voice-model.ru.md](envoy-voice-model.ru.md). English is the source language; the other is a translation.*
+
 This document describes what a mod has to put into the build if it adds one more model of speech
 recognition or synthesis to the `EnvoyVoiceAdapter` adapter.
 
@@ -83,11 +85,11 @@ The conversation between the adapter and its service is protected separately: th
 the loopback, the service is started only out of the folder of the adapter, and every request
 carries a one-off session secret in the `X-Envoy-Token` header. None of that concerns a model mod.
 
-## Text on screen
+## There is no text on screen
 
 A model mod shows nothing to the player, so it has nothing to translate. The only line of it that
-reaches a human eye is `name`, which the adapter writes into its log - and the log stays English,
-like every other log in Envoy.
+reaches a human eye is `name`, which the adapter writes into its log; the log itself is translated
+on the side of the adapter.
 
 `language` is a different matter: it says which language the model listens in, and a subscriber
 that registers a vocabulary has to be in the same one. That is why the demo subscribers take their

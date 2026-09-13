@@ -29,6 +29,61 @@ $mod = Join-Path $dist $d.modName
 New-Item -ItemType Directory -Force (Join-Path $mod $d.settingsTargetRel) | Out-Null
 Copy-Item -LiteralPath (Expand-Path $d.settings) -Destination (Join-Path $mod $d.settingsTargetRel) -Force
 
+# The text the adapter puts out - which is to say its log; it has no window of its
+# own. The tables are kept as UTF-8 in localization/ and turned here into the
+# UTF-16LE files the engine reads, by the script the bridge publishes in its SDK.
+# If the built-in baseline changes, the DLL next to it is older than the text and
+# has to be rebuilt - we say so out loud rather than shipping the mismatch.
+$loc = $d.localization
+if ($loc) {
+    $builder = Join-Path $d.sdkTools 'build-localization.py'
+    if (-not (Test-Path -LiteralPath $builder)) {
+        throw "The SDK of the bridge has no build-localization.py ($builder). Lay the bridge out first."
+    }
+
+    $strings = Expand-Path $loc.header
+    $before = if (Test-Path -LiteralPath $strings) { (Get-FileHash -LiteralPath $strings).Hash } else { '' }
+
+    $built = Join-Path $root 'build\localization'
+    & python $builder --source (Expand-Path $loc.source) --out $built `
+             --name $loc.name --base $loc.base --header $strings | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "building the translations failed with code $LASTEXITCODE" }
+
+    if ((Get-FileHash -LiteralPath $strings).Hash -ne $before) {
+        Write-Warning "the built-in strings changed - rebuild the plugin, the DLL is older than the text"
+    }
+
+    $into = Join-Path $mod 'Interface\Translations'
+    New-Item -ItemType Directory -Force $into | Out-Null
+    Copy-Item -LiteralPath (Join-Path $built "$($loc.name)_$($loc.base).txt") -Destination $into -Force
+
+    foreach ($lang in $loc.languageMods.PSObject.Properties) {
+        $file = Join-Path $built "$($loc.name)_$($lang.Name).txt"
+        if (-not (Test-Path -LiteralPath $file)) {
+            Write-Warning "no table for $($lang.Name) - the mod $($lang.Value) will not be built"
+            continue
+        }
+        $langMod = Join-Path $dist $lang.Value
+        New-Item -ItemType Directory -Force (Join-Path $langMod 'Interface\Translations') | Out-Null
+        Copy-Item -LiteralPath $file -Destination (Join-Path $langMod 'Interface\Translations') -Force
+
+        $langMeta = @(
+            '[General]'
+            'gameName=SkyrimSE'
+            'modid=0'
+            "version=$($d.version)"
+            "newestVersion=$($d.version)"
+            'category="0,"'
+            'installationFile='
+            "notes=EnvoyVoiceAdapter - $($lang.Name) text. Put it below the adapter."
+            ''
+            '[installedFiles]'
+            'size=0'
+        )
+        [IO.File]::WriteAllLines((Join-Path $langMod 'meta.ini'), $langMeta, $enc)
+    }
+}
+
 # The contract of a model mod is for authors, not for the game: the game does
 # not read it. So it rides as a SEPARATE package, like the SDK of the bridge,
 # and not as a folder inside the mod. On the Nexus that is an optional file on
@@ -80,7 +135,9 @@ $meta = @(
 [IO.File]::WriteAllLines((Join-Path $mod 'meta.ini'), $meta, $enc)
 
 '--- to be laid out ---'
-'  {0,-40} {1} files' -f $d.modName, @(Get-ChildItem -LiteralPath $mod -Recurse -File).Count
+foreach ($pack in Get-ChildItem -LiteralPath $dist -Directory) {
+    '  {0,-44} {1} files' -f $pack.Name, @(Get-ChildItem -LiteralPath $pack.FullName -Recurse -File).Count
+}
 if (-not $Apply) { ''; 'dry run - add -Apply'; return }
 
 # There are two packages - the mod and the contract for authors - and they are
