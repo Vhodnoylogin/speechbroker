@@ -26,16 +26,24 @@
     "esp": "Envoy.esp",
     "dll": "{root}/build/Release/Envoy.dll",
     "defaultConfig": "{root}/config/envoy.default.json",
-    "sdk": [
-      "{root}/contract/envoy-adapter.h",
-      "{root}/contract/envoy-abi.h",
-      "{root}/papyrus/Envoy.psc",
-      "{root}/contract/envoy-keys.md",
-      "{root}/contract/envoy-papyrus.md"
-    ],
     "docs": [
       "{root}/../LICENSE",
       "{root}/../THIRD-PARTY-NOTICES.md"
-    ]
+    ],
+    "sdkName": "Envoy Framework - SDK",
+    "sdkLayout": {
+      "cpp": [
+        "{root}/contract/envoy-adapter.h",
+        "{root}/contract/envoy-abi.h"
+      ],
+      "papyrus": [
+        "{root}/papyrus/Envoy.psc",
+        "{root}/papyrus/EnvoyQuest.psc"
+      ],
+      "docs": [
+        "{root}/contract/envoy-papyrus.md",
+        "{root}/contract/envoy-keys.md"
+      ]
+    }
   }
 }

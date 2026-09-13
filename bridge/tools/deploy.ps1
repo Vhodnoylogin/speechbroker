@@ -27,11 +27,13 @@ if (-not (Test-Path -LiteralPath $pex)) { throw "Нет собранных ск�
 $dist = Join-Path $root 'dist'
 Remove-Item -LiteralPath $dist -Recurse -Force -ErrorAction SilentlyContinue
 $mod = Join-Path $dist $d.modName
-New-Item -ItemType Directory -Force (Join-Path $mod 'Scripts\Source') | Out-Null
+New-Item -ItemType Directory -Force (Join-Path $mod 'Scripts') | Out-Null
 
+# В мод едет только собранное. Исходники скриптов - не часть мода: игра их
+# не читает, а игрок получает лишние файлы, которые ему нечем открыть.
+# Их место - в поставке для авторов, ниже.
 foreach ($s in $d.scripts) {
-    Copy-Item -LiteralPath (Join-Path $pex "$s.pex")          -Destination (Join-Path $mod 'Scripts') -Force
-    Copy-Item -LiteralPath (Join-Path $root "papyrus\$s.psc") -Destination (Join-Path $mod 'Scripts\Source') -Force
+    Copy-Item -LiteralPath (Join-Path $pex "$s.pex") -Destination (Join-Path $mod 'Scripts') -Force
 }
 Copy-Item -LiteralPath (Join-Path $root "esp\$($d.esp)") -Destination $mod -Force
 
@@ -45,11 +47,38 @@ if (Test-Path -LiteralPath $dll) {
     Write-Warning "библиотека моста не собрана: $dll"
 }
 
-# SDK - единственное, что мост отдаёт наружу. Адаптеры и слушатели собираются
-# против него, а не против нашего репозитория.
-$sdk = Join-Path $mod 'SDK'
-New-Item -ItemType Directory -Force $sdk | Out-Null
-foreach ($f in $d.sdk) { Copy-Item -LiteralPath (Expand-Path $f) -Destination $sdk -Force }
+# Поставка для авторов модов - ОТДЕЛЬНАЯ, а не папка внутри мода. Заголовки
+# C++, объявления Papyrus и описания контракта игра не читает вовсе: игроку они
+# не нужны, а автору мода нужны без игры. На Nexus это разные файлы на одной
+# странице: основной и необязательный «modding source».
+#
+# Собирается она всё равно раскладкой и всё равно кладётся в mods\: против неё
+# собираются адаптер и подписчик - ровно так же, как это сделает чужой автор,
+# распаковавший необязательный файл. В профилях этот мод держать выключенным:
+# игре в нём брать нечего.
+$sdkMod = Join-Path $dist $d.sdkName
+foreach ($part in $d.sdkLayout.PSObject.Properties) {
+    $into = Join-Path $sdkMod $part.Name
+    New-Item -ItemType Directory -Force $into | Out-Null
+    foreach ($f in $part.Value) { Copy-Item -LiteralPath (Expand-Path $f) -Destination $into -Force }
+}
+if ($d.docs) {
+    foreach ($f in $d.docs) { Copy-Item -LiteralPath (Expand-Path $f) -Destination $sdkMod -Force }
+}
+$sdkMeta = @(
+    '[General]'
+    'gameName=SkyrimSE'
+    'modid=0'
+    "version=$($d.version)"
+    "newestVersion=$($d.version)"
+    'category="0,"'
+    'installationFile='
+    'notes=Envoy Framework - поставка для авторов модов: контракт, объявления Papyrus, исходники скриптов. Игре не нужна, в профилях держать выключенной.'
+    ''
+    '[installedFiles]'
+    'size=0'
+)
+[IO.File]::WriteAllLines((Join-Path $sdkMod 'meta.ini'), $sdkMeta, $enc)
 
 # Лицензия и перечень заимствованного едут в каждый мод. Человек, распаковавший
 # архив, обязан найти их внутри: страницу, с которой он качал, он больше
@@ -75,33 +104,39 @@ $meta = @(
 
 '--- будет разложено ---'
 '  {0,-40} {1} файлов' -f $d.modName, @(Get-ChildItem -LiteralPath $mod -Recurse -File).Count
-'  в том числе SDK: {0}' -f ((Get-ChildItem -LiteralPath $sdk -File).Name -join ', ')
+'  {0,-40} {1} файлов' -f $d.sdkName, @(Get-ChildItem -LiteralPath $sdkMod -Recurse -File).Count
 if (-not $Apply) { ''; 'сухой прогон - добавь -Apply'; return }
 
-$target = Join-Path $d.modsRoot $d.modName
-New-Item -ItemType Directory -Force $target | Out-Null
-# Copy-Item -Recurse -Force над уже существующим деревом молча не перезаписывает
-# файлы во вложенных папках, и раскладка отчитывалась об успехе, оставив в сборке
-# библиотеку прошлой сборки. Копируем пофайлово и говорим, что изменилось.
-$added = 0; $updated = 0; $same = 0
-Get-ChildItem -LiteralPath $mod -Recurse -File | ForEach-Object {
-    $rel = $_.FullName.Substring($mod.Length).TrimStart('\')
-    $dst = Join-Path $target $rel
-    $dir = Split-Path -Parent $dst
-    if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force $dir | Out-Null }
-    if (-not (Test-Path -LiteralPath $dst)) {
-        Copy-Item -LiteralPath $_.FullName -Destination $dst -Force
-        $added++
-    } elseif ((Get-FileHash -LiteralPath $_.FullName).Hash -ne (Get-FileHash -LiteralPath $dst).Hash) {
-        Copy-Item -LiteralPath $_.FullName -Destination $dst -Force
-        $updated++
-    } else {
-        $same++
+# Поставок две - мод и SDK, - и раскладываются они одинаково. Раньше копировался
+# только мод, и папка SDK, собранная рядом, до сборки не доезжала.
+$copied = @()
+foreach ($pack in Get-ChildItem -LiteralPath $dist -Directory) {
+    $target = Join-Path $d.modsRoot $pack.Name
+    New-Item -ItemType Directory -Force $target | Out-Null
+    # Copy-Item -Recurse -Force над уже существующим деревом молча не перезаписывает
+    # файлы во вложенных папках, и раскладка отчитывалась об успехе, оставив в сборке
+    # библиотеку прошлой сборки. Копируем пофайлово и говорим, что изменилось.
+    $added = 0; $updated = 0; $same = 0
+    Get-ChildItem -LiteralPath $pack.FullName -Recurse -File | ForEach-Object {
+        $rel = $_.FullName.Substring($pack.FullName.Length).TrimStart('')
+        $dst = Join-Path $target $rel
+        $dir = Split-Path -Parent $dst
+        if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force $dir | Out-Null }
+        if (-not (Test-Path -LiteralPath $dst)) {
+            Copy-Item -LiteralPath $_.FullName -Destination $dst -Force
+            $added++
+        } elseif ((Get-FileHash -LiteralPath $_.FullName).Hash -ne (Get-FileHash -LiteralPath $dst).Hash) {
+            Copy-Item -LiteralPath $_.FullName -Destination $dst -Force
+            $updated++
+        } else {
+            $same++
+        }
     }
+    '  разложено: {0} - новых {1}, обновлено {2}, без изменений {3}' -f $pack.Name, $added, $updated, $same
+    $copied += $pack.Name
 }
-'  разложено: {0} - новых {1}, обновлено {2}, без изменений {3}' -f $d.modName, $added, $updated, $same
 
 if (-not $NoIndex) {
-    & $d.indexScript -Owner $d.indexOwner -Mods $d.modName -Note "Envoy Framework deploy $($d.version)"
+    & $d.indexScript -Owner $d.indexOwner -Mods $copied -Note "Envoy Framework deploy $($d.version)"
 }
 ''
