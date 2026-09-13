@@ -43,6 +43,13 @@ if (Test-Path -LiteralPath $dll) {
     Write-Warning "библиотека адаптера не собрана: $dll"
 }
 
+# Лицензия и перечень заимствованного едут в каждый мод. Человек, распаковавший
+# архив, обязан найти их внутри: страницу, с которой он качал, он больше
+# не откроет, а условия шести чужих проектов требуют, чтобы текст был в поставке.
+if ($d.docs) {
+    foreach ($f in $d.docs) { Copy-Item -LiteralPath (Expand-Path $f) -Destination $mod -Force }
+}
+
 $meta = @(
     '[General]'
     'gameName=SkyrimSE'

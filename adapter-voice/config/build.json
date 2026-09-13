@@ -17,6 +17,10 @@
     "sdkOut": "SDK",
     "publish": [
       "{root}/contract/envoy-voice-model.md"
+    ],
+    "docs": [
+      "{root}/../LICENSE",
+      "{root}/../THIRD-PARTY-NOTICES.md"
     ]
   }
 }
