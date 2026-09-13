@@ -6,7 +6,7 @@
 
 namespace Voice
 {
-	// Как поднимать службу, если она не отвечает на /health.
+	// How to bring the service up when it does not answer /health.
 	struct AutoStart
 	{
 		bool                     enabled{ false };
@@ -14,88 +14,92 @@ namespace Voice
 		std::vector<std::string> args;
 		std::string              workingDir;
 		std::string              parentPidArg;
-		int                      waitSec{ 60 };  // сколько ждать, пока поднятая служба ответит
-		int                      pollSec{ 1 };   // с каким шагом спрашивать её /health в это время
+		int                      waitSec{ 60 };  // how long to wait for a started service to answer
+		int                      pollSec{ 1 };   // how often to ask it /health while waiting
 	};
 
-	// Служба адаптера. Она одна на игру и едет ВНУТРИ мода адаптера: микрофон
-	// принадлежит адаптеру, а не моделям. Иначе каждая модель везла бы свой
-	// захват звука, и два установленных мода дрались бы за устройство.
+	// The service of the adapter. There is one per game and it rides INSIDE the mod
+	// of the adapter: the microphone belongs to the adapter, not to the models.
+	// Otherwise every model would carry its own capture of sound, and two
+	// installed mods would fight over the device.
 	//
-	// Отсюда же главное свойство для игрока: он ставит адаптер как обычный мод,
-	// и всё поднимается само - запускать отдельно нечего.
+	// Hence the property that matters most to the player: they install the adapter
+	// like any other mod and everything comes up by itself - there is nothing to
+	// start separately.
 	struct ServiceSettings
 	{
 		std::string              url{ "http://127.0.0.1:8931" };
 		int                      listenTimeoutSec{ 30 };
 		std::optional<AutoStart> autoStart;
 
-		// Разовый секрет этой сессии. Адаптер выдумывает его при загрузке,
-		// отдаёт службе при запуске и присылает в заголовке каждого запроса:
-		// занявший порт не сможет ни слушать игру, ни кормить её текстом.
+		// The one-off secret of this session. The adapter makes it up at load, hands
+		// it to the service at startup and sends it in a header on every request:
+		// whoever took the port can neither listen in on the game nor feed it text.
 		std::string token;
 	};
 
-	// Одна установленная модель - то, что привёз чужой мод.
+	// One installed model - what somebody else mod brought along.
 	//
-	// В листке нет ни адреса, ни программы: модель не служба, а распознаватель.
-	// Звук ей даёт служба адаптера, весами занимается тоже она. Адаптеру от
-	// листка нужно ровно три вещи: как модель зовут в ответах службы, черновик
-	// она даёт или окончательный ответ, и что она вообще умеет.
+	// There is neither an address nor a program in the listing: a model is not a
+	// service but a recogniser. The sound is given to it by the service of the
+	// adapter, and the weights are its business too. All the adapter wants from
+	// the listing is three things: what the model is called in the answers of the
+	// service, whether it gives a draft or a final answer, and what it can do at
+	// all.
 	struct Model
 	{
 		std::string id;
-		std::string name;            // как называть её в журнале
+		std::string name;            // what to call it in the log
 		std::string language;
 		bool        enabled{ false };
-		bool        fast{ false };   // class == "fast": отдаёт черновик, который уточнит точная
-		bool        hears{ true };   // provides содержит asr
-		bool        speaks{ false }; // provides содержит tts
-		std::string source;          // файл листка: в журнал, чтобы было видно, чей мод
+		bool        fast{ false };   // class == "fast": gives a draft the accurate one will refine
+		bool        hears{ true };   // provides contains asr
+		bool        speaks{ false }; // provides contains tts
+		std::string source;          // the listing file: into the log, so that whose mod it is shows
 	};
 
-	// Настройки адаптера. Файл читается один раз при загрузке плагина и
-	// разбирается в поля сразу: потоки опроса и озвучки берут готовые значения,
-	// а не ищут ключи в json на каждую реплику.
+	// The settings of the adapter. The file is read once when the plugin loads and
+	// is parsed into fields straight away: the threads of polling and speaking take
+	// ready values rather than looking keys up in json on every utterance.
 	//
-	// Значения по умолчанию у полей - те, что подставляются при отсутствии
-	// ключа в файле. Они же были зашиты в коде до того, как стали ключами,
-	// поэтому файл без новых ключей ведёт себя ровно как прежде.
+	// The defaults of the fields are what is put in when a key is missing from the
+	// file. They are the same values that were wired into the code before they
+	// became keys, so a file without the new keys behaves exactly as before.
 	class Config
 	{
 	public:
-		// Читает свой файл настроек, затем папку моделей. Отказ здесь означает
-		// только одно: свой файл не разобран. Отсутствие моделей отказом не
-		// считается - адаптер поднимается пустым и говорит об этом в журнал,
-		// потому что модель ставится отдельным модом и её может не быть.
+		// Reads its own settings file, then the folder of models. A refusal here means
+		// one thing only: our own file did not parse. The absence of models is not a
+		// refusal - the adapter comes up empty and says so in the log, because a model
+		// is installed as a separate mod and there may be none.
 		static bool Load();
 
 		static const Config& Get();
 
-		// Модель по имени, которым служба подписала ответ. Неизвестное имя -
-		// nullptr: служба вправе вернуть то, о чём адаптер не знает, и молчать
-		// об этом нельзя.
+		// The model by the name the service signed its answer with. An unknown name
+		// gives nullptr: the service is entitled to return something the adapter does
+		// not know about, and keeping quiet about that is not allowed.
 		const Model* Find(const std::string& a_engineId) const;
 
-		// Кем озвучивать. Пустой speakModel означает «первой говорящей»,
-		// и это правильное умолчание: имя конкретной модели в настройках
-		// адаптера снова привязало бы его к чужому моду.
+		// Who is to speak. An empty speakModel means "the first one that speaks", and
+		// that is the right default: the name of a particular model in the settings of
+		// the adapter would tie it back to somebody else mod.
 		const Model* SpeakingModel() const;
 
 		std::string        adapterId{ "voice" };
 		std::string        adapterName;
-		std::string        adapterProvides;  // считается по установленным моделям, а не берётся из файла
+		std::string        adapterProvides;  // worked out from the installed models, not taken from the file
 		ServiceSettings    service;
 		std::vector<Model> models;
 		std::string        speakModel;
 
-		int correlateMs{ 2500 };     // точный ответ в этом окне после черновика считается его уточнением
-		int retryDelayMs{ 2000 };    // пауза после неудачного /listen
-		int healthTimeoutSec{ 2 };   // сколько ждать соединения на /health
-		int listenGraceSec{ 10 };    // насколько дольше срока службы ждать ответ /listen
-		int idleSleepMs{ 1000 };     // шаг ожидания, пока мост держит нас в запасе
-		int sayTimeoutSec{ 120 };    // сколько ждать ответа /say
-		int idMapLimit{ 256 };       // сколько последних переводов "номер службы -> номер моста" помнить на модель; 0 - без предела
+		int correlateMs{ 2500 };     // an accurate answer in this window after a draft counts as its refinement
+		int retryDelayMs{ 2000 };    // the pause after a failed /listen
+		int healthTimeoutSec{ 2 };   // how long to wait for a connection on /health
+		int listenGraceSec{ 10 };    // how much longer than the deadline of the service to wait for /listen
+		int idleSleepMs{ 1000 };     // the step of waiting while the bridge keeps us in reserve
+		int sayTimeoutSec{ 120 };    // how long to wait for an answer to /say
+		int idMapLimit{ 256 };       // how many recent "service number -> bridge number" translations to remember per model; 0 - no limit
 
 	private:
 		Config() = default;

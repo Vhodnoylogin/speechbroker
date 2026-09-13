@@ -6,8 +6,8 @@
 
 namespace Voice
 {
-	// Адрес службы в том виде, в каком его понимает httplib: хост и порт
-	// отдельно, без схемы.
+	// The address of the service in the form httplib understands it: the host and
+	// the port apart, without a scheme.
 	struct Endpoint
 	{
 		std::string host{ "127.0.0.1" };
@@ -16,12 +16,12 @@ namespace Voice
 		static Endpoint Parse(const std::string& a_url);
 	};
 
-	// Служба адаптера: жива ли она и как её поднять, если нет. Она одна на игру
-	// и лежит внутри мода адаптера.
+	// The service of the adapter: whether it is alive and how to bring it up if it
+	// is not. There is one per game and it lies inside the mod of the adapter.
 	//
-	// Чужой процесс никогда не убивает: если служба уже отвечает, к ней просто
-	// подключаются. Человек мог поднять её сам - например, заранее, чтобы модель
-	// успела загрузиться до входа в игру.
+	// It never kills a process that is not ours: if the service already answers, we
+	// simply connect to it. A person may have started it themselves - in advance,
+	// say, so that the model has time to load before they enter the game.
 	class Service
 	{
 	public:
@@ -29,16 +29,16 @@ namespace Voice
 
 		const Endpoint& Where() const { return _where; }
 
-		// Имя заголовка, которым адаптер предъявляет службе секрет сессии.
-		// Его обязан нести КАЖДЫЙ запрос, иначе правило защищает рукопожатие,
-		// а не разговор. Сам httplib в этот заголовок не тянем нарочно: он
-		// подключает windows.h, а CommonLibSSE обязан увидеть его первым.
+		// The name of the header the adapter shows the service its session secret
+		// with. EVERY request has to carry it, or the rule protects the handshake
+		// rather than the conversation. httplib itself is deliberately kept out of
+		// this header: it pulls in windows.h, and CommonLibSSE has to see that first.
 		static constexpr const char* kPass = "X-Envoy-Token";
 
-		// /health ответил 200.
+		// /health answered 200.
 		bool Alive() const;
 
-		// Поднимает службу и ждёт, пока она ответит на /health.
+		// Brings the service up and waits until it answers /health.
 		void Launch() const;
 
 	private:

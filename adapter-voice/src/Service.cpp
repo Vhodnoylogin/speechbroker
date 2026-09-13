@@ -67,14 +67,14 @@ namespace Voice
 		}
 		const auto& start = *_settings.autoStart;
 		if (!start.enabled || start.exec.empty()) {
-			SKSE::log::warn("служба не отвечает, а поднимать её не разрешено");
+			SKSE::log::warn("the service does not answer, and starting it is not allowed");
 			return;
 		}
 
-		// CreateProcessW не умеет запускать .cmd и .bat напрямую - это не
-		// программы, а доводы для cmd.exe. Адаптер везёт свою службу именно
-		// таким запускателем: он короткий, его видно глазами и он переживает
-		// переезд игры на другой диск.
+		// CreateProcessW cannot start a .cmd or a .bat directly - they are not
+		// programs but arguments for cmd.exe. The adapter carries its service with
+		// exactly such a starter: it is short, it can be read by eye and it survives
+		// the game moving to another disk.
 		const auto  script = start.exec.ends_with(".cmd") || start.exec.ends_with(".bat");
 		std::string command = script ? "cmd.exe /c \"" + start.exec + "\"" :
 		                               "\"" + start.exec + "\"";
@@ -82,20 +82,21 @@ namespace Voice
 			command += " \"" + arg + "\"";
 		}
 
-		// Погасить службу при выходе из игры некому: адаптер уходит вместе с
-		// процессом игры и своего завершения выполнить не успевает. Поэтому
-		// службе сообщается, за кем следить, и она гасится сама. Без этого она
-		// переживает игру, держит микрофон и модель, а Mod Organizer из-за неё
-		// считает игру запущенной и запрещает править состав сборки.
+		// There is nobody to put the service out when the game exits: the adapter
+		// leaves together with the process of the game and never gets the chance to
+		// shut itself down. So the service is told who to watch, and it puts itself
+		// out. Without this it outlives the game, holds the microphone and the model,
+		// and Mod Organizer counts the game as running because of it and forbids any
+		// change to the make-up of the build.
 		if (!start.parentPidArg.empty()) {
 			command += " " + start.parentPidArg + " " + std::to_string(::GetCurrentProcessId());
 		}
 
-		// Секрет этой сессии. Служба, которая его проверяет, не станет отвечать
-		// чужой программе и не примет от неё текст на озвучку; служба, которая
-		// о нём не знает, довод не заметит - доводов, которых она не понимает,
-		// она не разбирает вовсе. Поэтому правило вводится без разрыва
-		// совместимости, а не когда-нибудь потом.
+		// The secret of this session. A service that checks it will not answer
+		// somebody else program and will not take text to speak from it; a service
+		// that knows nothing about it will not notice the argument - arguments it does
+		// not understand it does not parse at all. So the rule comes in without
+		// breaking compatibility, rather than some day later.
 		command += " --envoy-token " + _settings.token;
 
 		auto wideDir = Widen(start.workingDir);
@@ -103,26 +104,27 @@ namespace Voice
 		startup.cb = sizeof(startup);
 		PROCESS_INFORMATION info{};
 
-		SKSE::log::info("служба: поднимаю - {}", command);
+		SKSE::log::info("service: starting it - {}", command);
 
-		// Служба обязана выйти из объекта задания, в котором MO2 держит игру.
-		// MO2 считает игру запущенной, пока не опустеет всё дерево процессов, а
-		// служба сама не завершается никогда - без этого MO2 навсегда осталась бы
-		// в состоянии "игра работает", и состав сборки стало бы нельзя менять.
-		// Если задание запрещает выход, запускаем как получится: служба тогда
-		// удержит MO2, и правильный порядок - поднимать её заранее, вне игры.
+		// The service has to leave the job object MO2 keeps the game in. MO2 counts
+		// the game as running until the whole tree of processes is empty, and the
+		// service never ends by itself - without this MO2 would stay in the state
+		// "the game is running" forever, and the make-up of the build could not be
+		// changed. If the job forbids leaving, we start it as best we can: the service
+		// will then hold MO2, and the right order is to bring it up beforehand,
+		// outside the game.
 		const auto spawn = [&](DWORD a_flags) {
-			auto line = Widen(command);   // CreateProcessW портит строку, поэтому каждый раз своя
+			auto line = Widen(command);   // CreateProcessW spoils the string, so a fresh one every time
 			return ::CreateProcessW(nullptr, line.data(), nullptr, nullptr, FALSE, a_flags,
 				nullptr, wideDir.empty() ? nullptr : wideDir.c_str(), &startup, &info) != FALSE;
 		};
 
 		if (!spawn(CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB)) {
 			const auto why = ::GetLastError();
-			SKSE::log::warn("служба: не выпустили из задания (код {}), запускаю внутри него - "
-			                "MO2 будет считать игру запущенной, пока она жива", why);
+			SKSE::log::warn("service: not let out of the job (code {}), starting it inside - "
+			                "MO2 will count the game as running for as long as it lives", why);
 			if (!spawn(CREATE_NO_WINDOW)) {
-				SKSE::log::error("служба: запустить не удалось, код {}", ::GetLastError());
+				SKSE::log::error("service: could not start it, code {}", ::GetLastError());
 				return;
 			}
 		}
@@ -133,11 +135,11 @@ namespace Voice
 		                      std::chrono::seconds(start.waitSec);
 		while (std::chrono::steady_clock::now() < deadline) {
 			if (Alive()) {
-				SKSE::log::info("служба поднялась");
+				SKSE::log::info("the service is up");
 				return;
 			}
 			std::this_thread::sleep_for(std::chrono::seconds(start.pollSec));
 		}
-		SKSE::log::warn("служба не ответила за отведённое время");
+		SKSE::log::warn("the service did not answer within the time allowed");
 	}
 }

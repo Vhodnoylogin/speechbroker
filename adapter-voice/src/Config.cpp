@@ -17,18 +17,19 @@ namespace Voice
 		constexpr auto kHome = LR"(Data\SKSE\Plugins\envoy\adapters\voice)";
 		constexpr auto kConfigPath = LR"(Data\SKSE\Plugins\envoy\adapters\voice\envoy-voice.json)";
 
-		// Папка, куда каждый мод-модель кладёт свой листок. Имя файла значения
-		// не имеет - важен только ключ id внутри; папка читается в порядке имён,
-		// чтобы список моделей не зависел от того, как их вернула файловая
-		// система, и два запуска давали один и тот же порядок.
+		// The folder every model mod puts its listing into. The name of the file does
+		// not matter - only the id key inside it does; the folder is read in the order
+		// of the names, so that the list of models does not depend on how the file
+		// system handed them back and two launches give one and the same order.
 		constexpr auto kModelsDir = LR"(Data\SKSE\Plugins\envoy\adapters\voice\models)";
 
-		// Путь из настроек, если он относительный, считается от папки адаптера,
-		// и выйти за неё нельзя. Адаптер запускает СВОЮ службу, которая едет
-		// внутри его же мода; возможность указать сюда что угодно означала бы,
-		// что подменивший файл настроек запускает у игрока любую программу.
+		// A path from the settings, if it is relative, is taken from the folder of the
+		// adapter, and it cannot leave it. The adapter starts ITS OWN service, which
+		// rides inside its own mod; being able to write anything here would mean that
+		// whoever replaced the settings file starts any program they like on the
+		// machine of the player.
 		//
-		// Пустая строка на выходе означает отказ.
+		// An empty string on the way out means a refusal.
 		std::string ResolveInside(const std::string& a_path, const std::filesystem::path& a_base)
 		{
 			if (a_path.empty()) {
@@ -40,9 +41,9 @@ namespace Voice
 			}
 			const auto full = (a_base / given).lexically_normal();
 			const auto root = a_base.lexically_normal();
-			// lexically_relative даёт ".." в начале ровно тогда, когда путь ушёл
-			// выше корня. Сравнение строк здесь не годится: "voice-evil"
-			// начинается с "voice".
+			// lexically_relative gives a ".." at the front exactly when the path went
+			// above the root. Comparing strings will not do here: "voice-evil" begins
+			// with "voice".
 			const auto rel = full.lexically_relative(root);
 			if (rel.empty() || *rel.begin() == "..") {
 				return {};
@@ -50,9 +51,10 @@ namespace Voice
 			return full.string();
 		}
 
-		// Служба обязана жить на этой же машине. Через неё проходит всё, что
-		// игрок говорит и слышит; чужой хост в настройках означал бы, что
-		// установка голосового мода молча включает пересылку сказанного наружу.
+		// The service has to live on this very machine. Everything the player says
+		// and hears goes through it; a foreign host in the settings would mean that
+		// installing a voice mod silently switches on the sending of what was said
+		// out of the house.
 		bool Loopback(const std::string& a_url)
 		{
 			auto       rest = a_url;
@@ -71,9 +73,9 @@ namespace Voice
 			return rest == "127.0.0.1" || rest == "localhost" || rest == "::1" || rest == "[::1]";
 		}
 
-		// Секрет на сессию. Случайность нужна не ради стойкости шифра, а ради
-		// того, чтобы значение нельзя было угадать заранее и зашить в чужую
-		// программу, занявшую порт.
+		// A secret per session. The randomness is wanted not for the strength of a
+		// cipher but so that the value cannot be guessed in advance and wired into
+		// somebody else program that took the port.
 		std::string MakeToken()
 		{
 			std::random_device                 source;
@@ -96,7 +98,7 @@ namespace Voice
 			const auto exec = a_doc.value("exec", std::string{});
 			out.exec = ResolveInside(exec, home);
 			if (!exec.empty() && out.exec.empty()) {
-				SKSE::log::error("служба: exec «{}» выходит за папку адаптера - запускать не буду",
+				SKSE::log::error("service: exec '{}' leaves the folder of the adapter - I will not start it",
 					exec);
 				return std::nullopt;
 			}
@@ -104,15 +106,15 @@ namespace Voice
 			const auto dir = a_doc.value("workingDir", std::string{});
 			out.workingDir = ResolveInside(dir, home);
 			if (!dir.empty() && out.workingDir.empty()) {
-				SKSE::log::error("служба: workingDir «{}» выходит за папку адаптера", dir);
+				SKSE::log::error("service: workingDir '{}' leaves the folder of the adapter", dir);
 				return std::nullopt;
 			}
 
 			out.parentPidArg = a_doc.value("parentPidArg", out.parentPidArg);
 			out.waitSec = a_doc.value("waitSec", out.waitSec);
 			out.pollSec = a_doc.value("pollSec", out.pollSec);
-			// Доводы не трогаем. Их разрешает сама служба от своей рабочей
-			// папки, а среди них бывают не пути вовсе: "--port", "8931".
+			// The arguments are left alone. The service itself resolves them from its own
+			// working folder, and some of them are not paths at all: "--port", "8931".
 			for (const auto& arg : a_doc.value("args", nlohmann::json::array())) {
 				out.args.push_back(arg.get<std::string>());
 			}
@@ -132,23 +134,23 @@ namespace Voice
 			out.fast = a_doc.value("class", std::string{}) == "fast";
 			out.language = a_doc.value("language", out.language);
 
-			// Что модель умеет, она объявляет сама. Умолчание - только слух:
-			// распознавание есть у всякой модели, ради которой этот адаптер
-			// написан, а озвучка - нет.
+			// What a model can do it declares itself. The default is hearing only:
+			// recognition is in every model this adapter was written for, and speaking is
+			// not.
 			const auto provides = a_doc.value("provides", std::string{ "asr" });
 			out.hears = provides.find("asr") != std::string::npos;
 			out.speaks = provides.find("tts") != std::string::npos;
 			return out;
 		}
 
-		// Читает папку моделей. Отказ одного листка не отменяет остальных:
-		// листок привозит ЧУЖОЙ мод, и его ошибка не должна лишать человека
-		// моделей, которые в порядке. Своим файлом настроек адаптер по-прежнему
-		// строг - там ошибка наша.
+		// Reads the folder of models. A refusal of one listing does not cancel the
+		// rest: a listing is brought along by SOMEBODY ELSE mod, and its mistake must
+		// not leave a person without the models that are fine. With its own settings
+		// file the adapter is still strict - a mistake there is ours.
 		//
-		// Веса моделей адаптер не читает и не проверяет: их грузит служба,
-		// и правило «веса лежат внутри своего мода» стережёт она же. Двух
-		// проверяющих у одного правила быть не должно.
+		// The adapter neither reads nor checks the weights of the models: they are
+		// loaded by the service, and the rule "the weights lie inside their own mod"
+		// is guarded by the service as well. One rule must not have two guards.
 		std::vector<Model> ReadModels()
 		{
 			std::error_code ec;
@@ -176,20 +178,20 @@ namespace Voice
 					stream >> doc;
 					auto model = ReadModel(doc, file);
 					if (model.id.empty()) {
-						SKSE::log::error("модель из {}: нет ключа id - пропускаю",
+						SKSE::log::error("model out of {}: no id key - skipping it",
 							file.filename().string());
 						continue;
 					}
 					const auto twin = std::find_if(out.begin(), out.end(),
 						[&](const Model& a_seen) { return a_seen.id == model.id; });
 					if (twin != out.end()) {
-						SKSE::log::error("модель {} объявлена дважды: {} и {} - беру первую",
+						SKSE::log::error("model {} is declared twice: {} and {} - taking the first",
 							model.id, twin->source, model.source);
 						continue;
 					}
 					out.push_back(std::move(model));
 				} catch (const std::exception& e) {
-					SKSE::log::error("модель из {} не разобрана: {} - пропускаю",
+					SKSE::log::error("the model out of {} did not parse: {} - skipping it",
 						file.filename().string(), e.what());
 				}
 			}
@@ -235,7 +237,7 @@ namespace Voice
 	{
 		std::error_code ec;
 		if (!std::filesystem::exists(kConfigPath, ec)) {
-			SKSE::log::error("нет файла настроек: {}", std::filesystem::path{ kConfigPath }.string());
+			SKSE::log::error("no settings file: {}", std::filesystem::path{ kConfigPath }.string());
 			return false;
 		}
 
@@ -267,22 +269,22 @@ namespace Voice
 			self.sayTimeoutSec = doc.value("sayTimeoutSec", self.sayTimeoutSec);
 			self.idMapLimit = doc.value("idMapLimit", self.idMapLimit);
 		} catch (const std::exception& e) {
-			SKSE::log::error("настройки не разобраны: {}", e.what());
+			SKSE::log::error("the settings did not parse: {}", e.what());
 			return false;
 		}
 
 		if (!Loopback(self.service.url)) {
-			SKSE::log::error("служба по адресу «{}» ведёт не на эту машину - работать не буду",
+			SKSE::log::error("the service at '{}' does not point at this machine - I will not work",
 				self.service.url);
 			return false;
 		}
 
 		self.models = ReadModels();
 
-		// Способности адаптер не объявляет, а считает: обещать мосту озвучку,
-		// когда ни одна установленная модель не говорит, значит забрать работу
-		// у адаптера, который её умеет. Прежде это была строка в файле
-		// настроек - то есть обещание, ничем не подкреплённое.
+		// The adapter does not declare its capabilities but works them out: promising
+		// the bridge speech when not one installed model speaks means taking the work
+		// away from an adapter that can do it. This used to be a line in the settings
+		// file - that is, a promise backed by nothing.
 		const bool hears = std::any_of(self.models.begin(), self.models.end(),
 			[](const Model& a_model) { return a_model.enabled && a_model.hears; });
 		const bool speaks = self.SpeakingModel() != nullptr;

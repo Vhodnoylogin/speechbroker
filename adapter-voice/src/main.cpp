@@ -1,18 +1,22 @@
-// Адаптер голоса для Envoy.
+// The voice adapter for Envoy.
 //
-// Это мод: обычный плагин SKSE, живущий в процессе игры. С мостом он говорит
-// вызовом функции, а наружу - к своей службе, которая владеет микрофоном и
-// частью игры быть не может, - ходит по HTTP на петлю. Мост об этом не знает.
+// This is a mod: an ordinary SKSE plugin living in the process of the game. It
+// talks to the bridge by calling a function, and outward - to its own service,
+// which owns the microphone and cannot be part of the game - it goes over HTTP
+// on the loopback. The bridge knows nothing about that.
 //
-// Микрофон принадлежит АДАПТЕРУ, а не моделям: служба едет внутри этого же
-// мода и поднимается сама при загрузке - игроку запускать нечего. Модель же -
-// это распознаватель: чужой мод кладёт листок в папку models рядом с нашими
-// настройками, и служба грузит её веса. Частный случай "быстрая плюс точная" -
-// это два таких мода, а какая из них узнала реплику, сказано в ответе службы.
+// The microphone belongs to the ADAPTER, not to the models: the service rides
+// inside this very mod and comes up by itself at load - there is nothing for a
+// player to start. A model, on the other hand, is a recogniser: somebody else
+// mod puts a listing into the models folder next to our settings, and the
+// service loads its weights. The particular case of "a fast one plus an
+// accurate one" is two such mods, and which of them recognised an utterance is
+// said in the answer of the service.
 //
-// Здесь - только точки входа SKSE и рукопожатие с мостом. Настройки в Config,
-// жизнь службы в Service, перенос реплик в Listen, синтез в Speak, наша
-// сторона моста в Bridge.
+// Here there are only the SKSE entry points and the handshake with the bridge.
+// The settings are in Config, the life of the service in Service, carrying the
+// utterances over in Listen, the synthesis in Speak, our side of the bridge in
+// Bridge.
 
 #include <RE/Skyrim.h>
 #include <SKSE/SKSE.h>
@@ -54,25 +58,25 @@ namespace
 		switch (a_job.kind) {
 		case EnvoyAPI::kJobListen:
 			Bridge::Get().SetListening(a_job.active);
-			SKSE::log::info("мост: {} ({})", a_job.active ? "я источник" : "я в запасе",
+			SKSE::log::info("bridge: {} ({})", a_job.active ? "I am the source" : "I am in reserve",
 				a_job.text ? a_job.text : "");
 			break;
 		case EnvoyAPI::kJobVocabulary:
-			SKSE::log::info("словарь подписчиков: {} фраз", a_job.phraseCount);
+			SKSE::log::info("vocabulary of the subscribers: {} phrases", a_job.phraseCount);
 			break;
 		case EnvoyAPI::kJobSpeak:
 			if (a_job.text) {
-				// Озвучка идёт в своём потоке: держать поток игры на время
-				// синтеза нельзя.
+				// Speaking goes in a thread of its own: the thread of the game must not be
+				// held for the length of the synthesis.
 				std::string text = a_job.text;
 				const auto  speechId = a_job.speechId;
 				std::thread([text, speechId]() { Speak(text, speechId); }).detach();
 			}
 			break;
 		case EnvoyAPI::kJobAsk:
-			// Голосовой адаптер языковых моделей не держит: эта способность
-			// объявляется другим адаптером, и мост направит запрос ему.
-			SKSE::log::info("запрос к {} мне не адресован", a_job.service ? a_job.service : "?");
+			// The voice adapter holds no language models: that capability is declared by
+			// another adapter, and the bridge will send the request there.
+			SKSE::log::info("a request to {} is not addressed to me", a_job.service ? a_job.service : "?");
 			break;
 		default:
 			break;
@@ -94,34 +98,34 @@ namespace
 		info.contract = EnvoyAPI::kInterfaceVersion;
 
 		if (!bridge.Register(info, OnJob, nullptr)) {
-			SKSE::log::error("мост отказал в регистрации");
+			SKSE::log::error("the bridge refused to register us");
 			return;
 		}
-		SKSE::log::info("зарегистрирован в мосту как {}", config.adapterId);
+		SKSE::log::info("registered at the bridge as {}", config.adapterId);
 
 		if (config.models.empty()) {
-			// Это не поломка: модель ставится отдельным модом, и человек мог
-			// поставить только адаптер. Сказать об этом надо прямо, иначе
-			// молчащий микрофон выглядит как наша ошибка.
-			SKSE::log::warn("не установлено ни одной модели - распознавать нечем. "
-			                "Модель ставится отдельным модом и кладёт свой листок "
-			                "в Data/SKSE/Plugins/envoy/adapters/voice/models");
+			// This is not a breakage: a model is installed as a separate mod, and a
+			// person may have installed only the adapter. It has to be said plainly, or a
+			// silent microphone looks like a fault of ours.
+			SKSE::log::warn("not a single model is installed - there is nothing to recognise with. "
+			                "A model is installed as a separate mod and puts its listing "
+			                "into Data/SKSE/Plugins/envoy/adapters/voice/models");
 			return;
 		}
 
 		for (const auto& model : config.models) {
-			SKSE::log::info("модель {} ({}) из {}: {}{}", model.id, model.name, model.source,
-				model.enabled ? (model.fast ? "черновая" : "точная") : "выключена",
-				model.speaks ? ", умеет говорить" : "");
+			SKSE::log::info("model {} ({}) out of {}: {}{}", model.id, model.name, model.source,
+				model.enabled ? (model.fast ? "draft" : "accurate") : "switched off",
+				model.speaks ? ", can speak" : "");
 		}
 
-		// Поток один: микрофон принадлежит адаптеру, служба у него своя и одна,
-		// а какая модель узнала реплику - сказано в её ответе.
+		// One thread: the microphone belongs to the adapter, its service is its own
+		// and single, and which model recognised an utterance is said in its answer.
 		std::thread([]() { PollService(); }).detach();
 		const auto started = std::count_if(config.models.begin(), config.models.end(),
 			[](const Voice::Model& a_model) { return a_model.enabled && a_model.hears; });
-		SKSE::log::info("моделей объявлено: {}, объявляю мосту: {}", started,
-			config.adapterProvides.empty() ? "ничего" : config.adapterProvides);
+		SKSE::log::info("models declared: {}, declaring to the bridge: {}", started,
+			config.adapterProvides.empty() ? "nothing" : config.adapterProvides);
 	}
 
 	void OnMessage(SKSE::MessagingInterface::Message* a_message)
@@ -139,28 +143,28 @@ namespace
 		auto& bridge = Bridge::Get();
 		bridge.Attach(envoy);
 
-		// Мост НОВЕЕ себя принимать обязаны: он не читает у нас полей, которых
-		// в объявленной нами версии ещё не было, и старый адаптер для него
-		// остаётся исправным. Мост СТАРШЕ себя принимать нельзя: он не поймёт
-		// того, что мы шлём.
+		// A bridge NEWER than us we are obliged to accept: it does not read fields of
+		// ours that did not yet exist in the version we declared, and an old adapter
+		// stays sound as far as it is concerned. A bridge OLDER than us must not be
+		// accepted: it will not understand what we send.
 		//
-		// Прежде здесь стояло строгое равенство, и переработка моста до третьей
-		// версии выбила адаптер целиком: прогон 07.09 не состоялся, потому что
-		// речь в мост не попадала вовсе. Совместимость, сделанная с одной
-		// стороны, совместимостью не является.
+		// There used to be a strict equality here, and reworking the bridge up to
+		// version three knocked the adapter out entirely: the run of 07.09 never
+		// happened, because speech did not reach the bridge at all. Compatibility
+		// made from one side is not compatibility.
 		if (bridge.Version() < EnvoyAPI::kInterfaceVersion) {
-			SKSE::log::error("мост старше меня: он понимает контракт версии {}, "
-			                 "а я говорю на {} - работать не буду",
+			SKSE::log::error("the bridge is older than me: it understands contract version {}, "
+			                 "and I speak {} - I will not work",
 				bridge.Version(), EnvoyAPI::kInterfaceVersion);
 			bridge.Detach();
 			return;
 		}
 		if (bridge.Version() > EnvoyAPI::kInterfaceVersion) {
-			SKSE::log::info("мост новее меня: контракт версии {} против моих {} - "
-			                "работаю по своей, новых полей он у меня не спросит",
+			SKSE::log::info("the bridge is newer than me: contract version {} against my {} - "
+			                "working by mine, it will not ask me for the new fields",
 				bridge.Version(), EnvoyAPI::kInterfaceVersion);
 		}
-		SKSE::log::info("интерфейс моста получен, версия {}", bridge.Version());
+		SKSE::log::info("the interface of the bridge received, version {}", bridge.Version());
 		Start();
 	}
 }
@@ -189,13 +193,14 @@ extern "C" __declspec(dllexport) bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadIn
 	SKSE::Init(a_skse);
 	InitLog();
 
-	SKSE::log::info("{} v{} загружен", PLUGIN_NAME, PLUGIN_VERSION);
+	SKSE::log::info("{} v{} loaded", PLUGIN_NAME, PLUGIN_VERSION);
 	if (!Config::Load()) {
-		SKSE::log::error("без настроек работать не могу");
+		SKSE::log::error("I cannot work without settings");
 		return true;
 	}
 
-	// Мост рассылает интерфейс от своего имени - слушаем именно его.
+	// The bridge broadcasts the interface under its own name - that is what we
+	// listen for.
 	if (auto* messaging = SKSE::GetMessagingInterface()) {
 		messaging->RegisterListener("Envoy", OnMessage);
 	}

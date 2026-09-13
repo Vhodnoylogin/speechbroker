@@ -24,30 +24,34 @@ namespace Voice
 {
 	namespace
 	{
-		// Связь между результатами разных моделей и перевод номеров между
-		// службой и мостом. Состояние одно, под одним замком: поток опроса
-		// теперь один, но озвучка ходит из своего, и замок остаётся нужен.
+		// Relating the results of different models to each other and translating the
+		// numbers between the service and the bridge. One piece of state under one
+		// lock: there is only one polling thread now, but speaking comes from its own,
+		// and the lock is still needed.
 		//
-		// Пока у источника звука нет общего номера куска, результаты разных моделей
-		// связываются по времени: точный ответ, пришедший вскоре после
-		// предварительного, считается его уточнением. Это временно и честно помечено.
+		// Until the sound source has a common number for a piece, the results of
+		// different models are related by time: an accurate answer that came shortly
+		// after a preliminary one counts as its refinement. That is temporary and is
+		// honestly marked as such.
 		//
-		// Номер реплики у службы и у моста - разные числа. Служба говорит, какие
-		// СВОИ куски вобрал новый; мост понимает только свои. Перевод живёт здесь:
-		// адаптер - единственный, кто знает обе стороны, и держать эту карту
-		// где-либо ещё значило бы заставить одну из сторон знать про другую.
+		// The number of an utterance at the service and at the bridge are different
+		// numbers. The service says which of ITS OWN pieces the new one swallowed; the
+		// bridge understands only its own. The translation lives here: the adapter is
+		// the only one that knows both sides, and keeping this map anywhere else would
+		// mean making one of the sides know about the other.
 		//
-		// Перевод - отдельный на модель. Счётчик кусков у каждой модели свой,
-		// и при двух моделях сразу - «быстрая плюс точная», ради чего адаптер
-		// и заведён, - их номера сталкивались бы в одной карте: запись одной
-		// перекрывала бы запись другой, а «старейшей» считалась бы та, чей
-		// счётчик меньше. Поглощение всегда ссылается на куски той же модели,
-		// так что чужую карту искать не надо.
+		// The translation is separate per model. Every model has its own counter of
+		// pieces, and with two models at once - "a fast one plus an accurate one",
+		// which is what the adapter exists for - their numbers would collide in one
+		// map: an entry of one would cover an entry of the other, and the "oldest" one
+		// would be whichever had the smaller counter. An absorption always refers to
+		// pieces of the same model, so there is no need to look in anybody else map.
 		class Correlation
 		{
 		public:
-			// Номера службы -> номера моста. Неизвестный номер - это и есть
-			// «поглощение не случится», поэтому он не пропускается молча.
+			// The numbers of the service -> the numbers of the bridge. An unknown number
+			// IS the case of "the absorption will not happen", so it is not passed over
+			// in silence.
 			std::vector<std::int32_t> Translate(const std::string& a_modelId,
 				const nlohmann::json& a_serviceIds)
 			{
@@ -60,15 +64,15 @@ namespace Voice
 					if (found != map.end()) {
 						out.push_back(found->second);
 					} else {
-						SKSE::log::warn("модель {}: кусок {} в переводе не найден - "
-						                "его поглощение до моста не дойдёт", a_modelId, serviceId);
+						SKSE::log::warn("model {}: piece {} was not found in the translation - "
+						                "its absorption will not reach the bridge", a_modelId, serviceId);
 					}
 				}
 				return out;
 			}
 
-			// Для точного ответа: номер черновика, который он уточняет, либо 0.
-			// Черновик отдаётся один раз - второй точный ответ его уже не получит.
+			// For an accurate answer: the number of the draft it refines, or 0. A draft is
+			// given out once - a second accurate answer will not get it any more.
 			std::int32_t TakePreliminary(std::chrono::milliseconds a_window)
 			{
 				std::scoped_lock lock(_lock);
@@ -87,14 +91,14 @@ namespace Voice
 					_lastPreliminary = a_bridgeId;
 					_lastPreliminaryAt = std::chrono::steady_clock::now();
 				}
-				// Запоминаем перевод, чтобы следующий кусок мог назвать поглощённые.
-				// Карта растёт на реплику за кусок речи, и предел ей нужен. Но
-				// сбрасывать её целиком нельзя: длинный кусок, пришедший сразу после
-				// сброса, не нашёл бы своих коротких, и поглощение молча не
-				// случилось бы - мост огласил бы и куски, и фразу целиком. Поэтому
-				// выбрасываются только самые старые. Номера у службы сквозные и
-				// растут, так что в упорядоченной карте старейший всегда первый.
-				// Предел ноль и меньше - без предела.
+				// The translation is remembered so that the next piece can name what it
+				// swallowed. The map grows by one entry per piece of speech, and it needs a
+				// limit. But it must not be dropped whole: a long piece arriving right after a
+				// drop would not find its short ones, the absorption would silently not
+				// happen, and the bridge would announce both the pieces and the whole phrase.
+				// So only the oldest are thrown out. The numbers of the service run across and
+				// grow, so in an ordered map the oldest is always the first. A limit of zero
+				// or less means no limit.
 				if (a_serviceId != 0) {
 					auto& map = _serviceToBridge[a_modelId];
 					map[a_serviceId] = a_bridgeId;
@@ -109,7 +113,8 @@ namespace Voice
 			std::mutex                            _lock;
 			std::int32_t                          _lastPreliminary{ 0 };
 			std::chrono::steady_clock::time_point _lastPreliminaryAt{};
-			// Имя модели -> (номер службы -> номер моста).
+			// The name of the model -> (the number of the service -> the number of the
+			// bridge).
 			std::map<std::string, std::map<std::int32_t, std::int32_t>> _serviceToBridge;
 		};
 
@@ -125,14 +130,14 @@ namespace Voice
 			const auto text = a_item.value("text", std::string{});
 			const auto engine = a_item.value("engine", std::string{});
 
-			// Кто узнал реплику, говорит служба; черновик это или окончательный
-			// ответ, знает листок этой модели. Неизвестное имя - не молчаливый
-			// случай: значит, служба грузит модель, о которой в сборке нет мода,
-			// и разбираться с этим надо глазами.
+			// Who recognised the utterance is said by the service; whether it is a draft
+			// or a final answer is known from the listing of that model. An unknown name
+			// is not a silent case: it means the service is loading a model that has no
+			// mod in the build, and that has to be looked at by eye.
 			const auto* model = Config::Get().Find(engine);
 			if (!model) {
-				SKSE::log::warn("служба вернула ответ модели «{}», которой нет среди "
-				                "установленных - считаю окончательным", engine);
+				SKSE::log::warn("the service returned an answer from model '{}', which is not among the "
+				                "installed ones - taking it as final", engine);
 			}
 			const bool fast = model && model->fast;
 
@@ -147,14 +152,14 @@ namespace Voice
 			in.durationMs = 0;
 			in.isFinal = !fast;
 
-			// --- третья версия контракта ----------------------------------------
-			// Служба на новом движке отдаёт не целую фразу после молчания, а куски
-			// по ходу речи, и о каждом говорит, насколько уверена, что фраза на нём
-			// кончилась. Мост придерживает незаконченное - но только если ему это
-			// сказали, а сказать может лишь тот, кто слышит паузу.
+			// --- the third version of the contract -------------------------------
+			// A service on the new engine hands over not a whole phrase after a silence
+			// but pieces as the speech goes, and about each of them it says how sure it is
+			// that the phrase ended on it. The bridge holds the unfinished back - but only
+			// if it was told, and only the one that hears the pause can tell it.
 			//
-			// Служба, которая об этом ничего не знает, полей не пришлёт, и значения
-			// останутся прежними: завершённость единица, поглощать нечего.
+			// A service that knows nothing about this will send no such fields, and the
+			// values stay as they were: completeness one, nothing to absorb.
 			in.complete = a_item.value("complete", 1.0f);
 			in.lengthClass = a_item.value("lengthClass", 0);
 
@@ -174,14 +179,14 @@ namespace Voice
 
 			const auto id = bridge.PushUtterance(in);
 			if (id == 0) {
-				SKSE::log::warn("мост не принял реплику от модели {}", engine);
+				SKSE::log::warn("the bridge did not take the utterance from model {}", engine);
 				return;
 			}
 
 			g_correlation.Remember(engine, fast, a_item.value("id", 0), id);
 
 			if (!swallowed.empty()) {
-				SKSE::log::info("реплика {} поглощает {} прежних, завершённость {:.2f}",
+				SKSE::log::info("utterance {} absorbs {} earlier ones, completeness {:.2f}",
 					id, swallowed.size(), in.complete);
 			}
 		}
@@ -195,17 +200,18 @@ namespace Voice
 		const auto    timeout = config.service.listenTimeoutSec;
 		int           since = 0;
 
-		// Два разных исхода, и в журнале они обязаны различаться: иначе по нему
-		// не понять, проверили мы самостоятельный запуск службы или подключились
-		// к поднятой заранее руками.
+		// Two different outcomes, and they are obliged to differ in the log: otherwise
+		// there is no telling from it whether we checked that the service starts on
+		// its own or connected to one brought up by hand in advance.
 		if (service.Alive()) {
-			SKSE::log::info("служба уже поднята, подключаюсь к ней");
+			SKSE::log::info("the service is already up, connecting to it");
 		} else {
 			service.Launch();
 		}
 
-		// Выхода из цикла нет намеренно: поток отсоединён и умирает вместе с
-		// процессом игры, а своего завершения адаптер выполнить не успевает.
+		// There is deliberately no way out of the loop: the thread is detached and
+		// dies together with the process of the game, and the adapter never gets the
+		// chance to shut itself down.
 		for (;;) {
 			if (!Bridge::Get().Listening()) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(config.idleSleepMs));
@@ -213,8 +219,9 @@ namespace Voice
 			}
 
 			httplib::Client client(ep.host, ep.port);
-			// Служба держит /listen весь свой срок, пока не наберётся речи; ждать её
-			// надо дольше, чем она держит, иначе клиент оборвёт законный ответ на пороге.
+			// The service holds /listen for its whole deadline, until speech has gathered;
+			// it has to be waited for longer than it holds, or the client cuts off a
+			// lawful answer on the doorstep.
 			client.set_read_timeout(timeout + config.listenGraceSec, 0);
 			const auto path = "/listen?since=" + std::to_string(since) +
 			                  "&timeout=" + std::to_string(timeout);
@@ -232,12 +239,12 @@ namespace Voice
 					PushResult(item);
 				}
 			} catch (const std::exception& e) {
-				// Пауза здесь обязательна. На пути "не 200" она была, а на пути
-				// "200 с неразобранным телом" - нет, и чужая программа, занявшая
-				// порт и отвечающая мгновенно, разгоняла этот цикл до предела:
-				// ядро под нагрузкой и тысячи строк в журнал в секунду, прямо
-				// во время игры.
-				SKSE::log::warn("ответ службы не разобран - {}", e.what());
+				// The pause here is compulsory. It was on the "not 200" path and was not on
+				// the "200 with a body that does not parse" path, and somebody else program
+				// that took the port and answered instantly drove this loop to the limit: the
+				// core under load and thousands of lines a second into the log, right in the
+				// middle of play.
+				SKSE::log::warn("the answer of the service did not parse - {}", e.what());
 				std::this_thread::sleep_for(std::chrono::milliseconds(config.retryDelayMs));
 			}
 		}

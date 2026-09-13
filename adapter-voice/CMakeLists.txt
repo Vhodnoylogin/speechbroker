@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.24)
 
-# Тестовый адаптер Envoy: обычный плагин SKSE, то есть мод. С мостом говорит
-# вызовом функции внутри процесса игры; наружу, к голосовой службе, ходит сам
-# по HTTP. Собирается отдельно от моста и о его исходниках ничего не знает -
-# из моста берётся только контракт, и берётся он из установленного мода, папки
-# SDK. Путь к ней задаётся в config/build.json ключом sdk.
+# The Envoy test adapter: an ordinary SKSE plugin, which is to say a mod. It
+# talks to the bridge by calling a function inside the process of the game;
+# outward, to the voice service, it goes over HTTP by itself. It is built apart
+# from the bridge and knows nothing about its sources - only the contract is
+# taken from the bridge, and it is taken from the installed mod, the SDK folder.
+# The path to it is set in config/build.json under the sdk key.
 project(EnvoyVoiceAdapter VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -12,21 +13,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_SKIP_INSTALL_RULES ON)
 
-# ---------------------------------------------------------------- контракт
-# Где лежит SDK моста - настройка, а не константа: читаем её из того же файла,
-# которым пользуются скрипты раскладки.
+# ---------------------------------------------------------------- the contract
+# Where the SDK of the bridge lies is a setting, not a constant: we read it out
+# of the same file the lay-out scripts use.
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/config/build.json" ENVOY_BUILD_JSON)
 string(JSON ENVOY_SDK GET "${ENVOY_BUILD_JSON}" deploy sdk)
 if(NOT EXISTS "${ENVOY_SDK}/envoy-adapter.h")
     message(FATAL_ERROR
-        "Контракт моста не найден: ${ENVOY_SDK}/envoy-adapter.h\n"
-        "Сначала выложи мост - он публикует папку SDK внутри своего мода.")
+        "The contract of the bridge was not found: ${ENVOY_SDK}/envoy-adapter.h\n"
+        "Lay the bridge out first - it publishes the SDK folder inside its own mod.")
 endif()
-message(STATUS "Контракт Envoy: ${ENVOY_SDK}")
+message(STATUS "Envoy contract: ${ENVOY_SDK}")
 
-# ---------------------------------------------------------------- зависимости
-# CommonLibSSE-NG ищет fmt и spdlog через find_package, поэтому подсовываем их
-# FetchContent'ом с OVERRIDE_FIND_PACKAGE. vcpkg при этом не нужен.
+# ---------------------------------------------------------------- dependencies
+# CommonLibSSE-NG looks for fmt and spdlog through find_package, so we slip them
+# in with FetchContent and OVERRIDE_FIND_PACKAGE. vcpkg is not needed for this.
 include(FetchContent)
 
 set(FMT_INSTALL OFF CACHE BOOL "" FORCE)
@@ -55,8 +56,9 @@ FetchContent_Declare(
     GIT_SHALLOW TRUE
 )
 
-# rapidcsv нужен самой CommonLibSSE-NG: из CSV она читает адресную библиотеку,
-# и именно этим путём поддерживается VR. Забираем только заголовок.
+# rapidcsv is wanted by CommonLibSSE-NG itself: it reads the address library out
+# of a CSV, and that is exactly the path by which VR is supported. We take only
+# the header.
 FetchContent_Declare(
     rapidcsv
     GIT_REPOSITORY https://github.com/d99kris/rapidcsv.git
@@ -69,7 +71,7 @@ FetchContent_MakeAvailable(fmt spdlog nlohmann_json rapidcsv)
 set(RAPIDCSV_INCLUDE_DIRS "${rapidcsv_SOURCE_DIR}/src" CACHE PATH "" FORCE)
 
 set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
-message(STATUS "Fetching CommonLibSSE-NG (первый раз это долго)...")
+message(STATUS "Fetching CommonLibSSE-NG (the first time this takes a while)...")
 FetchContent_Declare(
     CommonLibSSE
     GIT_REPOSITORY https://github.com/CharmedBaryon/CommonLibSSE-NG.git
@@ -86,7 +88,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(httplib)
 
-# ---------------------------------------------------------------- наш плагин
+# ---------------------------------------------------------------- our plugin
 file(GLOB_RECURSE ADAPTER_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 add_library(EnvoyVoiceAdapter SHARED ${ADAPTER_SOURCES})
 

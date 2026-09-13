@@ -5,7 +5,8 @@
 
 namespace Voice
 {
-	// Озвучить текст моделью speakModel и доложить мосту, чем кончилось.
-	// Ждёт ответа службы, поэтому зваться должна из своего потока.
+	// Speak the text with the speakModel model and report to the bridge how it
+	// ended. It waits for the answer of the service, so it has to be called from a
+	// thread of its own.
 	void Speak(const std::string& a_text, std::int32_t a_speechId);
 }

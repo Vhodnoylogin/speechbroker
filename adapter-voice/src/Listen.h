@@ -2,12 +2,13 @@
 
 namespace Voice
 {
-	// Опрос службы адаптера: подключиться к ней или поднять, затем без конца
-	// забирать распознанное и переносить в мост. Живёт в своём потоке до конца
-	// процесса игры.
+	// Polling the service of the adapter: connect to it or bring it up, then
+	// endlessly take what was recognised and carry it over to the bridge. Lives in
+	// a thread of its own until the process of the game ends.
 	//
-	// Поток один. Служба одна: микрофон принадлежит адаптеру, а модели внутри
-	// неё разбирают один и тот же звук - какая из них узнала реплику, сказано
-	// в ответе полем engine.
+	// There is one thread. There is one service: the microphone belongs to the
+	// adapter, and the models inside the service work over one and the same sound -
+	// which of them recognised an utterance is said in the answer, in the engine
+	// field.
 	void PollService();
 }

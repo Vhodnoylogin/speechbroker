@@ -1,9 +1,9 @@
 {
-  "_": "Настройки адаптера. Служба здесь одна и своя - она владеет микрофоном и едет внутри этого же мода. Моделей здесь нет: каждая приходит своим модом и кладёт листок в папку models рядом с этим файлом.",
+  "_": "The settings of the adapter. There is one service here and it is its own - it owns the microphone and rides inside this very mod. There are no models here: each one arrives as a mod of its own and puts a listing into the models folder next to this file.",
 
   "adapter": {
     "id": "voice",
-    "name": "Голосовые модели"
+    "name": "Voice models"
   },
 
   "service": {

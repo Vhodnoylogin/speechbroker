@@ -17,11 +17,11 @@ namespace Voice
 		const auto& config = Config::Get();
 		auto&       bridge = Bridge::Get();
 
-		// Кого спрашивать, решает Config: здесь нас не касается, названа
-		// говорящая модель в настройках или взята первая подходящая.
+		// Who to ask is decided by Config: whether the speaking model is named in the
+		// settings or the first suitable one was taken is not our concern here.
 		const auto* model = config.SpeakingModel();
 		if (!model) {
-			SKSE::log::warn("озвучка {}: ни одна установленная модель не умеет говорить", a_speechId);
+			SKSE::log::warn("speech {}: not one installed model can speak", a_speechId);
 			bridge.PushSpeechDone(a_speechId, false, false);
 			return;
 		}
@@ -31,15 +31,15 @@ namespace Voice
 		httplib::Client client(ep.host, ep.port);
 		client.set_read_timeout(config.sayTimeoutSec, 0);
 		client.set_default_headers({ { Service::kPass, config.service.token } });
-		// Кем говорить, решает адаптер, а не служба: у неё моделей может быть
-		// несколько, и выбор - наше дело, потому что это мы знаем, что объявил
-		// каждый установленный мод.
+		// Who is to speak is decided by the adapter, not by the service: the service
+		// may have several models, and the choice is our business, because we are the
+		// ones that know what each installed mod declared.
 		nlohmann::json payload{ { "text", a_text }, { "model", model->id } };
 		auto           res = client.Post("/say", payload.dump(), "application/json");
 
 		const bool ok = res && res->status == 200;
-		SKSE::log::info("озвучка {} моделью {}: {}", a_speechId, model->id,
-			ok ? "сказано" : "не вышло");
+		SKSE::log::info("speech {} by model {}: {}", a_speechId, model->id,
+			ok ? "said" : "did not work");
 		bridge.PushSpeechDone(a_speechId, ok, false);
 	}
 }

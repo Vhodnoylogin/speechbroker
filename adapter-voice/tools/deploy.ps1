@@ -1,10 +1,12 @@
-﻿# Раскладка тестового адаптера Envoy в mods\. Все пути и имена - в config/build.json.
+﻿# Laying the Envoy test adapter out into mods\. Every path and name is in
+# config/build.json.
 #
-#   tools\deploy.ps1            показать, что будет сделано
-#   tools\deploy.ps1 -Apply     выполнить
+#   tools\deploy.ps1            show what would be done
+#   tools\deploy.ps1 -Apply     do it
 #
-# Адаптер - отдельный модуль: исходников моста здесь нет, и он их не видит.
-# Общий у них только контракт, и берётся он из установленного мода моста (SDK).
+# The adapter is a module of its own: the sources of the bridge are not here and
+# it does not see them. The one thing they share is the contract, and it is
+# taken from the installed mod of the bridge (SDK).
 param([switch]$Apply, [switch]$NoIndex)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -13,10 +15,10 @@ $d    = $cfg.deploy
 $enc  = New-Object Text.UTF8Encoding($false)
 
 $game = @(Get-Process -Name SkyrimVR,SkyrimSE -ErrorAction SilentlyContinue)
-if ($game.Count) { throw "Игра запущена ($($game.Name -join ', ')) - раскладка запрещена" }
+if ($game.Count) { throw "The game is running ($($game.Name -join ', ')) - laying out is not allowed" }
 
 if (-not (Test-Path -LiteralPath (Join-Path $d.sdk 'envoy-adapter.h'))) {
-    throw "Контракт моста не найден в $($d.sdk). Сначала выложи мост."
+    throw "The contract of the bridge was not found in $($d.sdk). Lay the bridge out first."
 }
 
 function Expand-Path([string]$p) { $p.Replace('{root}', $root) }
@@ -27,9 +29,10 @@ $mod = Join-Path $dist $d.modName
 New-Item -ItemType Directory -Force (Join-Path $mod $d.settingsTargetRel) | Out-Null
 Copy-Item -LiteralPath (Expand-Path $d.settings) -Destination (Join-Path $mod $d.settingsTargetRel) -Force
 
-# Контракт мод-модели - для авторов, а не для игры: она его не читает. Поэтому
-# он едет ОТДЕЛЬНОЙ поставкой, как и SDK моста, а не папкой внутри мода.
-# На Nexus это необязательный файл на той же странице.
+# The contract of a model mod is for authors, not for the game: the game does
+# not read it. So it rides as a SEPARATE package, like the SDK of the bridge,
+# and not as a folder inside the mod. On the Nexus that is an optional file on
+# the same page.
 if ($d.publish) {
     $sdkMod = Join-Path $dist $d.sdkName
     New-Item -ItemType Directory -Force $sdkMod | Out-Null
@@ -45,7 +48,7 @@ if ($d.publish) {
         "newestVersion=$($d.version)"
         'category="0,"'
         'installationFile='
-        'notes=Контракт мод-модели для EnvoyVoiceAdapter. Нужен автору мода, игре - нет; в профилях держать выключенным.'
+        'notes=The contract of a model mod for EnvoyVoiceAdapter. An author of a mod needs it, the game does not; keep it disabled in the profiles.'
         ''
         '[installedFiles]'
         'size=0'
@@ -53,9 +56,10 @@ if ($d.publish) {
     [IO.File]::WriteAllLines((Join-Path $sdkMod 'meta.ini'), $sdkMeta, $enc)
 }
 
-# Лицензия и перечень заимствованного едут в каждый мод. Человек, распаковавший
-# архив, обязан найти их внутри: страницу, с которой он качал, он больше
-# не откроет, а условия шести чужих проектов требуют, чтобы текст был в поставке.
+# The licence and the list of what was borrowed ride in every mod. Whoever
+# unpacked the archive has to find them inside it: they will not open the page
+# they downloaded from again, and the terms of six other projects require the
+# text to be in the package.
 if ($d.docs) {
     foreach ($f in $d.docs) { Copy-Item -LiteralPath (Expand-Path $f) -Destination $mod -Force }
 }
@@ -68,25 +72,27 @@ $meta = @(
     "newestVersion=$($d.version)"
     'category="0,"'
     'installationFile='
-    "notes=Тестовый адаптер Envoy к службе распознавания и синтеза речи. Требует мода $($d.bridgeMod)."
+    "notes=The Envoy test adapter to the service of speech recognition and synthesis. Needs the mod $($d.bridgeMod)."
     ''
     '[installedFiles]'
     'size=0'
 )
 [IO.File]::WriteAllLines((Join-Path $mod 'meta.ini'), $meta, $enc)
 
-'--- будет разложено ---'
-'  {0,-40} {1} файлов' -f $d.modName, @(Get-ChildItem -LiteralPath $mod -Recurse -File).Count
-if (-not $Apply) { ''; 'сухой прогон - добавь -Apply'; return }
+'--- to be laid out ---'
+'  {0,-40} {1} files' -f $d.modName, @(Get-ChildItem -LiteralPath $mod -Recurse -File).Count
+if (-not $Apply) { ''; 'dry run - add -Apply'; return }
 
-# Поставок две - мод и контракт для авторов, - и раскладываются они одинаково.
+# There are two packages - the mod and the contract for authors - and they are
+# laid out the same way.
 $copied = @()
 foreach ($pack in Get-ChildItem -LiteralPath $dist -Directory) {
     $target = Join-Path $d.modsRoot $pack.Name
     New-Item -ItemType Directory -Force $target | Out-Null
-    # Copy-Item -Recurse -Force над уже существующим деревом молча не перезаписывает
-    # файлы во вложенных папках, и раскладка отчитывалась об успехе, оставив в сборке
-    # библиотеку прошлой сборки. Копируем пофайлово и говорим, что изменилось.
+    # Copy-Item -Recurse -Force over a tree that already exists silently fails to
+    # overwrite files in nested folders, and the lay-out reported success while
+    # leaving the library of the previous build in the build. We copy file by file
+# and say what changed.
     $added = 0; $updated = 0; $same = 0
     Get-ChildItem -LiteralPath $pack.FullName -Recurse -File | ForEach-Object {
         $rel = $_.FullName.Substring($pack.FullName.Length).TrimStart('')
@@ -103,7 +109,7 @@ foreach ($pack in Get-ChildItem -LiteralPath $dist -Directory) {
             $same++
         }
     }
-    '  разложено: {0} - новых {1}, обновлено {2}, без изменений {3}' -f $pack.Name, $added, $updated, $same
+    '  laid out: {0} - new {1}, updated {2}, unchanged {3}' -f $pack.Name, $added, $updated, $same
     $copied += $pack.Name
 }
 

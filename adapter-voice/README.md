@@ -1,109 +1,123 @@
-# EnvoyVoiceAdapter — звук и модели
+# EnvoyVoiceAdapter - the sound and the models
 
-Часть Envoy, отвечающая за голос: она **владеет микрофоном**, раздаёт услышанное
-установленным моделям и переносит их ответы в мост.
+The part of Envoy that answers for the voice: it **owns the microphone**, deals what it hears out
+to the installed models and carries their answers into the bridge.
 
-Это **отдельный модуль**. Исходников моста здесь нет и быть не должно: мост виден только
-через контракт, который он публикует папкой `SDK` внутри своего мода. Так же его увидит и
-любой чужой мод, который захочет писать адаптер, — в этом и смысл разделения.
+This is a **module of its own**. The sources of the bridge are not here and must not be: the bridge
+is visible only through the contract it publishes in the `Envoy Framework - SDK` package. Any other
+mod that wants to write an adapter will see it the same way - that is the point of the division.
 
-Что такое Envoy целиком — в [описании модуля](../README.md).
+What Envoy is as a whole is in the [description of the module](../README.md).
 
-## Микрофон принадлежит адаптеру
+## The microphone belongs to the adapter
 
-Захват звука, тишина и границы фраз — дело адаптера, а не моделей. Делает это
-**его собственная служба**: она едет внутри этого же мода и поднимается сама при
-загрузке. Игроку запускать нечего — он ставит адаптер как обычный мод.
+Capturing the sound, the silence and the boundaries of phrases are the business of the adapter, not
+of the models. It is done by **its own service**: the service rides inside this very mod and comes
+up by itself at load. There is nothing for a player to start - they install the adapter like any
+other mod.
 
-Служба одна на игру, и это не мелочь: микрофон — устройство, и две модели,
-принесшие каждая свой захват, дрались бы за него.
+There is one service per game, and that is not a detail: a microphone is a device, and two models
+each bringing a capture of its own would fight over it.
 
-Модель в этой постройке — **распознаватель**: ей дают звук, она возвращает текст.
-Своей программы у неё нет.
+A model in this arrangement is a **recogniser**: it is given sound and it gives back text. It has
+no program of its own.
 
-## Ни одной модели адаптер не знает по имени
+## The adapter knows not one model by name
 
-Он читает папку
+It reads the folder
 
     Data\SKSE\Plugins\envoy\adapters\voice\models\
 
-и берёт оттуда объявления моделей. Каждый листок кладёт **отдельный мод** — мод-модель;
-веса грузит служба, а адаптеру от листка нужно три вещи: как модель зовут в ответах
-службы, черновик она даёт или окончательный ответ, и что она умеет.
-Полный контракт листка: [contract/envoy-voice-model.md](contract/envoy-voice-model.md).
+and takes the declarations of the models out of it. Each listing is put there by a **separate mod** -
+a model mod; the weights are loaded by the service, and all the adapter wants from a listing is
+three things: what the model is called in the answers of the service, whether it gives a draft or a
+final answer, and what it can do.
+The full contract of a listing: [contract/envoy-voice-model.md](contract/envoy-voice-model.md).
 
-Отсюда следует то, ради чего это сделано:
+From this follows what it was done for:
 
-- **адаптер можно выложить людям** — в нём нет ни одного пути, порта или языка, верных
-  только на машине автора;
-- **смена модели не требует новой сборки** и даже правки настроек: человек ставит другой мод;
-- **две модели сразу** — это просто два мода. Частный случай «быстрая плюс точная», где
-  быстрая отдаёт черновик, а точная его уточняет, настраивается установкой, а не кодом;
-- **чужой человек может выпустить свою модель**, не трогая наш код вовсе.
+- **the adapter can be released to people** - there is not one path, port or language in it that is
+  true only on the machine of its author;
+- **changing the model needs no new build** and not even an edit to the settings: a person installs
+  a different mod;
+- **two models at once** are simply two mods. The particular case of "a fast one plus an accurate
+  one", where the fast one gives a draft and the accurate one refines it, is arranged by installing,
+  not by code;
+- **somebody else can release a model of their own** without touching our code at all.
 
-Что адаптер объявляет мосту — `asr`, `tts` или оба — он **считает** по установленным
-моделям, а не берёт из своих настроек. Обещать мосту озвучку, когда ни одна модель не
-говорит, значит забрать работу у адаптера, который её умеет.
+What the adapter declares to the bridge - `asr`, `tts` or both - it **works out** from the installed
+models rather than taking it from its settings. Promising the bridge speech when not one model
+speaks means taking the work away from an adapter that can do it.
 
-## Что делает адаптер
+## What the adapter does
 
-- **Знает обе стороны.** Внутрь игры говорит вызовом функции через C-ABI моста, без сокетов.
-  Наружу, к службе, ходит сам по HTTP: транспорт выбирает адаптер, мост о нём не знает.
-- **Отвечает за жизнь службы.** Проверяет `/health`; если служба уже поднята — просто
-  подключается и чужой процесс никогда не убивает. Если нет — поднимает её по `autoStart`
-  из своих настроек и сообщает ей номер процесса игры, чтобы она погасла вместе с игрой.
-- **Опрашивает службу.** Один поток на всю игру: служба одна, а какая модель узнала
-  реплику — сказано в ответе полем `engine`. Ответ черновой модели в окне `correlateMs`
-  считается черновиком, который потом уточнит точная.
-- **Озвучивает.** Задание `Speak` от моста уходит первой модели, объявившей `tts`, либо
-  той, что названа в `speakModel`.
+- **It knows both sides.** Into the game it speaks by calling a function through the C ABI of the
+  bridge, with no sockets. Outward, to the service, it goes over HTTP by itself: the transport is
+  the choice of the adapter and the bridge knows nothing about it.
+- **It answers for the life of the service.** It checks `/health`; if the service is already up it
+  simply connects and never kills a process that is not ours. If it is not, the adapter brings it
+  up by `autoStart` out of its settings and tells it the number of the process of the game, so that
+  it goes out together with the game.
+- **It polls the service.** One thread for the whole game: there is one service, and which model
+  recognised an utterance is said in the answer, in the `engine` field. An answer from a draft model
+  inside the `correlateMs` window counts as a draft the accurate one will refine.
+- **It speaks.** A `Speak` job from the bridge goes to the first model that declared `tts`, or to
+  the one named in `speakModel`.
 
-## Разговор со службой
+## Talking to the service
 
-| Запрос | Когда | Ответ |
+| Request | When | Answer |
 |---|---|---|
-| `GET /health` | перед началом и после запуска службы | `200`, если жива |
-| `GET /listen?since=<номер>` | без конца, пока мост держит адаптер источником | новые реплики от всех моделей |
-| `POST /say` | по заданию моста | `200`, если сказано |
+| `GET /health` | before starting and after bringing the service up | `200` if it is alive |
+| `GET /listen?since=<number>` | endlessly, while the bridge keeps the adapter as the source | the new utterances from every model |
+| `POST /say` | on a job from the bridge | `200` if it was said |
 
-Ответ `/listen` — объект с массивом `utterances`, в каждой записи:
+The answer to `/listen` is an object with an `utterances` array, and in every record:
 
-| Ключ | Что значит |
+| Key | What it means |
 |---|---|
-| `id` | номер реплики у службы; адаптер переводит его в номер моста |
-| `text` | распознанное |
-| `engine` | какая модель узнала |
-| `score`, `margin` | уверенность и отрыв от второй гипотезы |
-| `ms` | сколько заняло |
-| `complete` | насколько служба уверена, что фраза **закончилась**. По этому числу мост решает, придержать её или отдать сразу |
-| `lengthClass` | короткая, средняя, длинная |
-| `supersedes` | номера кусков, которые эта реплика поглотила |
+| `id` | the number of the utterance at the service; the adapter translates it into the number at the bridge |
+| `text` | what was recognised |
+| `engine` | which model recognised it |
+| `score`, `margin` | the confidence and the margin over the second hypothesis |
+| `ms` | how long it took |
+| `complete` | how sure the service is that the phrase **ended**. By that number the bridge decides whether to hold it back or hand it over at once |
+| `lengthClass` | short, middle, long |
+| `supersedes` | the numbers of the pieces this utterance swallowed |
 
-## Настройки
+## The settings
 
-`envoy-voice.json` описывает **сам адаптер и его службу**: где она, как её поднять,
-сроки ожидания, ширину окна уточнения. Моделей в нём нет и быть не должно.
+`envoy-voice.json` describes **the adapter itself and its service**: where it is, how to bring it
+up, the deadlines, the width of the refinement window. There are no models in it and there must not
+be.
 
-| Ключ | Что значит |
+| Key | What it means |
 |---|---|
-| `service.url` | где служба. Принимается только петля: через неё идёт вся речь игрока |
-| `service.autoStart` | как её поднять. `exec` — только внутри папки адаптера |
-| `service.listenTimeoutSec` | сколько служба держит `/listen`, прежде чем ответить пусто |
-| `speakModel` | кем озвучивать. Пусто — первой говорящей из установленных |
-| `correlateMs` | окно, в котором точный ответ считается уточнением черновика |
-| `retryDelayMs` | пауза после неудачного `/listen` |
-| `healthTimeoutSec` | сколько ждать соединения на `/health` |
-| `listenGraceSec` | насколько дольше срока службы ждать её ответ |
-| `idleSleepMs` | шаг ожидания, пока мост держит адаптер в запасе |
-| `sayTimeoutSec` | сколько ждать ответа `/say` |
-| `idMapLimit` | сколько последних переводов «номер службы → номер моста» помнить на модель |
+| `service.url` | where the service is. Only the loopback is accepted: all the speech of the player goes through it |
+| `service.autoStart` | how to bring it up. `exec` only inside the folder of the adapter |
+| `service.listenTimeoutSec` | how long the service holds `/listen` before answering empty |
+| `speakModel` | who is to speak. Empty means the first speaking one among those installed |
+| `correlateMs` | the window in which an accurate answer counts as a refinement of a draft |
+| `retryDelayMs` | the pause after a failed `/listen` |
+| `healthTimeoutSec` | how long to wait for a connection on `/health` |
+| `listenGraceSec` | how much longer than the deadline of the service to wait for its answer |
+| `idleSleepMs` | the step of waiting while the bridge keeps the adapter in reserve |
+| `sayTimeoutSec` | how long to wait for an answer to `/say` |
+| `idMapLimit` | how many recent "number of the service -> number of the bridge" translations to remember per model |
 
-Свой файл настроек адаптер разбирает **строго**: ошибка в нём — наша, и при ней адаптер
-не поднимается вовсе. Чужой листок модели, наоборот, разбирается щадяще: неразобранный
-листок пропускается со строкой в журнале, а остальные модели работают. Человек,
-поставивший три мод-модели, не должен остаться без всех трёх из-за одной.
+The adapter parses its own settings file **strictly**: a mistake in it is ours, and on one the
+adapter does not come up at all. Somebody else listing of a model, on the contrary, is parsed
+gently: a listing that does not parse is skipped with a line in the log while the other models
+work. A person who installed three model mods must not be left without all three because of one.
 
-## Сборка
+## Text on screen
+
+The adapter has no window and no notices: everything it says goes into the log, and the log stays
+English on purpose - its lines travel into other people's bug reports. What the player reads is
+said by the bridge and by the subscribers, and it goes through the translation files described in
+the [description of the bridge](../bridge/README.md).
+
+## Building
 
 ```
 cmake -B build -S .
@@ -112,19 +126,21 @@ tools\deploy.ps1 -Apply
 tools\package.ps1 -Apply
 ```
 
-`cmake` откажется настраиваться, пока мост не выложен: контракт берётся из `SDK`, и путь к нему
-задан в `config/build.json` ключом `deploy.sdk`. Это не неудобство, а проверка — собранный против
-несуществующего контракта адаптер молча не совпал бы с мостом по версии интерфейса.
+`cmake` will refuse to configure until the bridge is laid out: the contract is taken from the SDK
+package, and the path to it is set in `config/build.json` under the `deploy.sdk` key. That is not
+an inconvenience but a check - an adapter built against a contract that does not exist would
+silently disagree with the bridge about the version of the interface.
 
-## Разговор со службой защищён
+## Talking to the service is protected
 
-Служба своя, но канал до неё всё равно защищён, потому что порт может занять чужая
-программа: адрес обязан быть петлёй, `exec` — лежать внутри папки адаптера, и каждый
-запрос несёт разовый секрет сессии в заголовке `X-Envoy-Token`. Секрет адаптер
-выдумывает при загрузке и отдаёт службе доводом `--envoy-token`.
+The service is ours, but the channel to it is protected all the same, because the port can be taken
+by a program that is not ours: the address has to be the loopback, `exec` has to lie inside the
+folder of the adapter, and every request carries a one-off session secret in the `X-Envoy-Token`
+header. The adapter makes the secret up at load and hands it to the service with the
+`--envoy-token` argument.
 
-## Совместимость с мостом
+## Compatibility with the bridge
 
-Она двусторонняя: мост **новее** себя адаптер принимает и работает по своей
-версии, мост **старше** — отказывается. Одностороннее правило уже однажды выбило адаптер
-целиком, и прогон не состоялся, потому что речь в мост не попадала вовсе.
+It has two sides: a bridge **newer** than itself the adapter accepts and works by its own version;
+a bridge **older** it refuses. A one-sided rule has already knocked the adapter out entirely once,
+and the run did not happen, because speech did not reach the bridge at all.

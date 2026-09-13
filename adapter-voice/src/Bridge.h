@@ -8,9 +8,10 @@
 
 namespace Voice
 {
-	// Наша сторона моста: интерфейс, который мост прислал сообщением SKSE,
-	// и то, что он нам поручил. Единственное место, где адаптер держит
-	// указатель на мост, - потоки опроса и озвучки ходят к мосту только отсюда.
+	// Our side of the bridge: the interface the bridge sent in an SKSE message, and
+	// what it has told us to do. The one place where the adapter holds a pointer to
+	// the bridge - the threads of polling and speaking reach the bridge only from
+	// here.
 	class Bridge
 	{
 	public:
@@ -22,15 +23,17 @@ namespace Voice
 
 		std::uint32_t Version() const { return _envoy->Version(); }
 
-		// Имя из регистрации запоминается: под ним же потом идут реплики и
-		// отчёты об озвучке, и второй раз спрашивать его у настроек незачем.
+		// The name from the registration is remembered: the utterances and the reports
+		// on speaking go under it later, and there is no point asking the settings for
+		// it a second time.
 		bool Register(const EnvoyAPI::AdapterInfo& a_info, EnvoyAPI::JobCallback a_onJob, void* a_user);
 
-		// Номер реплики у моста либо 0, если мост её не принял или его нет.
+		// The number of the utterance at the bridge, or 0 if the bridge did not take it
+		// or is not there.
 		std::int32_t PushUtterance(const EnvoyAPI::UtteranceIn& a_utterance);
 		void         PushSpeechDone(std::int32_t a_speechId, bool a_ok, bool a_interrupted);
 
-		// Мост назначил нас источником или велел замолчать.
+		// The bridge made us the source, or told us to fall silent.
 		void SetListening(bool a_on) { _listening.store(a_on); }
 		bool Listening() const { return _listening.load(); }
 
