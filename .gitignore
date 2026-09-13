@@ -1,5 +1,7 @@
 build/
 dist/
+# Скачанные исходники зависимостей, сохранённые при переносе сборки
+_deps-keep/
 out/
 .vs/
 .cache/
@@ -13,4 +15,4 @@ build.local.json
 *-token.txt
 
 # Сценарий из живого звука - производное: собирается engine-scenario.py
-tests/scenarios/live.json
+bridge/tests/scenarios/live.json
