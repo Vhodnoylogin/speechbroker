@@ -1,5 +1,7 @@
 # A model mod: Whisper RU
 
+*In Russian: [README.ru.md](README.ru.md). English is the source language; the other is a translation.*
+
 Two models for `EnvoyVoiceAdapter` - recognition and synthesis of Russian speech on Whisper: the
 accurate `large-v3-turbo` and the draft `small`.
 
@@ -73,11 +75,15 @@ If the file is missing the lay-out warns, there will be no weights in the mod, a
 find no models. When the mod goes out to people the weights lie straight in `models/<id>/` and no
 junction is needed.
 
-## Text on screen
+## There is no text on screen
 
-There is none: a model mod shows nothing to the player. The only line that reaches a human eye is
-the `name` field of a listing, which the adapter writes into its log - and the log stays English,
-like every other log in Envoy.
+A model mod shows nothing to the player, and there is nothing in it to translate. The only line
+that reaches a human eye is the `name` field of a listing, which the adapter writes into its log;
+the log itself is translated on the side of the adapter.
+
+`language` is a different matter: it says which language the model listens in, and a subscriber
+that registers a vocabulary has to be in the same one. That is why the test subscribers take their
+phrases out of a translation file rather than out of their scripts.
 
 ## How to release a model of your own
 
