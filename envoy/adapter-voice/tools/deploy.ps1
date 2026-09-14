@@ -29,6 +29,16 @@ $mod = Join-Path $dist $d.modName
 New-Item -ItemType Directory -Force (Join-Path $mod $d.settingsTargetRel) | Out-Null
 Copy-Item -LiteralPath (Expand-Path $d.settings) -Destination (Join-Path $mod $d.settingsTargetRel) -Force
 
+# The library itself. A mod without it is a mod that does nothing, so a missing
+# build is a refusal rather than a warning: laying out quietly would leave the
+# previous library in mods\ and the run would be testing last week.
+$dll = Expand-Path $d.dll
+if (-not (Test-Path -LiteralPath $dll)) {
+    throw "the library of the adapter is not built: $dll"
+}
+New-Item -ItemType Directory -Force (Join-Path $mod 'SKSE\Plugins') | Out-Null
+Copy-Item -LiteralPath $dll -Destination (Join-Path $mod 'SKSE\Plugins') -Force
+
 # The text the adapter puts out - which is to say its log; it has no window of its
 # own. The tables are kept as UTF-8 in localization/ and turned here into the
 # UTF-16LE files the engine reads, by the script the bridge publishes in its SDK.
