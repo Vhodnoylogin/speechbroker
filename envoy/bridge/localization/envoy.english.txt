@@ -1,9 +1,10 @@
 # Envoy Framework - every line the player can read, English.
 #
 # English is the source language: this file is written by hand, the others are
-# translated from it. The log is deliberately absent - its lines travel into
-# other people's bug reports, and a translated log cannot be read by the author
-# who has to answer them.
+# translated from it. The lines of the log are not missing but live in a section
+# of their own, envoy.log.english.txt, merged with this one when the tables are
+# built: the log is translated like everything else, and a section per subject
+# keeps one file from holding everything.
 #
 # One "$KEY<tab>text" line each; \n in a value becomes a line break. Lines
 # that do not start with $ are notes and are dropped on the way out.
