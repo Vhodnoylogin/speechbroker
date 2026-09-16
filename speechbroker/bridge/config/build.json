@@ -1,0 +1,79 @@
+{
+  "creationKit": "D:/SteamLibrary/steamapps/common/Skyrim Special Edition",
+  "papyrusFlags": "TESV_Papyrus_Flags.flg",
+  "imports": [
+    "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Skyrim Script Extender for VR (SKSEVR)/Scripts/Source",
+    "{creationKit}/Data/Source/Scripts",
+    "{root}/papyrus"
+  ],
+  "papyrusSource": "{root}/papyrus",
+  "papyrusOutput": "{root}/build/pex",
+  "automod": "D:/Skyrim VR Modding/AutoMod/src/SpookysAutomod.Cli/bin/Release/net8.0/spookys-automod.dll",
+  "esp": {
+    "file": "SpeechBroker.esp",
+    "author": "Claude",
+    "description": "Speech Broker - bridge between Skyrim and external models",
+    "quests": [
+      {
+        "editorId": "SpeechBrokerMain",
+        "name": "Speech Broker",
+        "script": "SpeechBrokerQuest",
+        "startEnabled": true,
+        "priority": 50
+      }
+    ]
+  },
+  "optimize": true,
+  "deploy": {
+    "modsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods",
+    "modName": "Speech Broker",
+    "version": "0.1.0",
+    "indexScript": "D:/Skyrim VR Modding/Claude Code/Skyrim VR/index/update-index.ps1",
+    "indexOwner": "chat-speechbroker-bridge",
+    "downloadsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/downloads",
+    "sevenZip": "C:/Program Files/7-Zip/7z.exe",
+    "bridgeUrl": "http://127.0.0.1:8930",
+    "bridgeToken": "D:/Skyrim VR Modding/MO2/plugins/mo2aibridge/mo2aibridge-token.txt",
+    "scripts": [
+      "SpeechBroker",
+      "SpeechBrokerQuest"
+    ],
+    "esp": "SpeechBroker.esp",
+    "dll": "{root}/build/Release/SpeechBroker.dll",
+    "defaultConfig": "{root}/config/speechbroker.default.json",
+    "docs": [
+      "{root}/../LICENSE",
+      "{root}/../THIRD-PARTY-NOTICES.md"
+    ],
+    "localization": {
+      "name": "SpeechBroker",
+      "base": "english",
+      "source": "{root}/localization"
+    },
+    "sdkName": "Speech Broker - SDK",
+    "sdkLayout": {
+      "cpp": [
+        "{root}/contract/speechbroker-adapter.h",
+        "{root}/contract/speechbroker-abi.h",
+        "{root}/contract/speechbroker-loc.h"
+      ],
+      "papyrus": [
+        "{root}/papyrus/SpeechBroker.psc",
+        "{root}/papyrus/SpeechBrokerQuest.psc"
+      ],
+      "docs": [
+        "{root}/contract/speechbroker-papyrus.md",
+        "{root}/contract/speechbroker-papyrus.ru.md",
+        "{root}/contract/speechbroker-keys.md",
+        "{root}/contract/speechbroker-keys.ru.md"
+      ],
+      "localization": [
+        "{root}/localization/speechbroker.english.txt",
+        "{root}/localization/speechbroker.russian.txt"
+      ],
+      "tools": [
+        "{root}/tools/build-localization.py"
+      ]
+    }
+  }
+}

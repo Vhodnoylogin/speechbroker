@@ -1,0 +1,13 @@
+{
+  "Name": "SpeechBroker",
+  "Author": "Vhodnoylogin",
+  "Description": "Speech Broker - bridge between Skyrim and external models",
+  "Version": "0.1.0",
+  "Template": "papyrus-native",
+  "TargetVersions": [
+    0,
+    1
+  ],
+  "OutputDirectory": "build",
+  "PapyrusFunctions": []
+}

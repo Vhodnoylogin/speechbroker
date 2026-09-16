@@ -1,0 +1,16 @@
+# Speech Broker - every line the player can read, Russian.
+#
+# Translated from localization/speechbroker.english.txt, which is the source language.
+# A key missing here falls back to its English line, so a partial translation
+# stays usable instead of turning into bare keys.
+#
+# This file ships inside the mod of the bridge, beside the English one: a
+# translation is a part of the module, not a mod to install next to it. Adding
+# a language means adding a file here and laying the mod out again.
+
+$SPEECHBROKER_MENU_LOG	Журнал
+$SPEECHBROKER_LOG_TITLE	Журнал моста
+$SPEECHBROKER_LOG_LEVEL	Сколько писать
+$SPEECHBROKER_LOG_SPEECH	Записывать распознанные слова
+$SPEECHBROKER_LOG_SPEECH_HELP	Выключено - в журнал идут номер реплики и модель, но не сами слова.\nВключено - на диске остаётся расшифровка всего сказанного вслух.
+$SPEECHBROKER_LOG_SESSION_HELP	Изменения действуют до закрытия игры.\nПостоянное значение - ключи log.level и log.speechText\nв Data/SKSE/Plugins/speechbroker/speechbroker.json.

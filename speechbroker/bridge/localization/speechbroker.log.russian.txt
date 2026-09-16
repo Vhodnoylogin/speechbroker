@@ -1,0 +1,102 @@
+# Speech Broker - the lines of the log, Russian.
+#
+# Translated from localization/speechbroker.log.english.txt. The numbered placeholders may
+# be reordered freely - that is what they are numbered for - but every one of them
+# has to appear, or the line falls back to its bare key.
+
+$SPEECHBROKER_WORD_NOBODY	никто
+$SPEECHBROKER_WORD_UNKNOWN	неизвестное
+$SPEECHBROKER_WORD_ON	включено
+$SPEECHBROKER_WORD_OFF	выключено
+$SPEECHBROKER_WORD_EXPENSIVE	дорогое
+$SPEECHBROKER_WORD_REVERSIBLE	обратимое
+$SPEECHBROKER_WORD_CAN_UNDO	умеет отменить
+$SPEECHBROKER_WORD_CANNOT_UNDO	отменить не умеет
+$SPEECHBROKER_WORD_GREEDY	жадная
+$SPEECHBROKER_WORD_SHARING	делится
+$SPEECHBROKER_WORD_TOO_LATE	 - ОПОЗДАЛА, торги закрыты
+$SPEECHBROKER_WORD_WRITTEN_DOWN	пишем
+$SPEECHBROKER_WORD_NOT_WRITTEN_DOWN	не пишем
+$SPEECHBROKER_WORD_SOURCE	источник
+$SPEECHBROKER_WORD_IN_RESERVE	в запасе
+$SPEECHBROKER_WORD_SUCCESS	успех
+$SPEECHBROKER_WORD_FAILURE	неудача
+$SPEECHBROKER_CFG_CREATED	файл настроек создан из встроенного набора
+$SPEECHBROKER_CFG_MERGED	файл настроек дополнен новыми ключами
+$SPEECHBROKER_CFG_FILE	файл настроек прочитан
+$SPEECHBROKER_CFG_BROKEN	файл настроек не разбирается, работаю на встроенных значениях
+$SPEECHBROKER_CFG_BASELINE	работаю на встроенных значениях
+$SPEECHBROKER_REASON_WINNER_UNKNOWN_COMMAND	команда победителя неизвестна - награда не делится
+$SPEECHBROKER_REASON_OTHER_COMMAND	узнал другую команду - эта не его
+$SPEECHBROKER_REASON_LOST_AND_GREEDY	проиграл, а делиться отказался
+$SPEECHBROKER_REASON_BELOW_THRESHOLD	уверенность ниже порога своего класса
+$SPEECHBROKER_REASON_PRIORITY	ставки неразличимы, спор решён порядком из настроек
+$SPEECHBROKER_REASON_AMBIGUOUS	фразу поняли по-разному и одинаково уверенно - реплика двусмысленна
+$SPEECHBROKER_REASON_SHARED_TAKES_TIE	одну команду просят несколько, порядок не задан - её делают те, кто делится
+$SPEECHBROKER_REASON_ALL_GREEDY	одну команду просят несколько, и все требуют её себе - не делает никто
+$SPEECHBROKER_REASON_UTTERANCE_TOO_WEAK	реплика расслышана хуже порога
+$SPEECHBROKER_REASON_NO_BIDS	никто не заявился
+$SPEECHBROKER_REASON_NO_BID_PASSED	ни одна ставка не прошла порог уверенности
+$SPEECHBROKER_REASON_GREEDY_WON	победитель жадный - результат только ему
+$SPEECHBROKER_REASON_SHARED_WON	победитель делится - результат достался всем, кто узнал ту же команду
+$SPEECHBROKER_REASON_SHARED_ALONE	победитель делится, делить не с кем
+$SPEECHBROKER_REASON_CEILING	истёк потолок класса длины
+$SPEECHBROKER_REASON_ROOM_EMPTY	зал пуст - придерживать не для кого
+$SPEECHBROKER_REASON_HOLD_WEIGHED	завершённость {0:.2f}, в зале {1}, цена ошибки {2:.2f}, риск {3:.2f} против допуска {4:.2f}
+$SPEECHBROKER_LOG_HANDED_AT_ONCE	реплика {0} отдаётся сразу: {1}
+$SPEECHBROKER_LOG_HELD	реплика {0} ПРИДЕРЖАНА: {1}
+$SPEECHBROKER_LOG_LET_GO	реплика {0} отпущена: {1}
+$SPEECHBROKER_LOG_DROPPED	реплика {0} выброшена не оглашённой: её поглотила {1}
+$SPEECHBROKER_LOG_REVOKED	реплика {0} была отдана ({1}) и поглощена репликой {2} - отзыв
+$SPEECHBROKER_LOG_SETTLED	реплика {0} тема {1} ставок {2} -> {3} ({4})
+$SPEECHBROKER_LOG_EVENT_UTTERANCE	событие {0} инициировано, реплика {1}
+$SPEECHBROKER_LOG_EVENT_FULL	событие {0} инициировано, строка «{1}», число {2}
+$SPEECHBROKER_LOG_EVENTS_READY	рассылка событий Papyrus готова
+$SPEECHBROKER_LOG_EVENTS_UNAVAILABLE	рассылка событий Papyrus недоступна: ни одно событие до скриптов не дойдёт
+$SPEECHBROKER_LOG_SETTINGS_READ	настройки прочитаны: окно ставок {0} мс, порог реплики {1:.2f}, уверенность {2:.2f}/{3:.2f}, отрыв {4:.2f}/{5:.2f}, ничью берёт делящийся: {6}, в порядке участников {7}, хранение {8:.0f} с не более {9} реплик, допуск придержания {10:.2f}, цена ошибки {11:.2f}/{12:.2f}/{13:.2f}, потолок {14}/{15}/{16} мс
+$SPEECHBROKER_LOG_SETTINGS_REREAD	настройки перечитаны, журнал: уровень {0}, слова игрока {1}
+$SPEECHBROKER_LOG_CONFIG_SOURCE	{0}: {1}
+$SPEECHBROKER_LOG_CONFIG_ERROR	настройки: {0}
+$SPEECHBROKER_LOG_PLUGIN_LOADED	{0} v{1} загружен, контракт версии {2}
+$SPEECHBROKER_LOG_SKSE_MESSAGE	сообщение SKSE: {0} ({1})
+$SPEECHBROKER_LOG_INTERFACE_BROADCAST	интерфейс моста разослан адаптерам
+$SPEECHBROKER_LOG_SEAMS_WIRED	швы ядра подключены к игре: задачи, состояние, события
+$SPEECHBROKER_LOG_NO_TASK_INTERFACE	интерфейс задач SKSE недоступен, работа сделана на месте
+$SPEECHBROKER_LOG_LOADWATCH_NO_HOLDER	держатель игровых событий недоступен: участников после загрузки будет некому позвать
+$SPEECHBROKER_LOG_LOADWATCH_ON	слежу за загрузкой игры событием движка
+$SPEECHBROKER_LOG_LOADWATCH_LOADED	игра загружена: зову участников объявиться заново
+$SPEECHBROKER_LOG_MENU_LEVEL	уровень журнала переключён из меню: {0}
+$SPEECHBROKER_LOG_MENU_SPEECH	слова игрока в журнале переключены из меню: {0}
+$SPEECHBROKER_LOG_MENU_ABSENT	SKSE Menu Framework не установлен - окна в игре не будет, журнал настраивается файлом
+$SPEECHBROKER_LOG_MENU_ADDED	окно моста добавлено в меню модов
+$SPEECHBROKER_LOG_SUBSCRIBED	участник {0} подписался на темы: {1}
+$SPEECHBROKER_LOG_DECLARED	участник {0} объявил себя: {1}, {2}
+$SPEECHBROKER_LOG_VOCABULARY	участник {0} объявил словарь: {1} фраз
+$SPEECHBROKER_LOG_MATCH_NO_UTTERANCE	участник {0} спросил совпадение по реплике {1} - реплики нет
+$SPEECHBROKER_LOG_MATCH	участник {0} спросил совпадение по реплике {1}: {2:.2f} на фразе «{3}»
+$SPEECHBROKER_LOG_BID	ставка {0} за реплику {1}: уверенность {2:.2f}, {3}, на фразе «{4}», через {5} мс{6}
+$SPEECHBROKER_LOG_DONE	реплика {0}: {1} отчитался, успех={2}
+$SPEECHBROKER_LOG_PAPYRUS_REGISTERED	Papyrus: скрипт {0} зарегистрирован
+$SPEECHBROKER_LOG_KEY_REFUSED	ключ {0} не принят: пустое имя или чужое пространство
+$SPEECHBROKER_LOG_SELFTEST_START	самопроверка рассылки: метка {0}, звонок через 2 с
+$SPEECHBROKER_LOG_SELFTEST_PING	самопроверка рассылки: посылаю SpeechBroker_Ping, метка {0}
+$SPEECHBROKER_LOG_SELFTEST_FAILED	самопроверка рассылки: ответа на метку {0} нет за 5 с - события моста до скриптов Papyrus НЕ ДОХОДЯТ
+$SPEECHBROKER_LOG_SELFTEST_OK	самопроверка рассылки: ответ на метку {0} пришёл через {1} мс - события моста до скриптов Papyrus доходят
+$SPEECHBROKER_LOG_ADAPTER_VERSION_REFUSED	адаптер {0}: версия контракта {1}, мост понимает от 1 до {2}
+$SPEECHBROKER_LOG_ADAPTER_REGISTERED	адаптер зарегистрирован: {0} ({1}), контракт {2}
+$SPEECHBROKER_LOG_ADAPTER_LEFT	адаптер ушёл: {0}
+$SPEECHBROKER_LOG_ADAPTER_ROLE	адаптер {0}: {1}
+$SPEECHBROKER_ADAPTER_MADE_SOURCE	назначен источником: {0}
+$SPEECHBROKER_ADAPTER_OTHER_SOURCE	источником назначен другой
+$SPEECHBROKER_LOG_REFINED_TEXT	реплика {0} уточнена адаптером {1} ({2}): {3}
+$SPEECHBROKER_LOG_REFINED	реплика {0} уточнена адаптером {1} ({2})
+$SPEECHBROKER_LOG_UTTERANCE_TEXT	реплика {0}: {1}
+$SPEECHBROKER_LOG_UTTERANCE_FROM_TEXT	реплика {0} от адаптера {1}: {2}
+$SPEECHBROKER_LOG_UTTERANCE_FROM	реплика {0} от адаптера {1}
+$SPEECHBROKER_LOG_NO_TTS	озвучить некому: нет источника tts
+$SPEECHBROKER_LOG_SPEECH_SENT	озвучка {0} -> адаптер {1}: {2}
+$SPEECHBROKER_LOG_NO_SERVICE	спросить некого: нет источника {0}
+$SPEECHBROKER_LOG_REQUEST_SENT	запрос {0} к {1} -> адаптер {2}
+$SPEECHBROKER_LOG_ANSWER	ответ {0} от адаптера {1}: {2}
+$SPEECHBROKER_LOG_SPEECH_DONE	озвучка {0} у адаптера {1}: {2}
+$SPEECHBROKER_QUEST_CONTRACT	контракт версии

@@ -1,0 +1,111 @@
+# Speech Broker - the lines of the log, English.
+#
+# The log is translated like everything else the bridge puts out. The one thing
+# that stays as it came is the recognised speech: what a person said is data, not
+# a message, and translating it would be meaningless.
+#
+# Placeholders are numbered, {0} and {1} rather than a bare {}, because another
+# language puts the words in another order and a translator has to be able to move
+# them. A wrong number of them does not silence the line: the bridge falls back to
+# printing the bare key.
+#
+# $SPEECHBROKER_WORD_* are the small pieces that go into a line as a placeholder, and
+# $SPEECHBROKER_REASON_* are the verdicts of the auction, which a subscriber can also read
+# back with SpeechBroker.GetOutcome.
+
+$SPEECHBROKER_WORD_NOBODY	nobody
+$SPEECHBROKER_WORD_UNKNOWN	unknown
+$SPEECHBROKER_WORD_ON	on
+$SPEECHBROKER_WORD_OFF	off
+$SPEECHBROKER_WORD_EXPENSIVE	expensive
+$SPEECHBROKER_WORD_REVERSIBLE	reversible
+$SPEECHBROKER_WORD_CAN_UNDO	can undo
+$SPEECHBROKER_WORD_CANNOT_UNDO	cannot undo
+$SPEECHBROKER_WORD_GREEDY	greedy
+$SPEECHBROKER_WORD_SHARING	sharing
+$SPEECHBROKER_WORD_TOO_LATE	 - TOO LATE, bidding is closed
+$SPEECHBROKER_WORD_WRITTEN_DOWN	written down
+$SPEECHBROKER_WORD_NOT_WRITTEN_DOWN	not written down
+$SPEECHBROKER_WORD_SOURCE	source
+$SPEECHBROKER_WORD_IN_RESERVE	in reserve
+$SPEECHBROKER_WORD_SUCCESS	success
+$SPEECHBROKER_WORD_FAILURE	failure
+$SPEECHBROKER_CFG_CREATED	settings file created from the built-in set
+$SPEECHBROKER_CFG_MERGED	settings file topped up with the new keys
+$SPEECHBROKER_CFG_FILE	settings file read
+$SPEECHBROKER_CFG_BROKEN	settings file does not parse, running on the built-in values
+$SPEECHBROKER_CFG_BASELINE	running on the built-in values
+$SPEECHBROKER_REASON_WINNER_UNKNOWN_COMMAND	the command of the winner is unknown - the prize is not shared
+$SPEECHBROKER_REASON_OTHER_COMMAND	recognised a different command - this one is not its own
+$SPEECHBROKER_REASON_LOST_AND_GREEDY	lost, and refused to share
+$SPEECHBROKER_REASON_BELOW_THRESHOLD	confidence below the threshold of its class
+$SPEECHBROKER_REASON_PRIORITY	the bids are indistinguishable, the argument was settled by the order from the settings
+$SPEECHBROKER_REASON_AMBIGUOUS	the phrase was understood differently and with equal confidence - the utterance is ambiguous
+$SPEECHBROKER_REASON_SHARED_TAKES_TIE	several ask for one command and no order is set - it is done by those that share
+$SPEECHBROKER_REASON_ALL_GREEDY	several ask for one command and all demand it for themselves - nobody does it
+$SPEECHBROKER_REASON_UTTERANCE_TOO_WEAK	the utterance was heard below the threshold
+$SPEECHBROKER_REASON_NO_BIDS	nobody bid
+$SPEECHBROKER_REASON_NO_BID_PASSED	not one bid passed the confidence threshold
+$SPEECHBROKER_REASON_GREEDY_WON	the winner is greedy - the result goes to it alone
+$SPEECHBROKER_REASON_SHARED_WON	the winner shares - the result went to everybody that recognised the same command
+$SPEECHBROKER_REASON_SHARED_ALONE	the winner shares, but there is nobody to share with
+$SPEECHBROKER_REASON_CEILING	the ceiling of the length class ran out
+$SPEECHBROKER_REASON_ROOM_EMPTY	the room is empty - nobody to hold it for
+$SPEECHBROKER_REASON_HOLD_WEIGHED	completeness {0:.2f}, {1} in the room, cost of a mistake {2:.2f}, risk {3:.2f} against a tolerance of {4:.2f}
+$SPEECHBROKER_LOG_HANDED_AT_ONCE	utterance {0} handed over at once: {1}
+$SPEECHBROKER_LOG_HELD	utterance {0} IS HELD: {1}
+$SPEECHBROKER_LOG_LET_GO	utterance {0} let go: {1}
+$SPEECHBROKER_LOG_DROPPED	utterance {0} thrown away unannounced: it was absorbed by {1}
+$SPEECHBROKER_LOG_REVOKED	utterance {0} had been handed over ({1}) and was absorbed by utterance {2} - revoking
+$SPEECHBROKER_LOG_SETTLED	utterance {0} topic {1} bids {2} -> {3} ({4})
+$SPEECHBROKER_LOG_EVENT_UTTERANCE	event {0} raised, utterance {1}
+$SPEECHBROKER_LOG_EVENT_FULL	event {0} raised, string '{1}', number {2}
+$SPEECHBROKER_LOG_EVENTS_READY	Papyrus event delivery is ready
+$SPEECHBROKER_LOG_EVENTS_UNAVAILABLE	Papyrus event delivery is unavailable: not one event will reach the scripts
+$SPEECHBROKER_LOG_SETTINGS_READ	settings read: bid window {0} ms, utterance threshold {1:.2f}, confidence {2:.2f}/{3:.2f}, margin {4:.2f}/{5:.2f}, sharing takes a tie: {6}, {7} participants in the order, kept {8:.0f} s and at most {9} utterances, hold tolerance {10:.2f}, cost of a mistake {11:.2f}/{12:.2f}/{13:.2f}, ceiling {14}/{15}/{16} ms
+$SPEECHBROKER_LOG_SETTINGS_REREAD	settings reread, log: level {0}, the words of the player {1}
+$SPEECHBROKER_LOG_CONFIG_SOURCE	{0}: {1}
+$SPEECHBROKER_LOG_CONFIG_ERROR	settings: {0}
+$SPEECHBROKER_LOG_PLUGIN_LOADED	{0} v{1} loaded, contract version {2}
+$SPEECHBROKER_LOG_SKSE_MESSAGE	SKSE message: {0} ({1})
+$SPEECHBROKER_LOG_INTERFACE_BROADCAST	bridge interface broadcast to the adapters
+$SPEECHBROKER_LOG_SEAMS_WIRED	the seams of the core are wired to the game: tasks, state, events
+$SPEECHBROKER_LOG_NO_TASK_INTERFACE	the SKSE task interface is unavailable, the work was done on the spot
+$SPEECHBROKER_LOG_LOADWATCH_NO_HOLDER	the holder of the game events is unavailable: there will be nobody to call the participants after a load
+$SPEECHBROKER_LOG_LOADWATCH_ON	watching for a game load through the own event of the engine
+$SPEECHBROKER_LOG_LOADWATCH_LOADED	game loaded: calling the participants to declare themselves again
+$SPEECHBROKER_LOG_MENU_LEVEL	log level switched from the menu: {0}
+$SPEECHBROKER_LOG_MENU_SPEECH	writing the player's words to the log switched from the menu: {0}
+$SPEECHBROKER_LOG_MENU_ABSENT	SKSE Menu Framework is not installed, so there is no window in the game; the log is still set from the file
+$SPEECHBROKER_LOG_MENU_ADDED	bridge window added to the mod menu
+$SPEECHBROKER_LOG_SUBSCRIBED	participant {0} subscribed to topics: {1}
+$SPEECHBROKER_LOG_DECLARED	participant {0} declared itself: {1}, {2}
+$SPEECHBROKER_LOG_VOCABULARY	participant {0} declared a vocabulary: {1} phrases
+$SPEECHBROKER_LOG_MATCH_NO_UTTERANCE	participant {0} asked about the match on utterance {1} - no such utterance
+$SPEECHBROKER_LOG_MATCH	participant {0} asked about the match on utterance {1}: {2:.2f} on the phrase '{3}'
+$SPEECHBROKER_LOG_BID	bid by {0} on utterance {1}: confidence {2:.2f}, {3}, on the phrase '{4}', after {5} ms{6}
+$SPEECHBROKER_LOG_DONE	utterance {0}: {1} reported back, success={2}
+$SPEECHBROKER_LOG_PAPYRUS_REGISTERED	Papyrus: script {0} registered
+$SPEECHBROKER_LOG_KEY_REFUSED	key {0} refused: empty name or a namespace of somebody else
+$SPEECHBROKER_LOG_SELFTEST_START	self-test of delivery: token {0}, ringing in 2 s
+$SPEECHBROKER_LOG_SELFTEST_PING	self-test of delivery: sending SpeechBroker_Ping, token {0}
+$SPEECHBROKER_LOG_SELFTEST_FAILED	self-test of delivery: no answer on token {0} within 5 s - the events of the bridge DO NOT REACH the Papyrus scripts
+$SPEECHBROKER_LOG_SELFTEST_OK	self-test of delivery: the answer on token {0} came in {1} ms - the events of the bridge do reach the Papyrus scripts
+$SPEECHBROKER_LOG_ADAPTER_VERSION_REFUSED	adapter {0}: contract version {1}, the bridge understands 1 to {2}
+$SPEECHBROKER_LOG_ADAPTER_REGISTERED	adapter registered: {0} ({1}), contract {2}
+$SPEECHBROKER_LOG_ADAPTER_LEFT	adapter left: {0}
+$SPEECHBROKER_LOG_ADAPTER_ROLE	adapter {0}: {1}
+$SPEECHBROKER_ADAPTER_MADE_SOURCE	made the source: {0}
+$SPEECHBROKER_ADAPTER_OTHER_SOURCE	somebody else was made the source
+$SPEECHBROKER_LOG_REFINED_TEXT	utterance {0} refined by adapter {1} ({2}): {3}
+$SPEECHBROKER_LOG_REFINED	utterance {0} refined by adapter {1} ({2})
+$SPEECHBROKER_LOG_UTTERANCE_TEXT	utterance {0}: {1}
+$SPEECHBROKER_LOG_UTTERANCE_FROM_TEXT	utterance {0} from adapter {1}: {2}
+$SPEECHBROKER_LOG_UTTERANCE_FROM	utterance {0} from adapter {1}
+$SPEECHBROKER_LOG_NO_TTS	nobody to speak it: there is no tts source
+$SPEECHBROKER_LOG_SPEECH_SENT	speech {0} -> adapter {1}: {2}
+$SPEECHBROKER_LOG_NO_SERVICE	nobody to ask: there is no {0} source
+$SPEECHBROKER_LOG_REQUEST_SENT	request {0} to {1} -> adapter {2}
+$SPEECHBROKER_LOG_ANSWER	answer {0} from adapter {1}: {2}
+$SPEECHBROKER_LOG_SPEECH_DONE	speech {0} at adapter {1}: {2}
+$SPEECHBROKER_QUEST_CONTRACT	contract version
