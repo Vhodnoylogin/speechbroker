@@ -9,34 +9,12 @@
   ],
   "papyrusSource": "{root}/papyrus",
   "papyrusOutput": "{root}/build/pex",
-  "automod": "D:/Skyrim VR Modding/AutoMod/src/SpookysAutomod.Cli/bin/Release/net8.0/spookys-automod.dll",
   "esp": {
     "file": "SpeechBrokerDemo.esp",
-    "author": "Claude",
-    "description": "Speech Broker - demo subscribers",
-    "quests": [
-      {
-        "editorId": "SpeechBrokerDemoObserverQuest",
-        "name": "SpeechBrokerDemoObserver",
-        "script": "SpeechBrokerDemoObserver",
-        "startEnabled": true,
-        "priority": 50
-      },
-      {
-        "editorId": "SpeechBrokerDemoGreedyQuest",
-        "name": "SpeechBrokerDemoGreedy",
-        "script": "SpeechBrokerDemoGreedy",
-        "startEnabled": true,
-        "priority": 50
-      },
-      {
-        "editorId": "SpeechBrokerDemoSharedQuest",
-        "name": "SpeechBrokerDemoShared",
-        "script": "SpeechBrokerDemoShared",
-        "startEnabled": true,
-        "priority": 50
-      }
-    ]
+    "source": "{root}/esp/source",
+    "gameRelease": "SkyrimSE",
+    "package": "Spriggit.Yaml.Skyrim",
+    "packageVersion": "0.41.0"
   },
   "optimize": true,
   "deploy": {
@@ -63,5 +41,6 @@
       "SpeechBrokerDemoShared"
     ],
     "esp": "SpeechBrokerDemo.esp"
-  }
+  },
+  "spriggit": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Skyrim-Claude Code Modder's Toolkit/tools/spriggit-cli.sh"
 }

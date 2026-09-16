@@ -1,0 +1,12 @@
+FormKey: 000802:SpeechBrokerDemo.esp
+EditorID: SpeechBrokerDemoSharedQuest
+VirtualMachineAdapter:
+  Scripts:
+  - Name: SpeechBrokerDemoShared
+  FileName: ''
+Name:
+  TargetLanguage: English
+  Value: SpeechBrokerDemoShared
+Flags:
+- StartGameEnabled
+Priority: 50

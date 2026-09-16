@@ -1,0 +1,8 @@
+SpriggitSource:
+  PackageName: Spriggit.Yaml.Skyrim
+  Version: 0.41
+ModKey: SpeechBrokerDemo.esp
+GameRelease: SkyrimSE
+ModHeader:
+  Author: Claude
+  Description: Speech Broker - demo subscribers
