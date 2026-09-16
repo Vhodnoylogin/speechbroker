@@ -8,20 +8,12 @@
   ],
   "papyrusSource": "{root}/papyrus",
   "papyrusOutput": "{root}/build/pex",
-  "automod": "D:/Skyrim VR Modding/AutoMod/src/SpookysAutomod.Cli/bin/Release/net8.0/spookys-automod.dll",
   "esp": {
     "file": "SpeechBroker.esp",
-    "author": "Claude",
-    "description": "Speech Broker - bridge between Skyrim and external models",
-    "quests": [
-      {
-        "editorId": "SpeechBrokerMain",
-        "name": "Speech Broker",
-        "script": "SpeechBrokerQuest",
-        "startEnabled": true,
-        "priority": 50
-      }
-    ]
+    "source": "{root}/esp/source",
+    "gameRelease": "SkyrimSE",
+    "package": "Spriggit.Yaml.Skyrim",
+    "packageVersion": "0.41.0"
   },
   "optimize": true,
   "deploy": {
@@ -75,5 +67,6 @@
         "{root}/tools/build-localization.py"
       ]
     }
-  }
+  },
+  "spriggit": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Skyrim-Claude Code Modder's Toolkit/tools/spriggit-cli.sh"
 }

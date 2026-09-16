@@ -1,0 +1,8 @@
+SpriggitSource:
+  PackageName: Spriggit.Yaml.Skyrim
+  Version: 0.41
+ModKey: SpeechBroker.esp
+GameRelease: SkyrimSE
+ModHeader:
+  Author: Claude
+  Description: Speech Broker - bridge between Skyrim and external models

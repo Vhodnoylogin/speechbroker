@@ -1,0 +1,12 @@
+FormKey: 000800:SpeechBroker.esp
+EditorID: SpeechBrokerMain
+VirtualMachineAdapter:
+  Scripts:
+  - Name: SpeechBrokerQuest
+  FileName: ''
+Name:
+  TargetLanguage: English
+  Value: Speech Broker
+Flags:
+- StartGameEnabled
+Priority: 50

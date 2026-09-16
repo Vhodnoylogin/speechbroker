@@ -1,40 +1,66 @@
-﻿# Building the plugin out of the recipe in config\build.json.
+﻿# Плагин и его исходник.
 #
-#   tools\build-esp.ps1     rebuild esp\<name> from scratch
+#   tools\build-esp.ps1                 собрать esp\<имя> из esp\source
+#   tools\build-esp.ps1 -FromPlugin     обратно: разобрать плагин в esp\source
 #
-# The plugin used to be a binary in git that nobody could reproduce: it had been
-# made by hand once, and the names of the scripts live INSIDE it, so renaming one
-# meant editing bytes. It is built here instead, by the AutoMod CLI the rest of
-# the project uses. The binary is still committed - the game needs it and not
-# everybody has the toolchain - but it is now a product and not a relic.
+# У .esp нет текстового исходника по природе: это база записей, а не результат
+# компиляции. Исходником служит его разбор в текст, и делает это Spriggit - файл
+# на запись плюс RecordData.yaml и spriggit-meta.json, где записаны версия самого
+# Spriggit и редакция игры, чтобы обратная сборка была воспроизводима. Разбор и
+# сборка проверены на совпадение побайтно.
+#
+# Рецепта здесь нарочно нет. Рецепт выражает лишь то, что умеет написавший его
+# генератор, и молча перестаёт описывать плагин, как только в том появляется
+# запись, которой генератор не знает, - продолжая выглядеть описанием.
+#
+# Двоичный .esp при этом остаётся в git рядом с исходником: его читает игра,
+# и не у всякого, кто возьмёт модуль, есть эта цепочка инструментов.
+param([switch]$FromPlugin)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $cfg  = Get-Content -LiteralPath (Join-Path $root 'config\build.json') -Raw | ConvertFrom-Json
 $r    = $cfg.esp
-if (-not $r) { throw "config\build.json holds no esp recipe" }
-
-$cli = $cfg.automod
-if (-not (Test-Path -LiteralPath $cli)) {
-    throw "AutoMod CLI not found: $cli - correct the automod key of config\build.json"
-}
-function Invoke-Automod {
-    dotnet $cli @args
-    if ($LASTEXITCODE -ne 0) { throw "automod refused: $($args -join ' ')" }
+if (-not $r) { throw "в config\build.json нет раздела esp" }
+if (-not (Test-Path -LiteralPath $cfg.spriggit)) {
+    throw "Spriggit не найден: $($cfg.spriggit) - поправь ключ spriggit в config\build.json"
 }
 
-$out = Join-Path $root 'esp'
-New-Item -ItemType Directory -Force $out | Out-Null
-$plugin = Join-Path $out $r.file
-Remove-Item -LiteralPath $plugin -Force -ErrorAction SilentlyContinue
+# PowerShell зовёт просто bash из system32 - это заглушка WSL, и сценарий с
+# виндовыми путями она не выполнит. Нужен Git Bash, а он всегда лежит рядом
+# с самим git, поэтому путь выводится, а не вписывается.
+$git = (Get-Command git -ErrorAction SilentlyContinue).Source
+if (-not $git) { throw "git не найден - без него не найти и Git Bash" }
+$bash = Join-Path (Join-Path (Split-Path -Parent (Split-Path -Parent $git)) 'bin') 'bash.exe'
+if (-not (Test-Path -LiteralPath $bash)) { throw "Git Bash не найден: $bash" }
 
-Invoke-Automod esp create $r.file -o $out --author $r.author --description $r.description
-foreach ($q in $r.quests) {
-    $a = @('esp', 'add-quest', $plugin, $q.editorId, '--name', $q.name,
-           '--priority', $q.priority)
-    if ($q.startEnabled) { $a += '--start-enabled' }
-    Invoke-Automod @a
-    Invoke-Automod esp attach-script $plugin --quest $q.editorId --script $q.script
+# PowerShell 5.1 превращает каждую строку stderr родной программы в ошибку, и при
+# 'Stop' это обрывает сценарий, хотя программа вернула ноль. Spriggit пишет в stderr
+# обычный ход работы, поэтому на время вызова строгость снимается, а решает
+# исключительно код возврата.
+function Invoke-Spriggit {
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & $bash $cfg.spriggit @args 2>&1 | ForEach-Object { "$_" } | Out-Null
+        $code = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $prev
+    }
+    if ($code -ne 0) { throw "Spriggit отказал, код $code" }
 }
 
-Invoke-Automod esp info $plugin
+function Expand-Path([string]$p) { $p.Replace('{root}', $root) }
+$source = Expand-Path $r.source
+$plugin = Join-Path $root "esp\$($r.file)"
 
+if ($FromPlugin) {
+    if (-not (Test-Path -LiteralPath $plugin)) { throw "нет плагина: $plugin" }
+    Invoke-Spriggit serialize --InputPath $plugin --OutputPath $source `
+        --GameRelease $r.gameRelease --PackageName $r.package --PackageVersion $r.packageVersion
+    "разобрано: $plugin -> $source"
+    return
+}
+
+if (-not (Test-Path -LiteralPath $source)) { throw "нет исходника плагина: $source" }
+Invoke-Spriggit deserialize --InputPath $source --OutputPath $plugin
+"собрано: $source -> $plugin"
