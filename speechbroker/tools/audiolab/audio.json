@@ -1,0 +1,5 @@
+{
+  "takes": "takes",
+  "blockMs": 32,
+  "voice": "../voice/models/piper/ru_RU-irina-medium.onnx"
+}
