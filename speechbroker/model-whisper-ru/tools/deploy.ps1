@@ -6,7 +6,7 @@
 # A model mod is a module of its own and NOT a program: there is no microphone
 # in it, no port and no file to run. It carries a model - a listing and the
 # files of the weights. The contract of the listing is in
-# adapter-voice\contract\envoy-voice-model.md.
+# adapter-voice\contract\speechbroker-voice-model.md.
 #
 # The weights of this model live in another module on this machine (the voice
 # branch), and there is no point copying gigabytes into the build: the lay-out
@@ -60,7 +60,7 @@ $meta = @(
     "newestVersion=$($d.version)"
     'category="0,"'
     'installationFile='
-    "notes=Models of Russian speech recognition and synthesis for the Envoy adapter. Needs the mod $($d.adapterMod)."
+    "notes=Models of Russian speech recognition and synthesis for the SpeechBroker adapter. Needs the mod $($d.adapterMod)."
     ''
     '[installedFiles]'
     'size=0'
@@ -121,6 +121,6 @@ if (Test-Path -LiteralPath $localPath) {
 }
 
 if (-not $NoIndex) {
-    & $d.indexScript -Owner $d.indexOwner -Mods $d.modName -Note "Envoy voice model deploy $($d.version)"
+    & $d.indexScript -Owner $d.indexOwner -Mods $d.modName -Note "SpeechBroker voice model deploy $($d.version)"
 }
 ''

@@ -2,7 +2,7 @@
 
 *По-английски: [README.md](README.md). Канонический язык - английский, эта страница переводная.*
 
-Две модели для `EnvoyVoiceAdapter` — распознавание и синтез русской речи
+Две модели для `SpeechBrokerVoiceAdapter` — распознавание и синтез русской речи
 на Whisper: точная `large-v3-turbo` и черновая `small`.
 
 Это **отдельный модуль и отдельный мод в сборке**, и в нём нет ни строчки кода.
@@ -13,8 +13,8 @@
 Это же и образец: любой человек может выпустить свою модель, скопировав эту папку
 и поправив один файл.
 
-Что такое Envoy целиком — в [описании модуля](../README.ru.md).
-Контракт листка — в [adapter-voice/contract/envoy-voice-model.ru.md](../adapter-voice/contract/envoy-voice-model.ru.md).
+Что такое Speech Broker целиком — в [описании модуля](../README.ru.md).
+Контракт листка — в [adapter-voice/contract/speechbroker-voice-model.ru.md](../adapter-voice/contract/speechbroker-voice-model.ru.md).
 
 ## Кто чем владеет
 

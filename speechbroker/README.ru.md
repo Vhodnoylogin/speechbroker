@@ -1,11 +1,18 @@
-# Envoy Framework
+# Speech Broker
 
 *По-английски: [README.md](README.md). Канонический язык - английский, эта страница переводная.*
 
-Мост между Skyrim и внешними моделями. Микрофоном и голосом владеет одна часть на всю
-игру; моды подписываются на её результат вместо того, чтобы поднимать собственный движок.
+Один микрофон на всю сборку. Игрок произносит фразу вслух, а Speech Broker решает,
+**какой мод её исполняет**, — чтобы пять модов не поднимали каждый свой движок распознавания
+и не отнимали устройство друг у друга.
 
-Четыре канала:
+**Чем он не является.** Это не шина сообщений между модами и не арбитр произвольных ресурсов.
+Всё, что он раздаёт, — произнесённая игроком фраза: аукцион внутри разыгрывает **реплику**,
+а не руку, не камеру и ничто иное. Разыгрывать другое — значит писать другой мод, а не
+добавлять сюда канал.
+
+Граница, которой он владеет, — между игрой и моделью снаружи, и речь пересекает её первой.
+Вдоль этой границы задуманы четыре канала, и мод назван по тому, который построен:
 
 | Канал | Что делает | Форма взаимодействия |
 |---|---|---|
@@ -19,15 +26,15 @@
 
 ## Три части, и каждая ставится отдельно
 
-Envoy — это **один мод и одна ветка** git, но внутри три самостоятельные части. У каждой
+Speech Broker — это **один мод и одна ветка** git, но внутри три самостоятельные части. У каждой
 своя сборка, свои скрипты раскладки, свой мод в сборке MO2 и своё описание. Человек
 ставит столько, сколько ему нужно.
 
 | Часть | Папка | Мод в сборке | Описание |
 |---|---|---|---|
-| **Envoy** — мост | `bridge\` | `Envoy Framework` | [bridge/README.ru.md](bridge/README.ru.md) |
-| **EnvoyVoiceAdapter** — микрофон и модели | `adapter-voice\` | `Envoy Framework - Voice Adapter` | [adapter-voice/README.ru.md](adapter-voice/README.ru.md) |
-| **мод-модель** — одна конкретная модель | `model-whisper-ru\` | `Envoy Framework - Voice Model - Whisper RU` | [model-whisper-ru/README.ru.md](model-whisper-ru/README.ru.md) |
+| **Speech Broker** — мост | `bridge\` | `Speech Broker` | [bridge/README.ru.md](bridge/README.ru.md) |
+| **SpeechBrokerVoiceAdapter** — микрофон и модели | `adapter-voice\` | `Speech Broker - Voice Adapter` | [adapter-voice/README.ru.md](adapter-voice/README.ru.md) |
+| **мод-модель** — одна конкретная модель | `model-whisper-ru\` | `Speech Broker - Voice Model - Whisper RU` | [model-whisper-ru/README.ru.md](model-whisper-ru/README.ru.md) |
 
 Рядом лежит `subscribers\demo\` — трое тестовых подписчиков. Это не часть поставки,
 а проверка: на них видно, как мост решает спор между модами. В рабочие профили они не нужны.
@@ -52,7 +59,7 @@ Envoy — это **один мод и одна ветка** git, но внутр
 ## Текст на экране и в журнале
 
 Всё, что человек может прочитать, — ключ, а строки за ключами лежат в штатных файлах
-перевода Skyrim: `Interface\Translations\Envoy*_<язык>.txt`. Язык исходника —
+перевода Skyrim: `Interface\Translations\Speech Broker*_<язык>.txt`. Язык исходника —
 английский, а **всякий язык едет внутри своего модуля**: перевод — часть модуля, а не мод,
 который ставят рядом. Движок сам берёт файл по языку игры.
 
@@ -70,7 +77,7 @@ Envoy — это **один мод и одна ветка** git, но внутр
     подписчик   ->  требует мост
 
 Общий у всех один **контракт**, и между частями он не копируется. Мост кладёт его
-**отдельной поставкой** `Envoy Framework - SDK`, которая раскладывается рядом с модом:
+**отдельной поставкой** `Speech Broker - SDK`, которая раскладывается рядом с модом:
 заголовки C-ABI для адаптеров, объявления Papyrus для слушателей, исходные таблицы строк
 и сборщик переводов. Адаптер и подписчик собираются против **установленного SDK**, а не
 против соседней папки в репозитории — ровно так же, как это сделает любой чужой мод.
@@ -78,7 +85,7 @@ Envoy — это **один мод и одна ветка** git, но внутр
 неудобство.
 
 Контракт мод-модели — свой, и публикует его адаптер:
-[adapter-voice/contract/envoy-voice-model.md](adapter-voice/contract/envoy-voice-model.md).
+[adapter-voice/contract/speechbroker-voice-model.md](adapter-voice/contract/speechbroker-voice-model.md).
 
 ## Принципы
 
@@ -89,7 +96,7 @@ Envoy — это **один мод и одна ветка** git, но внутр
 - **Ключ описывает вопрос, а не способ ответа.** `core.target.looked`, а не «перекрестье».
 - **Детерминизм.** Ни один спор не решается порядком пробуждения скриптов.
 - **Ядро не знает платформы.** Связь с SKSE — отдельный слой поверх, и это держится сборкой:
-  цель `envoy-host` собирает ядро без CommonLibSSE.
+  цель `speechbroker-host` собирает ядро без CommonLibSSE.
 
 ## Порядок сборки
 
@@ -108,9 +115,9 @@ cd model-whisper-ru                                       && tools\deploy.ps1 -A
 | Вопрос | Куда смотреть |
 |---|---|
 | как устроен аукцион, темы, придержание | [bridge/README.md](bridge/README.md) |
-| как проверить мост без игры | [bridge/README.md](bridge/README.md), цель `envoy-host` |
-| как написать свой адаптер | `cpp\envoy-adapter.h` в поставке SDK |
-| как подписаться из мода на Papyrus | `papyrus\Envoy.psc`, `docs\envoy-papyrus.md` в поставке SDK |
-| как добавить свою модель | [adapter-voice/contract/envoy-voice-model.md](adapter-voice/contract/envoy-voice-model.md) |
+| как проверить мост без игры | [bridge/README.md](bridge/README.md), цель `speechbroker-host` |
+| как написать свой адаптер | `cpp\speechbroker-adapter.h` в поставке SDK |
+| как подписаться из мода на Papyrus | `papyrus\SpeechBroker.psc`, `docs\speechbroker-papyrus.md` в поставке SDK |
+| как добавить свою модель | [adapter-voice/contract/speechbroker-voice-model.md](adapter-voice/contract/speechbroker-voice-model.md) |
 | как устроена мод-модель изнутри | [model-whisper-ru/README.ru.md](model-whisper-ru/README.ru.md) |
 | как перевести текст на другой язык | папка `localization\` нужной части и раздел выше |

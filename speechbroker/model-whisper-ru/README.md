@@ -2,7 +2,7 @@
 
 *In Russian: [README.ru.md](README.ru.md). English is the source language; the other is a translation.*
 
-Two models for `EnvoyVoiceAdapter` - recognition and synthesis of Russian speech on Whisper: the
+Two models for `SpeechBrokerVoiceAdapter` - recognition and synthesis of Russian speech on Whisper: the
 accurate `large-v3-turbo` and the draft `small`.
 
 This is a **module of its own and a mod of its own in the build**, and there is not a line of code
@@ -13,8 +13,8 @@ model is called, what it can do and where its files lie.
 It is also a sample: anybody can release a model of their own by copying this folder and correcting
 one file.
 
-What Envoy is as a whole is in the [description of the module](../README.md).
-The contract of a listing is in [adapter-voice/contract/envoy-voice-model.md](../adapter-voice/contract/envoy-voice-model.md).
+What Speech Broker is as a whole is in the [description of the module](../README.md).
+The contract of a listing is in [adapter-voice/contract/speechbroker-voice-model.md](../adapter-voice/contract/speechbroker-voice-model.md).
 
 ## Who owns what
 
