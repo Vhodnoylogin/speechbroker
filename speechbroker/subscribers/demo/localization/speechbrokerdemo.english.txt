@@ -1,0 +1,42 @@
+# The Speech Broker demo subscribers - every line the player can read, English.
+#
+# The vocabulary is in here as well, and that is the point rather than tidiness:
+# the phrases the subscribers register have to be in the language the player
+# actually speaks, which is the language of the installed model. Adding a language
+# to the demo is adding a file here, not editing a script.
+#
+# Built by the SDK script of the bridge into
+# Interface/Translations/SpeechBrokerDemo_<language>.txt, which both the game and
+# SpeechBroker.Translate read.
+
+$SPEECHBROKERDEMO_NOBODY	nobody
+$SPEECHBROKERDEMO_ON_AIR	Speech Broker is on the air, participants:
+$SPEECHBROKERDEMO_SAY_SOMETHING	Say something - the next dialogue will show the recognised text.
+$SPEECHBROKERDEMO_HEARS	Speech Broker hears.
+$SPEECHBROKERDEMO_TOPIC	topic
+$SPEECHBROKERDEMO_RECOGNISED	recognised
+$SPEECHBROKERDEMO_COMPLETENESS	completeness
+$SPEECHBROKERDEMO_FURTHER	From here on the report comes as notices in the corner.
+$SPEECHBROKERDEMO_OUTCOME	outcome
+$SPEECHBROKERDEMO_UTTERANCE	Utterance
+$SPEECHBROKERDEMO_REASON	Reason
+$SPEECHBROKERDEMO_GREEDY	greedy
+$SPEECHBROKERDEMO_SHARED	sharing
+$SPEECHBROKERDEMO_BIDS	bids
+$SPEECHBROKERDEMO_TOOK_IT	TOOK IT
+$SPEECHBROKERDEMO_GOT_IT	got it, winners:
+$SPEECHBROKERDEMO_REFUSED	refused
+$SPEECHBROKERDEMO_WINNERS_TOTAL	Winners in total:
+$SPEECHBROKERDEMO_GREEDY_WON	THE GREEDY ONE TOOK THE UTTERANCE FOR ITSELF
+$SPEECHBROKERDEMO_GREEDY_WON_WHY	It demanded exclusivity and got it - so the sharing one was left with nothing.
+$SPEECHBROKERDEMO_GREEDY_DENIED	THE GREEDY ONE WAS REFUSED
+$SPEECHBROKERDEMO_SHARED_WON	THE SHARING ONE GOT THE UTTERANCE
+$SPEECHBROKERDEMO_SHARED_WON_WHY	It shares, so the greedy one dropped out entirely - it was the one demanding exclusivity.
+$SPEECHBROKERDEMO_SHARED_DENIED	THE SHARING ONE WAS REFUSED
+$SPEECHBROKERDEMO_WORD_DOOR	close the door
+$SPEECHBROKERDEMO_WORD_RADIOCHECK	radio check
+$SPEECHBROKERDEMO_WORD_AROUND	what is around
+$SPEECHBROKERDEMO_NO_BRIDGE	Speech Broker: no bridge.\n\nThe SpeechBroker.dll plugin did not load - see SpeechBroker.log.
+$SPEECHBROKERDEMO_NOT_MINE	not mine
+$SPEECHBROKERDEMO_DECLARED	declared itself, a vocabulary of
+$SPEECHBROKERDEMO_PHRASES	phrases

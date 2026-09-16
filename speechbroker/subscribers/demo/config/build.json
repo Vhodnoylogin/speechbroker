@@ -1,0 +1,67 @@
+{
+  "creationKit": "D:/SteamLibrary/steamapps/common/Skyrim Special Edition",
+  "papyrusFlags": "TESV_Papyrus_Flags.flg",
+  "imports": [
+    "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Skyrim Script Extender for VR (SKSEVR)/Scripts/Source",
+    "{creationKit}/Data/Source/Scripts",
+    "{sdk}",
+    "{root}/papyrus"
+  ],
+  "papyrusSource": "{root}/papyrus",
+  "papyrusOutput": "{root}/build/pex",
+  "automod": "D:/Skyrim VR Modding/AutoMod/src/SpookysAutomod.Cli/bin/Release/net8.0/spookys-automod.dll",
+  "esp": {
+    "file": "SpeechBrokerDemo.esp",
+    "author": "Claude",
+    "description": "Speech Broker - demo subscribers",
+    "quests": [
+      {
+        "editorId": "SpeechBrokerDemoObserverQuest",
+        "name": "SpeechBrokerDemoObserver",
+        "script": "SpeechBrokerDemoObserver",
+        "startEnabled": true,
+        "priority": 50
+      },
+      {
+        "editorId": "SpeechBrokerDemoGreedyQuest",
+        "name": "SpeechBrokerDemoGreedy",
+        "script": "SpeechBrokerDemoGreedy",
+        "startEnabled": true,
+        "priority": 50
+      },
+      {
+        "editorId": "SpeechBrokerDemoSharedQuest",
+        "name": "SpeechBrokerDemoShared",
+        "script": "SpeechBrokerDemoShared",
+        "startEnabled": true,
+        "priority": 50
+      }
+    ]
+  },
+  "optimize": true,
+  "deploy": {
+    "modsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods",
+    "modName": "Speech Broker - Demo Subscriber",
+    "bridgeMod": "Speech Broker",
+    "sdk": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Speech Broker - SDK/papyrus",
+    "sdkTools": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Speech Broker - SDK/tools",
+    "localization": {
+      "name": "SpeechBrokerDemo",
+      "base": "english",
+      "source": "{root}/localization"
+    },
+    "version": "0.1.0",
+    "indexScript": "D:/Skyrim VR Modding/Claude Code/Skyrim VR/index/update-index.ps1",
+    "indexOwner": "chat-speechbroker-demo",
+    "downloadsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/downloads",
+    "sevenZip": "C:/Program Files/7-Zip/7z.exe",
+    "bridgeUrl": "http://127.0.0.1:8930",
+    "bridgeToken": "D:/Skyrim VR Modding/MO2/plugins/mo2aibridge/mo2aibridge-token.txt",
+    "scripts": [
+      "SpeechBrokerDemoObserver",
+      "SpeechBrokerDemoGreedy",
+      "SpeechBrokerDemoShared"
+    ],
+    "esp": "SpeechBrokerDemo.esp"
+  }
+}

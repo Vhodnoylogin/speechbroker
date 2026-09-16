@@ -1,4 +1,4 @@
-﻿Scriptname EnvoyDemoObserver extends Quest
+﻿Scriptname SpeechBrokerDemoObserver extends Quest
 {The observer: it sees EVERY utterance whatever the topic and takes no part in the draw.
 
  It exists precisely so that it shows when an utterance did not reach somebody: a
@@ -12,9 +12,9 @@
  heard after a load. After that come ordinary notices, or the dialogue would have
  to be closed on every phrase.
 
- Every line the player reads comes from Envoy.Translate, so it is in the language
+ Every line the player reads comes from SpeechBroker.Translate, so it is in the language
  the game runs in. The tables live in localization/ and ship as
- Interface\Translations\EnvoyDemo_<language>.txt.}
+ Interface\Translations\SpeechBrokerDemo_<language>.txt.}
 
 bool heardOnce = false
 
@@ -23,46 +23,46 @@ Event OnInit()
     ; else lives only in the memory of the bridge and dies with the process of the
     ; game, which is why the bridge calls everyone to declare themselves again on
     ; every load.
-    RegisterForModEvent("Envoy_Ready", "OnEnvoyReady")
+    RegisterForModEvent("SpeechBroker_Ready", "OnSpeechBrokerReady")
     Register()
 EndEvent
 
-Event OnEnvoyReady(string asEventName, string asUnused, float afContract, Form akSender)
+Event OnSpeechBrokerReady(string asEventName, string asUnused, float afContract, Form akSender)
     Register()
 EndEvent
 
 Function Register()
     heardOnce = false
-    if !Envoy.IsAvailable()
+    if !SpeechBroker.IsAvailable()
         ; These two are the only lines here written out rather than taken from a
         ; key, and for two different reasons. The trace cannot go through
-        ; Envoy.Translate, because the plugin that would translate it is exactly
+        ; SpeechBroker.Translate, because the plugin that would translate it is exactly
         ; what did not load. The dialogue can: the engine resolves a $-string
         ; shown whole out of the translation file by itself, with no plugin.
-        Debug.Trace("[Envoy] no bridge: the plugin did not load")
-        Debug.MessageBox("$ENVOYDEMO_NO_BRIDGE")
+        Debug.Trace("[SpeechBroker] no bridge: the plugin did not load")
+        Debug.MessageBox("$SPEECHBROKERDEMO_NO_BRIDGE")
         return
     endIf
-    RegisterForModEvent("Envoy_Speech_Any", "OnAny")
-    RegisterForModEvent("Envoy_Settled", "OnSettled")
+    RegisterForModEvent("SpeechBroker_Speech_Any", "OnAny")
+    RegisterForModEvent("SpeechBroker_Settled", "OnSettled")
     ; The observer does nothing and therefore declares itself revocable: it has
     ; nothing to undo. The call is here for the check itself - that a new function
     ; of the contract reaches a script and does not bring it down.
-    Envoy.Declare("DemoObserver", 0, true)
+    SpeechBroker.Declare("DemoObserver", 0, true)
 
     ; A dialogue is obliged to report what is not known. The contract version was
     ; known in advance and raised no doubt; what is not known is something else -
     ; whether anybody declared themselves to the bridge and on which topics. One
     ; glance now separates "there are no participants" from "there are
     ; participants, but the events do not reach them".
-    string[] who = Envoy.GetNamespaces()
+    string[] who = SpeechBroker.GetNamespaces()
     string[] mine
     string list = ""
     string joined = ""
     int i = 0
     int j = 0
     while i < who.Length
-        mine = Envoy.GetTopicsOf(who[i])
+        mine = SpeechBroker.GetTopicsOf(who[i])
         joined = ""
         j = 0
         while j < mine.Length
@@ -76,13 +76,13 @@ Function Register()
         i = i + 1
     endWhile
     if who.Length == 0
-        list = "\n  " + Envoy.Translate("$ENVOYDEMO_NOBODY")
+        list = "\n  " + SpeechBroker.Translate("$SPEECHBROKERDEMO_NOBODY")
     endIf
 
-    string hello = Envoy.Translate("$ENVOYDEMO_ON_AIR") + " " + who.Length
-    Debug.Trace("[Envoy] " + hello + list)
+    string hello = SpeechBroker.Translate("$SPEECHBROKERDEMO_ON_AIR") + " " + who.Length
+    Debug.Trace("[SpeechBroker] " + hello + list)
     Debug.Notification(hello)
-    Debug.MessageBox(hello + list + "\n\n" + Envoy.Translate("$ENVOYDEMO_SAY_SOMETHING"))
+    Debug.MessageBox(hello + list + "\n\n" + SpeechBroker.Translate("$SPEECHBROKERDEMO_SAY_SOMETHING"))
 EndFunction
 
 ; The string of an event is always empty: the event only wakes, the data is read
@@ -90,13 +90,13 @@ EndFunction
 ; a handler in Papyrus.
 Event OnAny(string asEventName, string asEmpty, float afId, Form akSender)
     int id = afId as int
-    string topicName = Envoy.GetTopic(id)
+    string topicName = SpeechBroker.GetTopic(id)
     ; Completeness is a new quantity of the contract: how sure the bridge is that
     ; the phrase ended on this utterance. While nobody sends it, it is one for
     ; everybody, and that too is an observation: holding does not work not because
     ; it is broken but because it has nothing to feed on.
-    string line = "[" + id + "] " + Envoy.Translate("$ENVOYDEMO_TOPIC") + " " + topicName + ", " + Envoy.Translate("$ENVOYDEMO_COMPLETENESS") + " " + Envoy.GetComplete(id) + ": " + Envoy.GetText(id)
-    Debug.Trace("[Envoy] " + line)
+    string line = "[" + id + "] " + SpeechBroker.Translate("$SPEECHBROKERDEMO_TOPIC") + " " + topicName + ", " + SpeechBroker.Translate("$SPEECHBROKERDEMO_COMPLETENESS") + " " + SpeechBroker.GetComplete(id) + ": " + SpeechBroker.GetText(id)
+    Debug.Trace("[SpeechBroker] " + line)
     Debug.Notification(line)
 
     ; The first utterance after a load goes as a dialogue: it is the one that proves
@@ -104,13 +104,13 @@ Event OnAny(string asEventName, string asEmpty, float afId, Form akSender)
     ; notices.
     if !heardOnce
         heardOnce = true
-        Debug.MessageBox(Envoy.Translate("$ENVOYDEMO_HEARS") + "\n\n" + Envoy.Translate("$ENVOYDEMO_TOPIC") + ": " + topicName + "\n" + Envoy.Translate("$ENVOYDEMO_RECOGNISED") + ": " + Envoy.GetText(id) + "\n\n" + Envoy.Translate("$ENVOYDEMO_FURTHER"))
+        Debug.MessageBox(SpeechBroker.Translate("$SPEECHBROKERDEMO_HEARS") + "\n\n" + SpeechBroker.Translate("$SPEECHBROKERDEMO_TOPIC") + ": " + topicName + "\n" + SpeechBroker.Translate("$SPEECHBROKERDEMO_RECOGNISED") + ": " + SpeechBroker.GetText(id) + "\n\n" + SpeechBroker.Translate("$SPEECHBROKERDEMO_FURTHER"))
     endIf
 EndEvent
 
 Event OnSettled(string asEventName, string asEmpty, float afId, Form akSender)
     int id = afId as int
-    string line = "[" + id + "] " + Envoy.Translate("$ENVOYDEMO_OUTCOME") + ": " + Envoy.GetOutcome(id)
-    Debug.Trace("[Envoy] " + line)
+    string line = "[" + id + "] " + SpeechBroker.Translate("$SPEECHBROKERDEMO_OUTCOME") + ": " + SpeechBroker.GetOutcome(id)
+    Debug.Trace("[SpeechBroker] " + line)
     Debug.Notification(line)
 EndEvent

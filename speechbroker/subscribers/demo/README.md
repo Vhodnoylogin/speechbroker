@@ -1,13 +1,13 @@
-# Envoy Framework - Demo Subscriber
+# Speech Broker - Demo Subscriber
 
 *In Russian: [README.ru.md](README.ru.md). English is the source language; the other is a translation.*
 
-The Envoy test listener: three Papyrus quests showing how a mod takes part in making sense of
+The Speech Broker test listener: three Papyrus quests showing how a mod takes part in making sense of
 speech and how the bridge settles an argument between participants.
 
 This is a **module of its own**. The sources of the bridge and of the adapter are not here: the
-declarations of the bridge are taken at compile time out of the `Envoy Framework - SDK` package.
-While Envoy lives on one git branch, a module is a folder of its own with a build of its own; a
+declarations of the bridge are taken at compile time out of the `Speech Broker - SDK` package.
+While Speech Broker lives on one git branch, a module is a folder of its own with a build of its own; a
 branch of its own will come later. This module is not wanted in the working profiles of the build -
 it exists for checking.
 
@@ -15,9 +15,9 @@ it exists for checking.
 
 | Script | Topics | Vocabulary | How it bids |
 |---|---|---|---|
-| `EnvoyDemoObserver` | all, through `Envoy_Speech_Any` | none | takes no part, only shows |
-| `EnvoyDemoGreedy` | `world` | the door phrase, the radio-check phrase | greedily: mine alone or not at all |
-| `EnvoyDemoShared` | `world`, `dialogue` | the look-around phrase, the radio-check phrase | shares with other non-greedy ones |
+| `SpeechBrokerDemoObserver` | all, through `SpeechBroker_Speech_Any` | none | takes no part, only shows |
+| `SpeechBrokerDemoGreedy` | `world` | the door phrase, the radio-check phrase | greedily: mine alone or not at all |
+| `SpeechBrokerDemoShared` | `world`, `dialogue` | the look-around phrase, the radio-check phrase | shares with other non-greedy ones |
 
 The vocabularies deliberately overlap on the **radio-check phrase** - on it the whole rule shows at
 once:
@@ -33,9 +33,9 @@ a topic never learns about the utterances of others, while the observer learns a
 
 ## The phrases are a translation, not code
 
-The vocabulary is not written into the scripts. Every phrase comes from `Envoy.Translate` by a key,
+The vocabulary is not written into the scripts. Every phrase comes from `SpeechBroker.Translate` by a key,
 and the lines behind the keys live in `localization/`, from where they are built into
-`Interface\Translations\EnvoyDemo_<language>.txt`.
+`Interface\Translations\SpeechBrokerDemo_<language>.txt`.
 
 That is not tidiness. A subscriber registers the phrases the player is going to **say**, and they
 have to be in the language of the installed model. English is the source language, Russian stands
@@ -54,7 +54,7 @@ tools\deploy.ps1 -Apply
 tools\package.ps1 -Apply
 ```
 
-Compilation refuses to run until the bridge is laid out: `Envoy.psc` is taken from the SDK package,
+Compilation refuses to run until the bridge is laid out: `SpeechBroker.psc` is taken from the SDK package,
 and the path to it is set in `config/build.json`. The lay-out needs the SDK too - the script that
 builds the string tables is published there.
 

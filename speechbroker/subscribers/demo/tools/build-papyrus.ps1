@@ -1,6 +1,6 @@
 ﻿# Compiling the scripts of the test listener. Every path is in config/build.json.
 #
-# The declarations of the bridge (Envoy.psc) are taken from the installed mod of
+# The declarations of the bridge (SpeechBroker.psc) are taken from the installed mod of
 # the bridge, the SDK folder: there is no copy of somebody else file in this
 # module and there must not be one.
 param([switch]$Quiet)
@@ -14,7 +14,7 @@ function Expand-CfgPath([string]$p) {
 
 $compiler = Join-Path $cfg.creationKit 'Papyrus Compiler\PapyrusCompiler.exe'
 if (-not (Test-Path -LiteralPath $compiler)) { throw "Compiler not found: $compiler. The Creation Kit is needed." }
-if (-not (Test-Path -LiteralPath (Join-Path $cfg.deploy.sdk 'Envoy.psc'))) {
+if (-not (Test-Path -LiteralPath (Join-Path $cfg.deploy.sdk 'SpeechBroker.psc'))) {
     throw "The declarations of the bridge were not found in $($cfg.deploy.sdk). Lay the bridge out first."
 }
 

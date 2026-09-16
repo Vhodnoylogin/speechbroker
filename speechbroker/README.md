@@ -1,11 +1,19 @@
-# Envoy Framework
+# Speech Broker
 
 *In Russian: [README.ru.md](README.ru.md). English is the source language; the other is a translation.*
 
-A bridge between Skyrim and outside models. The microphone and the voice are owned by one part
-for the whole game; mods subscribe to its result instead of raising an engine of their own.
+One microphone for the whole build. The player says something out loud, and Speech Broker decides
+**which mod acts on it** - so that five mods do not each raise a recognition engine of their own
+and fight over the device.
 
-Four channels:
+**What it is not.** It is not a bus of messages between mods, and it is not an arbiter of arbitrary
+resources. Everything it hands out is the speech of the player: the auction inside plays for an
+**utterance**, not for a hand, not for the camera, not for anything else. Arbitrating something
+else means writing another mod, not adding a channel here.
+
+The boundary it owns is the one between the game and a model outside it, and speech is the first
+thing to cross it. Four channels are planned along that boundary, and the name of the mod is the
+one that is built:
 
 | Channel | What it does | Shape of the exchange |
 |---|---|---|
@@ -19,15 +27,15 @@ without touching what is written.
 
 ## Three parts, and each is installed on its own
 
-Envoy is **one mod and one git branch**, but inside it there are three parts that stand alone.
+Speech Broker is **one mod and one git branch**, but inside it there are three parts that stand alone.
 Each has its own build, its own lay-out scripts, its own mod in the MO2 build and its own
 description. A person installs as many of them as they need.
 
 | Part | Folder | Mod in the build | Description |
 |---|---|---|---|
-| **Envoy** - the bridge | `bridge\` | `Envoy Framework` | [bridge/README.md](bridge/README.md) |
-| **EnvoyVoiceAdapter** - the microphone and the models | `adapter-voice\` | `Envoy Framework - Voice Adapter` | [adapter-voice/README.md](adapter-voice/README.md) |
-| **a model mod** - one particular model | `model-whisper-ru\` | `Envoy Framework - Voice Model - Whisper RU` | [model-whisper-ru/README.md](model-whisper-ru/README.md) |
+| **Speech Broker** - the bridge | `bridge\` | `Speech Broker` | [bridge/README.md](bridge/README.md) |
+| **SpeechBrokerVoiceAdapter** - the microphone and the models | `adapter-voice\` | `Speech Broker - Voice Adapter` | [adapter-voice/README.md](adapter-voice/README.md) |
+| **a model mod** - one particular model | `model-whisper-ru\` | `Speech Broker - Voice Model - Whisper RU` | [model-whisper-ru/README.md](model-whisper-ru/README.md) |
 
 Next to them lies `subscribers\demo\` - three test subscribers. That is not part of the delivery
 but a check: on them it shows how the bridge settles an argument between mods. They are not
@@ -56,7 +64,7 @@ microphone stays one for everybody.
 ## Text on screen
 
 Everything a player can read is a key, and the lines behind the keys live in Skyrim's own
-translation files - `Interface\Translations\Envoy*_<language>.txt`. English is the source
+translation files - `Interface\Translations\Speech Broker*_<language>.txt`. English is the source
 language, and **every language ships inside the module it belongs to**: a translation is a part of
 the module and not a mod to install beside it. The engine takes the file that matches the language
 of the game.
@@ -76,14 +84,14 @@ this reason.
     a subscriber ->  needs the bridge
 
 They all share one **contract**, and it is not copied between the parts. The bridge puts it into
-the `Envoy Framework - SDK` package, which is laid out next to the mod: the C ABI header for
+the `Speech Broker - SDK` package, which is laid out next to the mod: the C ABI header for
 adapters and the Papyrus declarations for listeners. The adapter and the subscriber build against
 the **installed SDK** rather than against a neighbouring folder in the repository - exactly as any
 other mod will. That is why their build refuses to run until the bridge is laid out: it is a
 check, not an inconvenience.
 
 The contract of a model mod is its own, and it is published by the adapter:
-[adapter-voice/contract/envoy-voice-model.md](adapter-voice/contract/envoy-voice-model.md).
+[adapter-voice/contract/speechbroker-voice-model.md](adapter-voice/contract/speechbroker-voice-model.md).
 
 ## Principles
 
@@ -95,7 +103,7 @@ The contract of a model mod is its own, and it is published by the adapter:
   crosshair".
 - **Determinism.** Not one argument is settled by the order in which scripts woke up.
 - **The core knows no platform.** The link to SKSE is a layer of its own on top, and that rests on
-  the build: the `envoy-host` target builds the core without CommonLibSSE.
+  the build: the `speechbroker-host` target builds the core without CommonLibSSE.
 
 ## The order of building
 
@@ -114,9 +122,9 @@ Lay out and pack only with the game closed.
 | Question | Where to look |
 |---|---|
 | how the auction, the topics and holding work | [bridge/README.md](bridge/README.md) |
-| how to check the bridge without the game | [bridge/README.md](bridge/README.md), the `envoy-host` target |
-| how to write an adapter of your own | `cpp\envoy-adapter.h` in the SDK package |
-| how to subscribe from a mod in Papyrus | `papyrus\Envoy.psc`, `docs\envoy-papyrus.md` in the SDK package |
-| how to add a model of your own | [adapter-voice/contract/envoy-voice-model.md](adapter-voice/contract/envoy-voice-model.md) |
+| how to check the bridge without the game | [bridge/README.md](bridge/README.md), the `speechbroker-host` target |
+| how to write an adapter of your own | `cpp\speechbroker-adapter.h` in the SDK package |
+| how to subscribe from a mod in Papyrus | `papyrus\SpeechBroker.psc`, `docs\speechbroker-papyrus.md` in the SDK package |
+| how to add a model of your own | [adapter-voice/contract/speechbroker-voice-model.md](adapter-voice/contract/speechbroker-voice-model.md) |
 | how a model mod is built inside | [model-whisper-ru/README.md](model-whisper-ru/README.md) |
 | how to translate the text into another language | `localization\` of the module, and the section above |

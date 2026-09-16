@@ -1,4 +1,4 @@
-# Laying the Envoy test listener out into mods\. Every path and name is in
+# Laying the SpeechBroker test listener out into mods\. Every path and name is in
 # config/build.json.
 #
 #   tools\deploy.ps1            show what would be done
@@ -38,7 +38,7 @@ Copy-Item -LiteralPath (Join-Path $root "esp\$($d.esp)") -Destination $mod -Forc
 # Text for the player, and the vocabulary with it: the phrases a subscriber
 # registers have to be in the language the player speaks. The tables are kept as
 # UTF-8 in localization/ and turned here into the UTF-16LE files the game and
-# Envoy.Translate both read.
+# SpeechBroker.Translate both read.
 $loc = $d.localization
 if ($loc) {
     $builder = Join-Path $d.sdkTools 'build-localization.py'
@@ -75,7 +75,7 @@ $meta = @(
     "newestVersion=$($d.version)"
     'category="0,"'
     'installationFile='
-    "notes=The Envoy test subscribers: the observer, the greedy one and the sharing one. Needs the mod $($d.bridgeMod). Not wanted in the working profiles."
+    "notes=The SpeechBroker test subscribers: the observer, the greedy one and the sharing one. Needs the mod $($d.bridgeMod). Not wanted in the working profiles."
     ''
     '[installedFiles]'
     'size=0'
@@ -117,6 +117,6 @@ foreach ($pack in Get-ChildItem -LiteralPath $dist -Directory) {
 }
 
 if (-not $NoIndex) {
-    & $d.indexScript -Owner $d.indexOwner -Mods $copied -Note "Envoy demo subscriber deploy $($d.version)"
+    & $d.indexScript -Owner $d.indexOwner -Mods $copied -Note "SpeechBroker demo subscriber deploy $($d.version)"
 }
 ''
