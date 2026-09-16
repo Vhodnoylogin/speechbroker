@@ -162,7 +162,7 @@ foreach ($pack in Get-ChildItem -LiteralPath $dist -Directory) {
     # and say what changed.
     $added = 0; $updated = 0; $same = 0
     Get-ChildItem -LiteralPath $pack.FullName -Recurse -File | ForEach-Object {
-        $rel = $_.FullName.Substring($pack.FullName.Length).TrimStart('')
+        $rel = $_.FullName.Substring($pack.FullName.Length).TrimStart('\')
         $dst = Join-Path $target $rel
         $dir = Split-Path -Parent $dst
         if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force $dir | Out-Null }
