@@ -1,6 +1,6 @@
 {
   "name": "Кому уходит фрагмент",
-  "_": "Every step checks one decision of the bridge. The texts are taken from the live recordings in dev/audio/takes - the same phrases that were spoken into the microphone. They stay in Russian on purpose: they are speech, not interface, and they are the only cover the Cyrillic case folding in core/Text has.",
+  "_": "Every step checks one decision of the bridge. The texts are taken from the live recordings in tools/audiolab/takes, which travel with the module - the same phrases that were spoken into the microphone. They stay in Russian on purpose: they are speech, not interface, and they are the only cover the Cyrillic case folding in core/Text has.",
   "steps": [
     {
       "_": "A tie of one kind: doors and guard declared the same phrase. The argument is about whose command it is, not about what was said.",
