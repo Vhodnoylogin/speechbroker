@@ -1,6 +1,6 @@
 #pragma once
 
-#include "envoy-loc.h"
+#include "speechbroker-loc.h"
 
 #include <spdlog/spdlog.h>
 
@@ -15,9 +15,9 @@ namespace Voice
 	// notices of its own.
 	//
 	// Not one line is written in the code. A line is a key, and the text behind it
-	// comes out of Interface\Translations\EnvoyVoiceAdapter_<language>.txt - the
-	// same mechanism and the same format as everywhere else in Envoy; the reading
-	// is done by envoy-loc.h out of the SDK of the bridge.
+	// comes out of Interface\Translations\SpeechBrokerVoiceAdapter_<language>.txt - the
+	// same mechanism and the same format as everywhere else in SpeechBroker; the reading
+	// is done by speechbroker-loc.h out of the SDK of the bridge.
 	//
 	// The adapter keeps a table of its own rather than borrowing one. It is a DLL
 	// of its own, and it writes its first lines before it has even met the bridge:

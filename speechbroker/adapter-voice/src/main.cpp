@@ -1,4 +1,4 @@
-// The voice adapter for Envoy.
+// The voice adapter for SpeechBroker.
 //
 // This is a mod: an ordinary SKSE plugin living in the process of the game. It
 // talks to the bridge by calling a function, and outward - to its own service,
@@ -21,7 +21,7 @@
 #include <RE/Skyrim.h>
 #include <SKSE/SKSE.h>
 
-#include "envoy-adapter.h"
+#include "speechbroker-adapter.h"
 
 #include "Bridge.h"
 #include "Config.h"
@@ -81,20 +81,20 @@ namespace
 		spdlog::set_default_logger(std::move(logger));
 	}
 
-	void OnJob(const EnvoyAPI::Job& a_job, void*)
+	void OnJob(const SpeechBrokerAPI::Job& a_job, void*)
 	{
 		switch (a_job.kind) {
-		case EnvoyAPI::kJobListen:
+		case SpeechBrokerAPI::kJobListen:
 			Bridge::Get().SetListening(a_job.active);
-			Voice::Loc::Info("$ENVOYVOICE_LOG_BRIDGE_ROLE",
-				Voice::Loc::Get(a_job.active ? "$ENVOYVOICE_WORD_I_AM_SOURCE"
-				                             : "$ENVOYVOICE_WORD_I_AM_RESERVE"),
+			Voice::Loc::Info("$SPEECHBROKERVOICE_LOG_BRIDGE_ROLE",
+				Voice::Loc::Get(a_job.active ? "$SPEECHBROKERVOICE_WORD_I_AM_SOURCE"
+				                             : "$SPEECHBROKERVOICE_WORD_I_AM_RESERVE"),
 				a_job.text ? a_job.text : "");
 			break;
-		case EnvoyAPI::kJobVocabulary:
-			Voice::Loc::Info("$ENVOYVOICE_LOG_VOCABULARY", a_job.phraseCount);
+		case SpeechBrokerAPI::kJobVocabulary:
+			Voice::Loc::Info("$SPEECHBROKERVOICE_LOG_VOCABULARY", a_job.phraseCount);
 			break;
-		case EnvoyAPI::kJobSpeak:
+		case SpeechBrokerAPI::kJobSpeak:
 			if (a_job.text) {
 				// Speaking goes in a thread of its own: the thread of the game must not be
 				// held for the length of the synthesis.
@@ -103,10 +103,10 @@ namespace
 				std::thread([text, speechId]() { Speak(text, speechId); }).detach();
 			}
 			break;
-		case EnvoyAPI::kJobAsk:
+		case SpeechBrokerAPI::kJobAsk:
 			// The voice adapter holds no language models: that capability is declared by
 			// another adapter, and the bridge will send the request there.
-			Voice::Loc::Info("$ENVOYVOICE_LOG_NOT_FOR_ME", a_job.service ? a_job.service : "?");
+			Voice::Loc::Info("$SPEECHBROKERVOICE_LOG_NOT_FOR_ME", a_job.service ? a_job.service : "?");
 			break;
 		default:
 			break;
@@ -121,32 +121,32 @@ namespace
 		}
 		const auto& config = Config::Get();
 
-		EnvoyAPI::AdapterInfo info{};
+		SpeechBrokerAPI::AdapterInfo info{};
 		info.id = config.adapterId.c_str();
 		info.name = config.adapterName.c_str();
 		info.provides = config.adapterProvides.c_str();
-		info.contract = EnvoyAPI::kInterfaceVersion;
+		info.contract = SpeechBrokerAPI::kInterfaceVersion;
 
 		if (!bridge.Register(info, OnJob, nullptr)) {
-			Voice::Loc::Error("$ENVOYVOICE_LOG_REGISTER_REFUSED");
+			Voice::Loc::Error("$SPEECHBROKERVOICE_LOG_REGISTER_REFUSED");
 			return;
 		}
-		Voice::Loc::Info("$ENVOYVOICE_LOG_REGISTERED", config.adapterId);
+		Voice::Loc::Info("$SPEECHBROKERVOICE_LOG_REGISTERED", config.adapterId);
 
 		if (config.models.empty()) {
 			// This is not a breakage: a model is installed as a separate mod, and a
 			// person may have installed only the adapter. It has to be said plainly, or a
 			// silent microphone looks like a fault of ours.
-			Voice::Loc::Warn("$ENVOYVOICE_LOG_NO_MODELS");
+			Voice::Loc::Warn("$SPEECHBROKERVOICE_LOG_NO_MODELS");
 			return;
 		}
 
 		for (const auto& model : config.models) {
-			Voice::Loc::Info("$ENVOYVOICE_LOG_MODEL", model.id, model.name, model.source,
+			Voice::Loc::Info("$SPEECHBROKERVOICE_LOG_MODEL", model.id, model.name, model.source,
 				Voice::Loc::Get(model.enabled
-				                    ? (model.fast ? "$ENVOYVOICE_WORD_DRAFT" : "$ENVOYVOICE_WORD_ACCURATE")
-				                    : "$ENVOYVOICE_WORD_SWITCHED_OFF"),
-				model.speaks ? Voice::Loc::Get("$ENVOYVOICE_WORD_CAN_SPEAK") : "");
+				                    ? (model.fast ? "$SPEECHBROKERVOICE_WORD_DRAFT" : "$SPEECHBROKERVOICE_WORD_ACCURATE")
+				                    : "$SPEECHBROKERVOICE_WORD_SWITCHED_OFF"),
+				model.speaks ? Voice::Loc::Get("$SPEECHBROKERVOICE_WORD_CAN_SPEAK") : "");
 		}
 
 		// One thread: the microphone belongs to the adapter, its service is its own
@@ -154,25 +154,25 @@ namespace
 		std::thread([]() { PollService(); }).detach();
 		const auto started = std::count_if(config.models.begin(), config.models.end(),
 			[](const Voice::Model& a_model) { return a_model.enabled && a_model.hears; });
-		Voice::Loc::Info("$ENVOYVOICE_LOG_DECLARED", started,
-			config.adapterProvides.empty() ? Voice::Loc::Get("$ENVOYVOICE_WORD_NOTHING")
+		Voice::Loc::Info("$SPEECHBROKERVOICE_LOG_DECLARED", started,
+			config.adapterProvides.empty() ? Voice::Loc::Get("$SPEECHBROKERVOICE_WORD_NOTHING")
 			                               : config.adapterProvides);
 	}
 
 	void OnMessage(SKSE::MessagingInterface::Message* a_message)
 	{
-		if (!a_message || a_message->type != EnvoyAPI::kMessageInterface) {
+		if (!a_message || a_message->type != SpeechBrokerAPI::kMessageInterface) {
 			return;
 		}
-		if (a_message->dataLen != sizeof(EnvoyAPI::IEnvoy*)) {
+		if (a_message->dataLen != sizeof(SpeechBrokerAPI::ISpeechBroker*)) {
 			return;
 		}
-		auto* envoy = *static_cast<EnvoyAPI::IEnvoy**>(a_message->data);
-		if (!envoy) {
+		auto* speechbroker = *static_cast<SpeechBrokerAPI::ISpeechBroker**>(a_message->data);
+		if (!speechbroker) {
 			return;
 		}
 		auto& bridge = Bridge::Get();
-		bridge.Attach(envoy);
+		bridge.Attach(speechbroker);
 
 		// A bridge NEWER than us we are obliged to accept: it does not read fields of
 		// ours that did not yet exist in the version we declared, and an old adapter
@@ -183,17 +183,17 @@ namespace
 		// version three knocked the adapter out entirely: the run of 07.09 never
 		// happened, because speech did not reach the bridge at all. Compatibility
 		// made from one side is not compatibility.
-		if (bridge.Version() < EnvoyAPI::kInterfaceVersion) {
-			Voice::Loc::Error("$ENVOYVOICE_LOG_BRIDGE_TOO_OLD",
-				bridge.Version(), EnvoyAPI::kInterfaceVersion);
+		if (bridge.Version() < SpeechBrokerAPI::kInterfaceVersion) {
+			Voice::Loc::Error("$SPEECHBROKERVOICE_LOG_BRIDGE_TOO_OLD",
+				bridge.Version(), SpeechBrokerAPI::kInterfaceVersion);
 			bridge.Detach();
 			return;
 		}
-		if (bridge.Version() > EnvoyAPI::kInterfaceVersion) {
-			Voice::Loc::Info("$ENVOYVOICE_LOG_BRIDGE_NEWER",
-				bridge.Version(), EnvoyAPI::kInterfaceVersion);
+		if (bridge.Version() > SpeechBrokerAPI::kInterfaceVersion) {
+			Voice::Loc::Info("$SPEECHBROKERVOICE_LOG_BRIDGE_NEWER",
+				bridge.Version(), SpeechBrokerAPI::kInterfaceVersion);
 		}
-		Voice::Loc::Info("$ENVOYVOICE_LOG_INTERFACE_RECEIVED", bridge.Version());
+		Voice::Loc::Info("$SPEECHBROKERVOICE_LOG_INTERFACE_RECEIVED", bridge.Version());
 		Start();
 	}
 }
@@ -228,9 +228,9 @@ extern "C" __declspec(dllexport) bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadIn
 	// turns out to name one.
 	Voice::Loc::Load(kTranslations, ResolveLanguage("auto"));
 
-	Voice::Loc::Info("$ENVOYVOICE_LOG_PLUGIN_LOADED", PLUGIN_NAME, PLUGIN_VERSION);
+	Voice::Loc::Info("$SPEECHBROKERVOICE_LOG_PLUGIN_LOADED", PLUGIN_NAME, PLUGIN_VERSION);
 	if (!Config::Load()) {
-		Voice::Loc::Error("$ENVOYVOICE_LOG_NO_SETTINGS_FATAL");
+		Voice::Loc::Error("$SPEECHBROKERVOICE_LOG_NO_SETTINGS_FATAL");
 		return true;
 	}
 
@@ -241,7 +241,7 @@ extern "C" __declspec(dllexport) bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadIn
 	// The bridge broadcasts the interface under its own name - that is what we
 	// listen for.
 	if (auto* messaging = SKSE::GetMessagingInterface()) {
-		messaging->RegisterListener("Envoy", OnMessage);
+		messaging->RegisterListener("SpeechBroker", OnMessage);
 	}
 	return true;
 }

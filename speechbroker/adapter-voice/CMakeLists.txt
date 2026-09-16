@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.24)
 
-# The Envoy test adapter: an ordinary SKSE plugin, which is to say a mod. It
+# The Speech Broker test adapter: an ordinary SKSE plugin, which is to say a mod. It
 # talks to the bridge by calling a function inside the process of the game;
 # outward, to the voice service, it goes over HTTP by itself. It is built apart
 # from the bridge and knows nothing about its sources - only the contract is
 # taken from the bridge, and it is taken from the installed mod, the SDK folder.
 # The path to it is set in config/build.json under the sdk key.
-project(EnvoyVoiceAdapter VERSION 0.1.0 LANGUAGES CXX)
+project(SpeechBrokerVoiceAdapter VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -16,14 +16,14 @@ set(CMAKE_SKIP_INSTALL_RULES ON)
 # ---------------------------------------------------------------- the contract
 # Where the SDK of the bridge lies is a setting, not a constant: we read it out
 # of the same file the lay-out scripts use.
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/config/build.json" ENVOY_BUILD_JSON)
-string(JSON ENVOY_SDK GET "${ENVOY_BUILD_JSON}" deploy sdk)
-if(NOT EXISTS "${ENVOY_SDK}/envoy-adapter.h")
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/config/build.json" SPEECHBROKER_BUILD_JSON)
+string(JSON SPEECHBROKER_SDK GET "${SPEECHBROKER_BUILD_JSON}" deploy sdk)
+if(NOT EXISTS "${SPEECHBROKER_SDK}/speechbroker-adapter.h")
     message(FATAL_ERROR
-        "The contract of the bridge was not found: ${ENVOY_SDK}/envoy-adapter.h\n"
+        "The contract of the bridge was not found: ${SPEECHBROKER_SDK}/speechbroker-adapter.h\n"
         "Lay the bridge out first - it publishes the SDK folder inside its own mod.")
 endif()
-message(STATUS "Envoy contract: ${ENVOY_SDK}")
+message(STATUS "Speech Broker contract: ${SPEECHBROKER_SDK}")
 
 # ---------------------------------------------------------------- dependencies
 # CommonLibSSE-NG looks for fmt and spdlog through find_package, so we slip them
@@ -90,30 +90,30 @@ FetchContent_MakeAvailable(httplib)
 
 # ---------------------------------------------------------------- our plugin
 file(GLOB_RECURSE ADAPTER_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
-add_library(EnvoyVoiceAdapter SHARED ${ADAPTER_SOURCES})
+add_library(SpeechBrokerVoiceAdapter SHARED ${ADAPTER_SOURCES})
 
 if(MSVC)
-    target_compile_options(EnvoyVoiceAdapter PRIVATE
+    target_compile_options(SpeechBrokerVoiceAdapter PRIVATE
         /MP /W4 /WX /permissive- /Zc:preprocessor /EHsc /utf-8
         /wd4068 /wd4189 /wd4200 /wd4201 /wd4324
     )
 endif()
 
-set_target_properties(EnvoyVoiceAdapter PROPERTIES OUTPUT_NAME "EnvoyVoiceAdapter" SUFFIX ".dll")
+set_target_properties(SpeechBrokerVoiceAdapter PROPERTIES OUTPUT_NAME "SpeechBrokerVoiceAdapter" SUFFIX ".dll")
 
-target_compile_definitions(EnvoyVoiceAdapter PRIVATE
-    PLUGIN_NAME="EnvoyVoiceAdapter"
+target_compile_definitions(SpeechBrokerVoiceAdapter PRIVATE
+    PLUGIN_NAME="SpeechBrokerVoiceAdapter"
     PLUGIN_AUTHOR="Vhodnoylogin"
     PLUGIN_VERSION="${PROJECT_VERSION}"
 )
 
-target_include_directories(EnvoyVoiceAdapter PRIVATE
+target_include_directories(SpeechBrokerVoiceAdapter PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    "${ENVOY_SDK}"
+    "${SPEECHBROKER_SDK}"
     "${RAPIDCSV_INCLUDE_DIRS}"
 )
 
-target_link_libraries(EnvoyVoiceAdapter PRIVATE
+target_link_libraries(SpeechBrokerVoiceAdapter PRIVATE
     CommonLibSSE::CommonLibSSE
     nlohmann_json::nlohmann_json
     httplib::httplib

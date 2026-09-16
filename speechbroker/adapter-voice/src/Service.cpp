@@ -68,7 +68,7 @@ namespace Voice
 		}
 		const auto& start = *_settings.autoStart;
 		if (!start.enabled || start.exec.empty()) {
-			Loc::Warn("$ENVOYVOICE_LOG_SERVICE_SILENT_NO_START");
+			Loc::Warn("$SPEECHBROKERVOICE_LOG_SERVICE_SILENT_NO_START");
 			return;
 		}
 
@@ -98,14 +98,14 @@ namespace Voice
 		// that knows nothing about it will not notice the argument - arguments it does
 		// not understand it does not parse at all. So the rule comes in without
 		// breaking compatibility, rather than some day later.
-		command += " --envoy-token " + _settings.token;
+		command += " --speechbroker-token " + _settings.token;
 
 		auto wideDir = Widen(start.workingDir);
 		STARTUPINFOW startup{};
 		startup.cb = sizeof(startup);
 		PROCESS_INFORMATION info{};
 
-		Loc::Info("$ENVOYVOICE_LOG_SERVICE_STARTING", command);
+		Loc::Info("$SPEECHBROKERVOICE_LOG_SERVICE_STARTING", command);
 
 		// The service has to leave the job object MO2 keeps the game in. MO2 counts
 		// the game as running until the whole tree of processes is empty, and the
@@ -122,9 +122,9 @@ namespace Voice
 
 		if (!spawn(CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB)) {
 			const auto why = ::GetLastError();
-			Loc::Warn("$ENVOYVOICE_LOG_SERVICE_IN_JOB", why);
+			Loc::Warn("$SPEECHBROKERVOICE_LOG_SERVICE_IN_JOB", why);
 			if (!spawn(CREATE_NO_WINDOW)) {
-				Loc::Error("$ENVOYVOICE_LOG_SERVICE_START_FAILED", ::GetLastError());
+				Loc::Error("$SPEECHBROKERVOICE_LOG_SERVICE_START_FAILED", ::GetLastError());
 				return;
 			}
 		}
@@ -135,11 +135,11 @@ namespace Voice
 		                      std::chrono::seconds(start.waitSec);
 		while (std::chrono::steady_clock::now() < deadline) {
 			if (Alive()) {
-				Loc::Info("$ENVOYVOICE_LOG_SERVICE_UP");
+				Loc::Info("$SPEECHBROKERVOICE_LOG_SERVICE_UP");
 				return;
 			}
 			std::this_thread::sleep_for(std::chrono::seconds(start.pollSec));
 		}
-		Loc::Warn("$ENVOYVOICE_LOG_SERVICE_TIMEOUT");
+		Loc::Warn("$SPEECHBROKERVOICE_LOG_SERVICE_TIMEOUT");
 	}
 }

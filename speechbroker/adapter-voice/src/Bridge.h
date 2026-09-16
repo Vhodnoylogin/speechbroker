@@ -1,6 +1,6 @@
 #pragma once
 
-#include "envoy-adapter.h"
+#include "speechbroker-adapter.h"
 
 #include <atomic>
 #include <cstdint>
@@ -17,20 +17,20 @@ namespace Voice
 	public:
 		static Bridge& Get();
 
-		void Attach(EnvoyAPI::IEnvoy* a_envoy) { _envoy = a_envoy; }
-		void Detach() { _envoy = nullptr; }
-		bool Ready() const { return _envoy != nullptr; }
+		void Attach(SpeechBrokerAPI::ISpeechBroker* a_speechbroker) { _speechbroker = a_speechbroker; }
+		void Detach() { _speechbroker = nullptr; }
+		bool Ready() const { return _speechbroker != nullptr; }
 
-		std::uint32_t Version() const { return _envoy->Version(); }
+		std::uint32_t Version() const { return _speechbroker->Version(); }
 
 		// The name from the registration is remembered: the utterances and the reports
 		// on speaking go under it later, and there is no point asking the settings for
 		// it a second time.
-		bool Register(const EnvoyAPI::AdapterInfo& a_info, EnvoyAPI::JobCallback a_onJob, void* a_user);
+		bool Register(const SpeechBrokerAPI::AdapterInfo& a_info, SpeechBrokerAPI::JobCallback a_onJob, void* a_user);
 
 		// The number of the utterance at the bridge, or 0 if the bridge did not take it
 		// or is not there.
-		std::int32_t PushUtterance(const EnvoyAPI::UtteranceIn& a_utterance);
+		std::int32_t PushUtterance(const SpeechBrokerAPI::UtteranceIn& a_utterance);
 		void         PushSpeechDone(std::int32_t a_speechId, bool a_ok, bool a_interrupted);
 
 		// The bridge made us the source, or told us to fall silent.
@@ -40,7 +40,7 @@ namespace Voice
 	private:
 		Bridge() = default;
 
-		EnvoyAPI::IEnvoy* _envoy{ nullptr };
+		SpeechBrokerAPI::ISpeechBroker* _speechbroker{ nullptr };
 		std::string       _id;
 		std::atomic_bool  _listening{ true };
 	};

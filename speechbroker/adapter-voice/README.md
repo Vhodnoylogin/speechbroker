@@ -1,15 +1,15 @@
-# EnvoyVoiceAdapter - the sound and the models
+# SpeechBrokerVoiceAdapter - the sound and the models
 
 *In Russian: [README.ru.md](README.ru.md). English is the source language; the other is a translation.*
 
-The part of Envoy that answers for the voice: it **owns the microphone**, deals what it hears out
+The part of Speech Broker that answers for the voice: it **owns the microphone**, deals what it hears out
 to the installed models and carries their answers into the bridge.
 
 This is a **module of its own**. The sources of the bridge are not here and must not be: the bridge
-is visible only through the contract it publishes in the `Envoy Framework - SDK` package. Any other
+is visible only through the contract it publishes in the `Speech Broker - SDK` package. Any other
 mod that wants to write an adapter will see it the same way - that is the point of the division.
 
-What Envoy is as a whole is in the [description of the module](../README.md).
+What Speech Broker is as a whole is in the [description of the module](../README.md).
 
 ## The microphone belongs to the adapter
 
@@ -28,13 +28,13 @@ no program of its own.
 
 It reads the folder
 
-    Data\SKSE\Plugins\envoy\adapters\voice\models\
+    Data\SKSE\Plugins\speechbroker\adapters\voice\models\
 
 and takes the declarations of the models out of it. Each listing is put there by a **separate mod** -
 a model mod; the weights are loaded by the service, and all the adapter wants from a listing is
 three things: what the model is called in the answers of the service, whether it gives a draft or a
 final answer, and what it can do.
-The full contract of a listing: [contract/envoy-voice-model.md](contract/envoy-voice-model.md).
+The full contract of a listing: [contract/speechbroker-voice-model.md](contract/speechbroker-voice-model.md).
 
 From this follows what it was done for:
 
@@ -89,7 +89,7 @@ The answer to `/listen` is an object with an `utterances` array, and in every re
 
 ## The settings
 
-`envoy-voice.json` describes **the adapter itself and its service**: where it is, how to bring it
+`speechbroker-voice.json` describes **the adapter itself and its service**: where it is, how to bring it
 up, the deadlines, the width of the refinement window. There are no models in it and there must not
 be.
 
@@ -115,15 +115,15 @@ work. A person who installed three model mods must not be left without all three
 ## The text of the adapter
 
 The adapter has no window and no notices: everything it says goes into the log. The log is
-translated like everything else in Envoy - not one line is written in the code, there are keys
-there, and the text lives in `Interface\Translations\EnvoyVoiceAdapter_<language>.txt`. The
-reading is done by `envoy-loc.h` out of the SDK of the bridge: the adapter is a library of its own
+translated like everything else in Speech Broker - not one line is written in the code, there are keys
+there, and the text lives in `Interface\Translations\SpeechBrokerVoiceAdapter_<language>.txt`. The
+reading is done by `speechbroker-loc.h` out of the SDK of the bridge: the adapter is a library of its own
 and writes its first lines before it has met the bridge.
 
 What stays as it came is **the recognised speech**: what a person said is data and not a message,
 and it reaches the log in the language it was said in.
 
-The language comes from the `language` key in `envoy-voice.json`; `auto` is the language of the
+The language comes from the `language` key in `speechbroker-voice.json`; `auto` is the language of the
 game itself. Every language goes inside the mod of the adapter - a translation is a part of the
 module and not a mod to install beside it.
 
@@ -145,9 +145,9 @@ silently disagree with the bridge about the version of the interface.
 
 The service is ours, but the channel to it is protected all the same, because the port can be taken
 by a program that is not ours: the address has to be the loopback, `exec` has to lie inside the
-folder of the adapter, and every request carries a one-off session secret in the `X-Envoy-Token`
+folder of the adapter, and every request carries a one-off session secret in the `X-Speech Broker-Token`
 header. The adapter makes the secret up at load and hands it to the service with the
-`--envoy-token` argument.
+`--speechbroker-token` argument.
 
 ## Compatibility with the bridge
 

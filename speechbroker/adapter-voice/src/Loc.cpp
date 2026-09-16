@@ -6,12 +6,12 @@ namespace Voice
 {
 	namespace
 	{
-		EnvoyLoc::Table g_table;
+		SpeechBrokerLoc::Table g_table;
 	}
 
 	void Loc::Load(const std::filesystem::path& a_dir, const std::string& a_language)
 	{
-		g_table.Load(a_dir, a_language, kEnvoyDefaultStrings, std::size(kEnvoyDefaultStrings));
+		g_table.Load(a_dir, a_language, kSpeechBrokerDefaultStrings, std::size(kSpeechBrokerDefaultStrings));
 
 		// In English on purpose, and the only line of the adapter that is: it reports
 		// whether the translation loaded, so it cannot depend on the translation

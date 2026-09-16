@@ -33,7 +33,7 @@ namespace Voice
 		// with. EVERY request has to carry it, or the rule protects the handshake
 		// rather than the conversation. httplib itself is deliberately kept out of
 		// this header: it pulls in windows.h, and CommonLibSSE has to see that first.
-		static constexpr const char* kPass = "X-Envoy-Token";
+		static constexpr const char* kPass = "X-SpeechBroker-Token";
 
 		// /health answered 200.
 		bool Alive() const;

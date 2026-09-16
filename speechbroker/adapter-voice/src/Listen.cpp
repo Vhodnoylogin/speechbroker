@@ -65,7 +65,7 @@ namespace Voice
 					if (found != map.end()) {
 						out.push_back(found->second);
 					} else {
-						Loc::Warn("$ENVOYVOICE_LOG_PIECE_UNKNOWN", a_modelId, serviceId);
+						Loc::Warn("$SPEECHBROKERVOICE_LOG_PIECE_UNKNOWN", a_modelId, serviceId);
 					}
 				}
 				return out;
@@ -136,11 +136,11 @@ namespace Voice
 			// mod in the build, and that has to be looked at by eye.
 			const auto* model = Config::Get().Find(engine);
 			if (!model) {
-				Loc::Warn("$ENVOYVOICE_LOG_MODEL_UNKNOWN", engine);
+				Loc::Warn("$SPEECHBROKERVOICE_LOG_MODEL_UNKNOWN", engine);
 			}
 			const bool fast = model && model->fast;
 
-			EnvoyAPI::UtteranceIn in{};
+			SpeechBrokerAPI::UtteranceIn in{};
 			in.text = text.c_str();
 			in.language = model ? model->language.c_str() : "";
 			in.engine = engine.c_str();
@@ -178,14 +178,14 @@ namespace Voice
 
 			const auto id = bridge.PushUtterance(in);
 			if (id == 0) {
-				Loc::Warn("$ENVOYVOICE_LOG_BRIDGE_REFUSED_UTTERANCE", engine);
+				Loc::Warn("$SPEECHBROKERVOICE_LOG_BRIDGE_REFUSED_UTTERANCE", engine);
 				return;
 			}
 
 			g_correlation.Remember(engine, fast, a_item.value("id", 0), id);
 
 			if (!swallowed.empty()) {
-				Loc::Info("$ENVOYVOICE_LOG_ABSORBS",
+				Loc::Info("$SPEECHBROKERVOICE_LOG_ABSORBS",
 					id, swallowed.size(), in.complete);
 			}
 		}
@@ -203,7 +203,7 @@ namespace Voice
 		// there is no telling from it whether we checked that the service starts on
 		// its own or connected to one brought up by hand in advance.
 		if (service.Alive()) {
-			Loc::Info("$ENVOYVOICE_LOG_SERVICE_ALREADY_UP");
+			Loc::Info("$SPEECHBROKERVOICE_LOG_SERVICE_ALREADY_UP");
 		} else {
 			service.Launch();
 		}
@@ -243,7 +243,7 @@ namespace Voice
 				// that took the port and answered instantly drove this loop to the limit: the
 				// core under load and thousands of lines a second into the log, right in the
 				// middle of play.
-				Loc::Warn("$ENVOYVOICE_LOG_ANSWER_BROKEN", e.what());
+				Loc::Warn("$SPEECHBROKERVOICE_LOG_ANSWER_BROKEN", e.what());
 				std::this_thread::sleep_for(std::chrono::milliseconds(config.retryDelayMs));
 			}
 		}

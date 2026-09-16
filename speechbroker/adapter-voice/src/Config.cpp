@@ -15,14 +15,14 @@ namespace Voice
 {
 	namespace
 	{
-		constexpr auto kHome = LR"(Data\SKSE\Plugins\envoy\adapters\voice)";
-		constexpr auto kConfigPath = LR"(Data\SKSE\Plugins\envoy\adapters\voice\envoy-voice.json)";
+		constexpr auto kHome = LR"(Data\SKSE\Plugins\speechbroker\adapters\voice)";
+		constexpr auto kConfigPath = LR"(Data\SKSE\Plugins\speechbroker\adapters\voice\speechbroker-voice.json)";
 
 		// The folder every model mod puts its listing into. The name of the file does
 		// not matter - only the id key inside it does; the folder is read in the order
 		// of the names, so that the list of models does not depend on how the file
 		// system handed them back and two launches give one and the same order.
-		constexpr auto kModelsDir = LR"(Data\SKSE\Plugins\envoy\adapters\voice\models)";
+		constexpr auto kModelsDir = LR"(Data\SKSE\Plugins\speechbroker\adapters\voice\models)";
 
 		// A path from the settings, if it is relative, is taken from the folder of the
 		// adapter, and it cannot leave it. The adapter starts ITS OWN service, which
@@ -99,7 +99,7 @@ namespace Voice
 			const auto exec = a_doc.value("exec", std::string{});
 			out.exec = ResolveInside(exec, home);
 			if (!exec.empty() && out.exec.empty()) {
-				Loc::Error("$ENVOYVOICE_LOG_EXEC_OUTSIDE",
+				Loc::Error("$SPEECHBROKERVOICE_LOG_EXEC_OUTSIDE",
 					exec);
 				return std::nullopt;
 			}
@@ -107,7 +107,7 @@ namespace Voice
 			const auto dir = a_doc.value("workingDir", std::string{});
 			out.workingDir = ResolveInside(dir, home);
 			if (!dir.empty() && out.workingDir.empty()) {
-				Loc::Error("$ENVOYVOICE_LOG_WORKDIR_OUTSIDE", dir);
+				Loc::Error("$SPEECHBROKERVOICE_LOG_WORKDIR_OUTSIDE", dir);
 				return std::nullopt;
 			}
 
@@ -179,20 +179,20 @@ namespace Voice
 					stream >> doc;
 					auto model = ReadModel(doc, file);
 					if (model.id.empty()) {
-						Loc::Error("$ENVOYVOICE_LOG_MODEL_NO_ID",
+						Loc::Error("$SPEECHBROKERVOICE_LOG_MODEL_NO_ID",
 							file.filename().string());
 						continue;
 					}
 					const auto twin = std::find_if(out.begin(), out.end(),
 						[&](const Model& a_seen) { return a_seen.id == model.id; });
 					if (twin != out.end()) {
-						Loc::Error("$ENVOYVOICE_LOG_MODEL_TWICE",
+						Loc::Error("$SPEECHBROKERVOICE_LOG_MODEL_TWICE",
 							model.id, twin->source, model.source);
 						continue;
 					}
 					out.push_back(std::move(model));
 				} catch (const std::exception& e) {
-					Loc::Error("$ENVOYVOICE_LOG_MODEL_BROKEN",
+					Loc::Error("$SPEECHBROKERVOICE_LOG_MODEL_BROKEN",
 						file.filename().string(), e.what());
 				}
 			}
@@ -238,7 +238,7 @@ namespace Voice
 	{
 		std::error_code ec;
 		if (!std::filesystem::exists(kConfigPath, ec)) {
-			Loc::Error("$ENVOYVOICE_LOG_NO_SETTINGS", std::filesystem::path{ kConfigPath }.string());
+			Loc::Error("$SPEECHBROKERVOICE_LOG_NO_SETTINGS", std::filesystem::path{ kConfigPath }.string());
 			return false;
 		}
 
@@ -271,12 +271,12 @@ namespace Voice
 			self.sayTimeoutSec = doc.value("sayTimeoutSec", self.sayTimeoutSec);
 			self.idMapLimit = doc.value("idMapLimit", self.idMapLimit);
 		} catch (const std::exception& e) {
-			Loc::Error("$ENVOYVOICE_LOG_SETTINGS_BROKEN", e.what());
+			Loc::Error("$SPEECHBROKERVOICE_LOG_SETTINGS_BROKEN", e.what());
 			return false;
 		}
 
 		if (!Loopback(self.service.url)) {
-			Loc::Error("$ENVOYVOICE_LOG_NOT_LOOPBACK",
+			Loc::Error("$SPEECHBROKERVOICE_LOG_NOT_LOOPBACK",
 				self.service.url);
 			return false;
 		}

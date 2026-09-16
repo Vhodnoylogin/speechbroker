@@ -1,4 +1,4 @@
-﻿# Laying the Envoy test adapter out into mods\. Every path and name is in
+﻿# Laying the SpeechBroker test adapter out into mods\. Every path and name is in
 # config/build.json.
 #
 #   tools\deploy.ps1            show what would be done
@@ -17,7 +17,7 @@ $enc  = New-Object Text.UTF8Encoding($false)
 $game = @(Get-Process -Name SkyrimVR,SkyrimSE -ErrorAction SilentlyContinue)
 if ($game.Count) { throw "The game is running ($($game.Name -join ', ')) - laying out is not allowed" }
 
-if (-not (Test-Path -LiteralPath (Join-Path $d.sdk 'envoy-adapter.h'))) {
+if (-not (Test-Path -LiteralPath (Join-Path $d.sdk 'speechbroker-adapter.h'))) {
     throw "The contract of the bridge was not found in $($d.sdk). Lay the bridge out first."
 }
 
@@ -98,7 +98,7 @@ if ($d.publish) {
         "newestVersion=$($d.version)"
         'category="0,"'
         'installationFile='
-        'notes=The contract of a model mod for EnvoyVoiceAdapter. An author of a mod needs it, the game does not; keep it disabled in the profiles.'
+        'notes=The contract of a model mod for SpeechBrokerVoiceAdapter. An author of a mod needs it, the game does not; keep it disabled in the profiles.'
         ''
         '[installedFiles]'
         'size=0'
@@ -122,7 +122,7 @@ $meta = @(
     "newestVersion=$($d.version)"
     'category="0,"'
     'installationFile='
-    "notes=The Envoy test adapter to the service of speech recognition and synthesis. Needs the mod $($d.bridgeMod)."
+    "notes=The SpeechBroker test adapter to the service of speech recognition and synthesis. Needs the mod $($d.bridgeMod)."
     ''
     '[installedFiles]'
     'size=0'
@@ -166,6 +166,6 @@ foreach ($pack in Get-ChildItem -LiteralPath $dist -Directory) {
 }
 
 if (-not $NoIndex) {
-    & $d.indexScript -Owner $d.indexOwner -Mods $copied -Note "Envoy Voice Adapter deploy $($d.version)"
+    & $d.indexScript -Owner $d.indexOwner -Mods $copied -Note "SpeechBroker Voice Adapter deploy $($d.version)"
 }
 ''

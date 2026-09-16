@@ -1,9 +1,9 @@
 # The contract of a model mod
 
-*In Russian: [envoy-voice-model.ru.md](envoy-voice-model.ru.md). English is the source language; the other is a translation.*
+*In Russian: [speechbroker-voice-model.ru.md](speechbroker-voice-model.ru.md). English is the source language; the other is a translation.*
 
 This document describes what a mod has to put into the build if it adds one more model of speech
-recognition or synthesis to the `EnvoyVoiceAdapter` adapter.
+recognition or synthesis to the `SpeechBrokerVoiceAdapter` adapter.
 
 ## Who owns what
 
@@ -26,7 +26,7 @@ which the adapter exists for, is simply two installed mods.
 
 ## Where to put the listing
 
-    Data\SKSE\Plugins\envoy\adapters\voice\models\<anything>.json
+    Data\SKSE\Plugins\speechbroker\adapters\voice\models\<anything>.json
 
 The name of the file plays no part - what matters is the `id` key inside it. Mod Organizer merges
 the folders of mods into one, so every model mod puts its own file there and they do not collide.
@@ -34,7 +34,7 @@ The folder is read **in the order of the file names**: two launches give one and
 
 The files of the model itself the mod puts next to it, in **its own** subfolder:
 
-    Data\SKSE\Plugins\envoy\adapters\voice\models\<id>\...
+    Data\SKSE\Plugins\speechbroker\adapters\voice\models\<id>\...
 
 ## The fields of a listing
 
@@ -83,7 +83,7 @@ player, or start any program on their machine.
 
 The conversation between the adapter and its service is protected separately: the address has to be
 the loopback, the service is started only out of the folder of the adapter, and every request
-carries a one-off session secret in the `X-Envoy-Token` header. None of that concerns a model mod.
+carries a one-off session secret in the `X-Speech Broker-Token` header. None of that concerns a model mod.
 
 ## There is no text on screen
 
@@ -102,7 +102,7 @@ with no `id`, a second listing with the same `id`, weights outside their own mod
 a line in the log and one model skipped. A person who installed three model mods must not be left
 without all three because of one.
 
-Its own settings file (`envoy-voice.json`) the adapter parses strictly, on the contrary, and on a
+Its own settings file (`speechbroker-voice.json`) the adapter parses strictly, on the contrary, and on a
 mistake it does not come up at all: a mistake there is ours, and there is no point hiding it.
 
 ## An example

@@ -1,8 +1,8 @@
 # Third-party notices
 
-Envoy Framework links the following third-party code into its binaries. Each project
+Speech Broker links the following third-party code into its binaries. Each project
 keeps its own licence; the notices below are reproduced as those licences require.
-Envoy itself is MIT — see `LICENSE`.
+Speech Broker itself is MIT — see `LICENSE`.
 
 | Project | Used by | Licence |
 |---|---|---|
