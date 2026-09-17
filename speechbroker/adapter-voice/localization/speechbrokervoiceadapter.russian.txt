@@ -5,48 +5,24 @@
 
 $SPEECHBROKERVOICE_WORD_I_AM_SOURCE	я источник
 $SPEECHBROKERVOICE_WORD_I_AM_RESERVE	я в запасе
-$SPEECHBROKERVOICE_WORD_DRAFT	черновая
-$SPEECHBROKERVOICE_WORD_ACCURATE	точная
-$SPEECHBROKERVOICE_WORD_SWITCHED_OFF	выключена
-$SPEECHBROKERVOICE_WORD_CAN_SPEAK	, умеет говорить
 $SPEECHBROKERVOICE_WORD_NOTHING	ничего
-$SPEECHBROKERVOICE_WORD_SAID	сказано
 $SPEECHBROKERVOICE_WORD_DID_NOT_WORK	не вышло
-$SPEECHBROKERVOICE_LOG_EXEC_OUTSIDE	служба: exec «{0}» выходит за папку адаптера - запускать не буду
-$SPEECHBROKERVOICE_LOG_WORKDIR_OUTSIDE	служба: workingDir «{0}» выходит за папку адаптера
-$SPEECHBROKERVOICE_LOG_MODEL_NO_ID	модель из {0}: нет ключа id - пропускаю
-$SPEECHBROKERVOICE_LOG_MODEL_TWICE	модель {0} объявлена дважды: {1} и {2} - беру первую
-$SPEECHBROKERVOICE_LOG_MODEL_BROKEN	модель из {0} не разобрана: {1} - пропускаю
 $SPEECHBROKERVOICE_LOG_NO_SETTINGS	нет файла настроек: {0}
 $SPEECHBROKERVOICE_LOG_SETTINGS_BROKEN	настройки не разобраны: {0}
-$SPEECHBROKERVOICE_LOG_NOT_LOOPBACK	служба по адресу «{0}» ведёт не на эту машину - работать не буду
 $SPEECHBROKERVOICE_LOG_PIECE_UNKNOWN	модель {0}: кусок {1} в переводе не найден - его поглощение до моста не дойдёт
-$SPEECHBROKERVOICE_LOG_MODEL_UNKNOWN	служба вернула ответ модели «{0}», которой нет среди установленных - считаю окончательным
 $SPEECHBROKERVOICE_LOG_BRIDGE_REFUSED_UTTERANCE	мост не принял реплику от модели {0}
 $SPEECHBROKERVOICE_LOG_ABSORBS	реплика {0} поглощает {1} прежних, завершённость {2:.2f}
-$SPEECHBROKERVOICE_LOG_SERVICE_ALREADY_UP	служба уже поднята, подключаюсь к ней
-$SPEECHBROKERVOICE_LOG_ANSWER_BROKEN	ответ службы не разобран - {0}
 $SPEECHBROKERVOICE_LOG_BRIDGE_ROLE	мост: {0} ({1})
 $SPEECHBROKERVOICE_LOG_VOCABULARY	словарь подписчиков: {0} фраз
 $SPEECHBROKERVOICE_LOG_NOT_FOR_ME	запрос к {0} мне не адресован
 $SPEECHBROKERVOICE_LOG_REGISTER_REFUSED	мост отказал в регистрации
 $SPEECHBROKERVOICE_LOG_REGISTERED	зарегистрирован в мосту как {0}
-$SPEECHBROKERVOICE_LOG_NO_MODELS	не установлено ни одной модели - распознавать нечем. Модель ставится отдельным модом и кладёт свой листок в Data/SKSE/Plugins/speechbroker/adapters/voice/models
-$SPEECHBROKERVOICE_LOG_MODEL	модель {0} ({1}) из {2}: {3}{4}
-$SPEECHBROKERVOICE_LOG_DECLARED	моделей объявлено: {0}, объявляю мосту: {1}
 $SPEECHBROKERVOICE_LOG_BRIDGE_TOO_OLD	мост старше меня: он понимает контракт версии {0}, а я говорю на {1} - работать не буду
 $SPEECHBROKERVOICE_LOG_BRIDGE_NEWER	мост новее меня: контракт версии {0} против моих {1} - работаю по своей, новых полей он у меня не спросит
 $SPEECHBROKERVOICE_LOG_INTERFACE_RECEIVED	интерфейс моста получен, версия {0}
 $SPEECHBROKERVOICE_LOG_PLUGIN_LOADED	{0} v{1} загружен
 $SPEECHBROKERVOICE_LOG_NO_SETTINGS_FATAL	без настроек работать не могу
-$SPEECHBROKERVOICE_LOG_SERVICE_SILENT_NO_START	служба не отвечает, а поднимать её не разрешено
-$SPEECHBROKERVOICE_LOG_SERVICE_STARTING	служба: поднимаю - {0}
-$SPEECHBROKERVOICE_LOG_SERVICE_IN_JOB	служба: не выпустили из задания (код {0}), запускаю внутри него - MO2 будет считать игру запущенной, пока она жива
-$SPEECHBROKERVOICE_LOG_SERVICE_START_FAILED	служба: запустить не удалось, код {0}
-$SPEECHBROKERVOICE_LOG_SERVICE_UP	служба поднялась
-$SPEECHBROKERVOICE_LOG_SERVICE_TIMEOUT	служба не ответила за отведённое время
 $SPEECHBROKERVOICE_LOG_NO_SPEAKER	озвучка {0}: ни одна установленная модель не умеет говорить
-$SPEECHBROKERVOICE_LOG_SPOKE	озвучка {0} моделью {1}: {2}
 $SPEECHBROKERVOICE_LOG_RING_READY	кольцо: место на {0} отсчётов, {1} кБ
 $SPEECHBROKERVOICE_LOG_RING_NO_ROOM	кольцо: построено без места вовсе - каждый отсчёт микрофона будет считаться потерянным
 $SPEECHBROKERVOICE_LOG_PACER_READY	темп: прогон на паузе {0} мс, ход закончен после {1} мс тишины, и прогон не реже чем раз в {2} мс
@@ -128,3 +104,4 @@ $SPEECHBROKERVOICE_LOG_CAPTURE_FILE_END	захват: '{0}' исчерпан - �
 $SPEECHBROKERVOICE_LOG_CAPTURE_FILE_LOOP	захват: '{0}' начинается заново
 $SPEECHBROKERVOICE_LOG_SETTINGS_SOURCE_UNKNOWN	настройки: ears.capture.source задан как '{0}', а это не 'device' и не 'file' - берётся микрофон
 $SPEECHBROKERVOICE_LOG_SETTINGS_PAUSE_FACTOR	настройки: ears.completeness.pauseFactor равен {0:.2f} - меньше единицы правило о торопливой паузе не сработает никогда, а при нуле и ниже любая пауза читается как конец фразы
+$SPEECHBROKERVOICE_LOG_HOST_BROADCAST	таблица для модов-моделей разослана - кто слушал, может зарегистрироваться

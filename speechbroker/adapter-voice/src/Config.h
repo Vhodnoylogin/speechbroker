@@ -1,123 +1,86 @@
 #pragma once
 
-#include "turn/Ears.h"
+#include "models/ModelHost.h"  // HostSettings, and EarsSettings through turn/Ears.h
 
-#include <optional>
 #include <string>
-#include <vector>
 
 namespace Voice
 {
-	// How to bring the service up when it does not answer /health.
-	struct AutoStart
-	{
-		bool                     enabled{ false };
-		std::string              exec;
-		std::vector<std::string> args;
-		std::string              workingDir;
-		std::string              parentPidArg;
-		int                      waitSec{ 60 };  // how long to wait for a started service to answer
-		int                      pollSec{ 1 };   // how often to ask it /health while waiting
-	};
-
-	// The service of the adapter. There is one per game and it rides INSIDE the mod
-	// of the adapter: the microphone belongs to the adapter, not to the models.
-	// Otherwise every model would carry its own capture of sound, and two
-	// installed mods would fight over the device.
-	//
-	// Hence the property that matters most to the player: they install the adapter
-	// like any other mod and everything comes up by itself - there is nothing to
-	// start separately.
-	struct ServiceSettings
-	{
-		std::string              url{ "http://127.0.0.1:8931" };
-		int                      listenTimeoutSec{ 30 };
-		std::optional<AutoStart> autoStart;
-
-		// The one-off secret of this session. The adapter makes it up at load, hands
-		// it to the service at startup and sends it in a header on every request:
-		// whoever took the port can neither listen in on the game nor feed it text.
-		std::string token;
-	};
-
-	// One installed model - what somebody else mod brought along.
-	//
-	// There is neither an address nor a program in the listing: a model is not a
-	// service but a recogniser. The sound is given to it by the service of the
-	// adapter, and the weights are its business too. All the adapter wants from
-	// the listing is three things: what the model is called in the answers of the
-	// service, whether it gives a draft or a final answer, and what it can do at
-	// all.
-	struct Model
-	{
-		std::string id;
-		std::string name;            // what to call it in the log
-		std::string language;
-		bool        enabled{ false };
-		bool        fast{ false };   // class == "fast": gives a draft the accurate one will refine
-		bool        hears{ true };   // provides contains asr
-		bool        speaks{ false }; // provides contains tts
-		std::string source;          // the listing file: into the log, so that whose mod it is shows
-	};
-
 	// The settings of the adapter. The file is read once when the plugin loads and
-	// is parsed into fields straight away: the threads of polling and speaking take
-	// ready values rather than looking keys up in json on every utterance.
+	// is parsed into fields straight away: the threads of the ears and of every
+	// model take ready values rather than looking keys up in json while somebody is
+	// speaking.
 	//
 	// The defaults of the fields are what is put in when a key is missing from the
-	// file. They are the same values that were wired into the code before they
-	// became keys, so a file without the new keys behaves exactly as before.
+	// file, and they are the shipping behaviour. A file written before a key
+	// existed behaves exactly as it did.
+	//
+	// THERE IS NO SERVICE HERE ANY MORE, and that is the whole shape of this file.
+	// Until 17.09 the adapter was an HTTP client: it brought up a python service,
+	// polled it for utterances and asked it to speak, and a "model" was a json
+	// listing that service read. Both are gone. The microphone belongs to the
+	// adapter, in this process (src/audio, src/turn), and a model is an SKSE plugin
+	// that registers through the C ABI in contract/speechbroker-voice-model.h. So
+	// there is no url, no token, no autoStart, no listing folder and no speakModel:
+	// a model is installed, not configured, and nothing about it is written here.
 	class Config
 	{
 	public:
-		// Reads its own settings file, then the folder of models. A refusal here means
-		// one thing only: our own file did not parse. The absence of models is not a
-		// refusal - the adapter comes up empty and says so in the log, because a model
-		// is installed as a separate mod and there may be none.
+		// Reads the settings file. A refusal means our own file did not parse, and
+		// that is fatal: a mistake in it is ours. There is nothing else to refuse
+		// for - no models are read here, because no model is declared here.
 		static bool Load();
 
 		static const Config& Get();
 
-		// The model by the name the service signed its answer with. An unknown name
-		// gives nullptr: the service is entitled to return something the adapter does
-		// not know about, and keeping quiet about that is not allowed.
-		const Model* Find(const std::string& a_engineId) const;
+		// What the adapter calls itself at the bridge.
+		std::string adapterId{ "voice" };
+		std::string adapterName;
 
-		// Who is to speak. An empty speakModel means "the first one that speaks", and
-		// that is the right default: the name of a particular model in the settings of
-		// the adapter would tie it back to somebody else mod.
-		const Model* SpeakingModel() const;
-
-		std::string        adapterId{ "voice" };
-		std::string        adapterName;
-		std::string        adapterProvides;  // worked out from the installed models, not taken from the file
-		ServiceSettings    service;
-		std::vector<Model> models;
-		std::string        speakModel;
+		// What it declares to the bridge. "asr" and only "asr": this adapter hears.
+		// Speaking is a capability of an adapter that has a speech model behind it,
+		// and promising the bridge speech we cannot produce takes the work away
+		// from an adapter that can (see OnJob, kJobSpeak, in main.cpp).
+		//
+		// It is NOT worked out from the installed models any more, and cannot be:
+		// models register at kDataLoaded, long after the adapter has introduced
+		// itself to the bridge at kPostPostLoad. A model-less installation is
+		// therefore an adapter that declares hearing and hears nothing, and the log
+		// says so in as many words rather than leaving a silent microphone to look
+		// like a fault of ours.
+		std::string adapterProvides{ "asr" };
 
 		// Which language the adapter writes its log in. "auto" is the language the
 		// game runs in. It is a key of its own and not borrowed from the bridge
 		// because the adapter is a DLL of its own and writes its first lines before
 		// it has met the bridge; a player who pins a language does it in both files.
-		std::string        language{ "auto" };
+		std::string language{ "auto" };
 
-		int correlateMs{ 2500 };     // an accurate answer in this window after a draft counts as its refinement
-		int retryDelayMs{ 2000 };    // the pause after a failed /listen
-		int healthTimeoutSec{ 2 };   // how long to wait for a connection on /health
-		int listenGraceSec{ 10 };    // how much longer than the deadline of the service to wait for /listen
-		int idleSleepMs{ 1000 };     // the step of waiting while the bridge keeps us in reserve
-		int sayTimeoutSec{ 120 };    // how long to wait for an answer to /say
-		int idMapLimit{ 256 };       // how many recent "service number -> bridge number" translations to remember per model; 0 - no limit
-
-		// The ears: the microphone, the cutting of the stream into passes. Every
-		// tuned number in it comes from the python this is ported from, and the
-		// defaults in the structs are its shipped values - see src/turn/Ears.h and
-		// the headers it gathers, where each one quotes the line it came from.
+		// How many recent "our slice id -> the bridge's utterance id" translations
+		// to remember. A piece that swallows earlier ones names them by OUR numbers,
+		// and the bridge understands only its own; the translation lives in the
+		// adapter because it is the only side that knows both. 0 - no limit.
 		//
-		// It is a field of Config and not a reader of it: nothing under src/audio
-		// or src/turn includes this file, which is what lets the whole listening
-		// half be built and tested with a wav, outside the game.
+		// It must not be dropped whole when it fills: a long piece arriving right
+		// after a drop would not find the short ones it swallowed, the absorption
+		// would silently not happen, and the bridge would announce both the pieces
+		// and the whole phrase. Only the oldest go.
+		int idMapLimit{ 256 };
+
+		// The ears: the microphone and the cutting of the stream into passes.
+		//
+		// It is a field of Config and not a reader of it: nothing under src/audio or
+		// src/turn includes this file, which is what lets the whole listening half
+		// be built and run from a wav, outside the game.
 		EarsSettings ears;
+
+		// The dispatch half: who may register, how a model's life is run, how the
+		// standings are kept and how an argument between models is settled.
+		//
+		// The same shape and the same reason as ears - nothing under src/models
+		// includes this file either, so that half can be exercised with a table of
+		// numbers and no game anywhere near it.
+		Models::HostSettings models;
 
 	private:
 		Config() = default;

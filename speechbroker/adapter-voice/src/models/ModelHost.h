@@ -32,11 +32,17 @@ namespace Voice::Models
 	// docs/model-host.md calls an obligation of the adapter is a member of this
 	// class or of something it owns.
 	//
-	// THE GAME THREAD ENTERS THIS CLASS EXACTLY TWICE AND NOWHERE ELSE: Broadcast,
-	// out of the SKSE message handler at kDataLoaded, and Register, which a shim
-	// calls back out of its own handler. Both are deliberately trivial. Bring-up,
-	// Start, Submit, Stop, the deadlines and the assembling all run on threads of
-	// ours.
+	// THE GAME THREAD ENTERS THIS CLASS EXACTLY ONCE AND NOWHERE ELSE: Register,
+	// which a shim calls back out of its own SKSE message handler. It is
+	// deliberately trivial. Bring-up, Start, Submit, Stop, the deadlines and the
+	// assembling all run on threads of ours.
+	//
+	// IT USED TO BE TWICE, AND THE SECOND ONE HAS MOVED OUT. Broadcast - the SKSE
+	// dispatch of the table at kDataLoaded - is gone from this class: it is the one
+	// step of this half that is about SKSE and not about models, and nothing under
+	// src/models/ may include SKSE/ at all. main.cpp owns the message handler
+	// already, so it dispatches the address of Table() itself and this class keeps
+	// its promise that it can be built and exercised with no game anywhere near it.
 
 	// What the player may allow. A kind the player has forbidden is refused AT
 	// Register AND NOWHERE LATER, before Start is ever called, so a forbidden
@@ -199,22 +205,16 @@ namespace Voice::Models
 		// --- the handshake ----------------------------------------------------
 
 		// The table. A function-local static, process lifetime, never replaced.
+		//
+		// WHOEVER BROADCASTS IT DOES SO AT SKSE's kDataLoaded, dispatching THE
+		// ADDRESS OF THIS POINTER with dataLen == sizeof(void*) - the house
+		// convention, and exactly what the bridge does towards its own adapters.
+		// That broadcast is main.cpp's, not this class's: see the note at the head
+		// of the class. There is no second broadcast and no entry point to ask for
+		// the table - a model that was not listening is simply not registered, is
+		// never asked for anything, and costs nobody anything.
 		// THREAD: any.
 		static const SpeechBrokerVoiceHost* Table() noexcept;
-
-		// Broadcast it at SKSE's kDataLoaded, dispatching THE ADDRESS OF THE
-		// TABLE POINTER with dataLen == sizeof(void*) - the house convention, and
-		// exactly what the bridge does towards its own adapters. There is no
-		// second broadcast and no entry point to ask for the table: a model that
-		// was not listening is simply not registered, is never asked for
-		// anything, and costs nobody anything.
-		//
-		// kDataLoaded and not earlier, on purpose: by then every model plugin has
-		// certainly been loaded and has had its chance to subscribe.
-		//
-		// THREAD: THE GAME THREAD, from the SKSE message handler. This is one of
-		// the two places in this half where that is true.
-		void Broadcast();
 
 		// --- the registry ------------------------------------------------------
 
@@ -357,6 +357,61 @@ namespace Voice::Models
 		// THREAD: any.
 		std::shared_ptr<Collector> Collecting(std::int64_t a_utteranceId) const;
 
+		// --- taking a model out of a pass --------------------------------------
+		//
+		// THESE THREE ARE PUBLIC BECAUSE A MODEL'S OWN DISPATCH THREAD IS THE
+		// CALLER. A Model holds Host& and nothing else of ours; it drops its own
+		// queued entry, and the one thing it must not do is decide by itself what
+		// that means for the pass. Keeping the decision here is what makes "a
+		// removal is logged as a removal, and a pass whose last participant went
+		// away does not sit until its deadline" true in one place instead of four.
+
+		// Remove one model from one pass: Collector::Remove, one log line naming
+		// the reason, and - when that leaves nobody unanswered and Close() hands
+		// the collector to exactly this caller - the post to a worker.
+		//
+		// IT IS NOT THE PLACE THAT CHARGES ANYTHING. A removal costs no standing;
+		// the second half of a DroppedUnsent - Reputation::NoteDropped - belongs to
+		// whoever knows WHICH entry was dropped, which is Model::Offer and the
+		// dispatch loop (Model.h, Offer).
+		// THREAD: any. A dispatch thread, a model's thread inside Unregister or
+		// Ready(0), or a worker.
+		void Drop(const std::shared_ptr<Collector>& a_collector, SpeechBrokerVoiceHandle a_handle,
+			Removal a_why);
+
+		// Drop this handle from every OPEN TIMED pass. The probes are deliberately
+		// not touched: a probe is not a pass of a turn, it is retired when its
+		// model unregisters, and dropping a model out of its own probe would leave
+		// the one check in this system that does not rest on trusting a model
+		// permanently unanswerable.
+		// THREAD: any model's thread, from inside Unregister or Ready(0).
+		void RemoveEverywhere(SpeechBrokerVoiceHandle a_handle, Removal a_why);
+
+		// Hand a closed collector to the workers. Called by whoever Close()
+		// returned true to - the scheduler when a deadline fires, a model's thread
+		// when its answer was the last one, a dispatch thread when its removal was.
+		// THREAD: any.
+		void PostClosed(std::shared_ptr<Collector> a_collector);
+
+		// THE PROBE. One second of digital silence submitted as an ORDINARY
+		// request straight after a successful Start: its own turnId and serial,
+		// final == 1 because the buffer will not grow, and deadlineMs 0 because
+		// it is not timed.
+		//
+		// ITS COLLECTOR LIVES IN _probes AND NOT IN _open, which is the whole
+		// reason there are two maps: a probe is retired only when its model
+		// unregisters or the session ends, and a high-water mark over utterance
+		// ids would retire it the moment any later pass closed - silently
+		// disabling the one check in this system that does not rest on trusting a
+		// model.
+		//
+		// PUBLIC FOR THE SAME REASON THE THREE ABOVE ARE: the caller is THE MODEL'S
+		// OWN DISPATCH THREAD, the instant its Start returned OK. Nothing else in
+		// the process knows that instant has arrived, and the probe has to go out
+		// on that thread - the serialised one - like every other request.
+		// THREAD: the model's own dispatch thread.
+		void SubmitProbe(const std::shared_ptr<Model>& a_model);
+
 		// --- the vocabulary ----------------------------------------------------
 
 		// Merged across every installed subscriber by the bridge, clipped HERE to
@@ -416,33 +471,34 @@ namespace Voice::Models
 			std::int32_t a_level, const char* a_key,
 			const char* const* a_args, std::int32_t a_argCount);
 
-		// THE PROBE. One second of digital silence submitted as an ORDINARY
-		// request straight after a successful Start: its own turnId and serial,
-		// final == 1 because the buffer will not grow, and deadlineMs 0 because
-		// it is not timed.
-		//
-		// ITS COLLECTOR LIVES IN _probes AND NOT IN _open, which is the whole
-		// reason there are two maps: a probe is retired only when its model
-		// unregisters or the session ends, and a high-water mark over utterance
-		// ids would retire it the moment any later pass closed - silently
-		// disabling the one check in this system that does not rest on trusting a
-		// model.
-		//
-		// THREAD: the bring-up worker, or the model's own dispatch thread right
-		// after Start returned OK.
-		void SubmitProbe(const std::shared_ptr<Model>& a_model);
-
 		// ASSEMBLE A CLOSED PASS. Everything heavy is here and nowhere else:
 		// measure the terminal fall on the snapshot, fold the readings, take the
 		// turn's ledger, run the serial guard and the reconciliation under its
 		// lock, release the debts, charge the timeouts, and publish.
+		//
+		// a_scratch IS THE WORKER'S OWN PITCH TRACKER, LENT FOR THE CALL, and it is
+		// a parameter rather than a member for the reason Prosody.h states at
+		// PitchTracker: one tracker belongs to one thread, and a worker that
+		// measures a terminal fall brings its own. A tracker on this class would be
+		// shared by every worker and would need a lock around the one piece of
+		// arithmetic this half runs concurrently on purpose.
 		// THREAD: a worker.
-		void Assemble(std::shared_ptr<Collector> a_collector);
+		void Assemble(const std::shared_ptr<Collector>& a_collector, PitchTracker& a_scratch);
 
 		// The ledger of this turn, made on first sight. Old ledgers are dropped
 		// when their turn is finished and no collector of it is open.
 		// THREAD: a worker.
 		std::shared_ptr<TurnLedger> Ledger(std::int64_t a_turnId);
+
+		// THE NUMBER Register PUBLISHES AS SpeechBrokerVoiceSession::maxRequestSamples.
+		// It is the ears' own MaxRequestSamples() whenever the ears exist, because
+		// a ceiling that was announced and a ceiling that was enforced must not be
+		// two fields that can drift apart. Register runs at plugin load, long
+		// before Begin builds them, so the same arithmetic stands in for that
+		// window - derived from the ears' settings and never read as a number of
+		// its own (HostSettings::trustEarsFloor says the same thing about the floor).
+		// THREAD: any.
+		std::uint32_t MaxRequestSamples() const;
 
 		HostSettings _settings;
 		EarsSettings _earsSettings;
@@ -476,6 +532,28 @@ namespace Voice::Models
 		// Monotone, never 0, never reused. It identifies an answer and nothing
 		// else does.
 		std::atomic<std::int64_t> _nextUtterance{ 1 };
+
+		// THE SLICE COUNTER OF THE SESSION, AND IT IS THE SESSION'S AND NOT THE
+		// TURN'S. A slice id names a piece a person said; the bridge holds a bounded
+		// map of them and reads `refines` and `supersedes` against it, so two turns
+		// handing out id 1 would make one turn's correction point at another turn's
+		// speech. Every TurnLedger is handed a reference to this one counter
+		// (Arbiter.h, TurnLedger's constructor).
+		std::atomic<std::int32_t> _nextSliceId{ 1 };
+
+		// HAS Begin RUN. A model that registers afterwards has missed the pass
+		// where every registered model's thread is started, so Register starts its
+		// thread there and then - otherwise a shim that subscribes late is accepted,
+		// logged, and then never brought up at all, which looks from the outside
+		// exactly like a model that refused to start.
+		std::atomic_bool _begun{ false };
+
+		// Latched: the one line that says no interim pass will ever run because
+		// every installed model declared finalOnly. It is the one empty roster that
+		// is a PROPERTY OF THE INSTALLATION rather than of the moment, so it is said
+		// once and not once per pause between phrases (contract,
+		// SpeechBrokerVoiceModelInfo::finalOnly).
+		std::atomic_bool _saidFinalOnly{ false };
 
 		// The probe's turn ids, which belong to no speaking turn. Negative, so
 		// that they can never collide with a turnId out of the ears - which

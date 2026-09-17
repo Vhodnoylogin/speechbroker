@@ -1,15 +1,11 @@
 #include "Config.h"
 #include "Loc.h"
 
-#include <RE/Skyrim.h>
-#include <SKSE/SKSE.h>
-
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
-#include <random>
 
 namespace Voice
 {
@@ -18,16 +14,9 @@ namespace Voice
 		constexpr auto kHome = LR"(Data\SKSE\Plugins\speechbroker\adapters\voice)";
 		constexpr auto kConfigPath = LR"(Data\SKSE\Plugins\speechbroker\adapters\voice\speechbroker-voice.json)";
 
-		// The folder every model mod puts its listing into. The name of the file does
-		// not matter - only the id key inside it does; the folder is read in the order
-		// of the names, so that the list of models does not depend on how the file
-		// system handed them back and two launches give one and the same order.
-		constexpr auto kModelsDir = LR"(Data\SKSE\Plugins\speechbroker\adapters\voice\models)";
-
-		// A path from the settings, if it is relative, is taken from the folder of the
-		// adapter, and it cannot leave it. The adapter starts ITS OWN service, which
-		// rides inside its own mod; being able to write anything here would mean that
-		// whoever replaced the settings file starts any program they like on the
+		// A path from the settings, if it is relative, is taken from the folder of
+		// the adapter, and it cannot leave it. Whoever can replace the settings file
+		// could otherwise make the adapter read - or one day write - anywhere on the
 		// machine of the player.
 		//
 		// An empty string on the way out means a refusal.
@@ -52,88 +41,18 @@ namespace Voice
 			return full.string();
 		}
 
-		// The service has to live on this very machine. Everything the player says
-		// and hears goes through it; a foreign host in the settings would mean that
-		// installing a voice mod silently switches on the sending of what was said
-		// out of the house.
-		bool Loopback(const std::string& a_url)
-		{
-			auto       rest = a_url;
-			const auto scheme = rest.find("://");
-			if (scheme != std::string::npos) {
-				rest = rest.substr(scheme + 3);
-			}
-			const auto slash = rest.find('/');
-			if (slash != std::string::npos) {
-				rest = rest.substr(0, slash);
-			}
-			const auto colon = rest.rfind(':');
-			if (colon != std::string::npos && rest.find(']') == std::string::npos) {
-				rest = rest.substr(0, colon);
-			}
-			return rest == "127.0.0.1" || rest == "localhost" || rest == "::1" || rest == "[::1]";
-		}
-
-		// A secret per session. The randomness is wanted not for the strength of a
-		// cipher but so that the value cannot be guessed in advance and wired into
-		// somebody else program that took the port.
-		std::string MakeToken()
-		{
-			std::random_device                 source;
-			std::uniform_int_distribution<int> digit(0, 15);
-			constexpr char                     alphabet[] = "0123456789abcdef";
-			std::string                        out;
-			out.reserve(32);
-			for (int i = 0; i < 32; ++i) {
-				out.push_back(alphabet[digit(source)]);
-			}
-			return out;
-		}
-
-		std::optional<AutoStart> ReadAutoStart(const nlohmann::json& a_doc)
-		{
-			const std::filesystem::path home{ kHome };
-			AutoStart                   out;
-			out.enabled = a_doc.value("enabled", out.enabled);
-
-			const auto exec = a_doc.value("exec", std::string{});
-			out.exec = ResolveInside(exec, home);
-			if (!exec.empty() && out.exec.empty()) {
-				Loc::Error("$SPEECHBROKERVOICE_LOG_EXEC_OUTSIDE",
-					exec);
-				return std::nullopt;
-			}
-
-			const auto dir = a_doc.value("workingDir", std::string{});
-			out.workingDir = ResolveInside(dir, home);
-			if (!dir.empty() && out.workingDir.empty()) {
-				Loc::Error("$SPEECHBROKERVOICE_LOG_WORKDIR_OUTSIDE", dir);
-				return std::nullopt;
-			}
-
-			out.parentPidArg = a_doc.value("parentPidArg", out.parentPidArg);
-			out.waitSec = a_doc.value("waitSec", out.waitSec);
-			out.pollSec = a_doc.value("pollSec", out.pollSec);
-			// The arguments are left alone. The service itself resolves them from its own
-			// working folder, and some of them are not paths at all: "--port", "8931".
-			for (const auto& arg : a_doc.value("args", nlohmann::json::array())) {
-				out.args.push_back(arg.get<std::string>());
-			}
-			return out;
-		}
-
 		// ------------------------------------------------------------------ the ears
 		// The microphone and the cutting of the stream into passes.
 		//
 		// Every reader below obeys the rule of this file without an exception: a key
 		// that is missing leaves the field at the value its struct was built with,
-		// and those values are the ones the python shipped. A settings file written
-		// before this block existed behaves exactly as it did.
+		// and those values are the shipping behaviour. A settings file written
+		// before a block existed behaves exactly as it did.
 		//
-		// THE READING GOES ONE WAY ONLY. These structs live in src/audio and
-		// src/turn, and not one file there includes this one - which is what lets
-		// the whole listening half be built and run from a wav, outside the game.
-		// Config fills them; nothing fills Config back.
+		// THE READING GOES ONE WAY ONLY. These structs live in src/audio, src/turn
+		// and src/models, and not one file there includes this one - which is what
+		// lets both halves be built and run outside the game. Config fills them;
+		// nothing fills Config back.
 		void ReadDevice(const nlohmann::json& a_doc, DeviceSettings& a_out)
 		{
 			a_out.input = a_doc.value("input", a_out.input);
@@ -159,9 +78,7 @@ namespace Voice
 
 			// The wav is pinned to the folder of the adapter HERE, because the
 			// capture cannot do it: audio/ may not include this file and therefore
-			// does not know where that folder is. It resolves what it is handed
-			// against the working directory and refuses anything that climbs out;
-			// what it is handed is already relative to the adapter.
+			// does not know where that folder is.
 			const std::filesystem::path home{ kHome };
 			const auto                  file = a_doc.value("file", std::string{});
 			a_out.file = ResolveInside(file, home);
@@ -265,81 +182,80 @@ namespace Voice
 			a_out.consumerPollMs = a_doc.value("consumerPollMs", a_out.consumerPollMs);
 		}
 
-		Model ReadModel(const nlohmann::json& a_doc, const std::filesystem::path& a_file)
+		// -------------------------------------------------------------- the models
+		// Who may register, how a model's life is run, and how an argument between
+		// two of them is settled.
+		//
+		// THERE IS NO MODEL IN HERE, only the rules that apply to all of them. A
+		// model is an SKSE plugin the player installed; it declares itself through
+		// the C ABI and the adapter learns of it at kDataLoaded. Naming one in this
+		// file would tie the adapter back to somebody else's mod, which is exactly
+		// what the listing folder used to do.
+		void ReadKindPolicy(const nlohmann::json& a_doc, Models::KindPolicy& a_out)
 		{
-			Model out;
-			out.source = a_file.filename().string();
-			out.id = a_doc.value("id", out.id);
-			out.name = a_doc.value("name", out.id);
-			out.enabled = a_doc.value("enabled", out.enabled);
-			if (!out.enabled) {
-				return out;
-			}
-			out.fast = a_doc.value("class", std::string{}) == "fast";
-			out.language = a_doc.value("language", out.language);
-
-			// What a model can do it declares itself. The default is hearing only:
-			// recognition is in every model this adapter was written for, and speaking is
-			// not.
-			const auto provides = a_doc.value("provides", std::string{ "asr" });
-			out.hears = provides.find("asr") != std::string::npos;
-			out.speaks = provides.find("tts") != std::string::npos;
-			return out;
+			// The one a player is entitled to be asked about is `remote`, because it
+			// is the one where the sound of their room leaves the machine. It ships
+			// off, and the gate is applied at Register - before the model has
+			// resolved a name or opened a socket.
+			a_out.inProcess = a_doc.value("inProcess", a_out.inProcess);
+			a_out.child = a_doc.value("child", a_out.child);
+			a_out.attached = a_doc.value("attached", a_out.attached);
+			a_out.remote = a_doc.value("remote", a_out.remote);
 		}
 
-		// Reads the folder of models. A refusal of one listing does not cancel the
-		// rest: a listing is brought along by SOMEBODY ELSE mod, and its mistake must
-		// not leave a person without the models that are fine. With its own settings
-		// file the adapter is still strict - a mistake there is ours.
-		//
-		// The adapter neither reads nor checks the weights of the models: they are
-		// loaded by the service, and the rule "the weights lie inside their own mod"
-		// is guarded by the service as well. One rule must not have two guards.
-		std::vector<Model> ReadModels()
+		void ReadDispatch(const nlohmann::json& a_doc, Models::DispatchSettings& a_out)
 		{
-			std::error_code ec;
-			if (!std::filesystem::exists(kModelsDir, ec)) {
-				return {};
-			}
+			a_out.startAttempts = a_doc.value("startAttempts", a_out.startAttempts);
+			a_out.defaultBudgetMs = a_doc.value("defaultBudgetMs", a_out.defaultBudgetMs);
+			a_out.bootstrapSlackMs = a_doc.value("bootstrapSlackMs", a_out.bootstrapSlackMs);
+			a_out.probeSeconds = a_doc.value("probeSeconds", a_out.probeSeconds);
+			a_out.busyWindow = a_doc.value("busyWindow", a_out.busyWindow);
+			a_out.busyRateLimit = a_doc.value("busyRateLimit", a_out.busyRateLimit);
+			a_out.stackGuaranteeBytes = a_doc.value("stackGuaranteeBytes", a_out.stackGuaranteeBytes);
+			a_out.submitOverrunMs = a_doc.value("submitOverrunMs", a_out.submitOverrunMs);
+			a_out.startComplaintMs = a_doc.value("startComplaintMs", a_out.startComplaintMs);
+		}
 
-			std::vector<std::filesystem::path> files;
-			for (const auto& entry : std::filesystem::directory_iterator(kModelsDir, ec)) {
-				if (!entry.is_regular_file(ec)) {
-					continue;
-				}
-				auto path = entry.path();
-				if (path.extension() == ".json") {
-					files.push_back(std::move(path));
-				}
-			}
-			std::sort(files.begin(), files.end());
+		void ReadStanding(const nlohmann::json& a_doc, Models::ReputationSettings& a_out)
+		{
+			// The path is left as it was written and is resolved inside the folder
+			// of the adapter by whoever opens it - the same rule the wav goes
+			// through, applied where the file is actually read.
+			a_out.file = a_doc.value("file", a_out.file);
+			a_out.keep = a_doc.value("keep", a_out.keep);
+			a_out.defaultTrust = a_doc.value("defaultTrust", a_out.defaultTrust);
+			a_out.minSample = a_doc.value("minSample", a_out.minSample);
+			a_out.latencyPercentile = a_doc.value("latencyPercentile", a_out.latencyPercentile);
+			a_out.fastBelowMs = a_doc.value("fastBelowMs", a_out.fastBelowMs);
+			a_out.latencySamplesNeeded = a_doc.value("latencySamplesNeeded", a_out.latencySamplesNeeded);
+			a_out.maxFailurePenalty = a_doc.value("maxFailurePenalty", a_out.maxFailurePenalty);
+			a_out.maxInventionPenalty = a_doc.value("maxInventionPenalty", a_out.maxInventionPenalty);
+			a_out.minWeight = a_doc.value("minWeight", a_out.minWeight);
+		}
 
-			std::vector<Model> out;
-			for (const auto& file : files) {
-				try {
-					nlohmann::json doc;
-					std::ifstream  stream(file);
-					stream >> doc;
-					auto model = ReadModel(doc, file);
-					if (model.id.empty()) {
-						Loc::Error("$SPEECHBROKERVOICE_LOG_MODEL_NO_ID",
-							file.filename().string());
-						continue;
-					}
-					const auto twin = std::find_if(out.begin(), out.end(),
-						[&](const Model& a_seen) { return a_seen.id == model.id; });
-					if (twin != out.end()) {
-						Loc::Error("$SPEECHBROKERVOICE_LOG_MODEL_TWICE",
-							model.id, twin->source, model.source);
-						continue;
-					}
-					out.push_back(std::move(model));
-				} catch (const std::exception& e) {
-					Loc::Error("$SPEECHBROKERVOICE_LOG_MODEL_BROKEN",
-						file.filename().string(), e.what());
-				}
+		void ReadArbiter(const nlohmann::json& a_doc, Models::ArbiterSettings& a_out)
+		{
+			a_out.overlapMs = a_doc.value("overlapMs", a_out.overlapMs);
+			a_out.overlapPercent = a_doc.value("overlapPercent", a_out.overlapPercent);
+		}
+
+		void ReadHost(const nlohmann::json& a_doc, Models::HostSettings& a_out)
+		{
+			if (a_doc.contains("allow")) {
+				ReadKindPolicy(a_doc["allow"], a_out.allow);
 			}
-			return out;
+			if (a_doc.contains("dispatch")) {
+				ReadDispatch(a_doc["dispatch"], a_out.dispatch);
+			}
+			if (a_doc.contains("standing")) {
+				ReadStanding(a_doc["standing"], a_out.standing);
+			}
+			if (a_doc.contains("arbiter")) {
+				ReadArbiter(a_doc["arbiter"], a_out.arbiter);
+			}
+			a_out.workers = a_doc.value("workers", a_out.workers);
+			a_out.stackGuaranteeBytes = a_doc.value("stackGuaranteeBytes", a_out.stackGuaranteeBytes);
+			a_out.trustEarsFloor = a_doc.value("trustEarsFloor", a_out.trustEarsFloor);
 		}
 	}
 
@@ -354,34 +270,12 @@ namespace Voice
 		return Mutable();
 	}
 
-	const Model* Config::Find(const std::string& a_engineId) const
-	{
-		for (const auto& model : models) {
-			if (model.id == a_engineId) {
-				return &model;
-			}
-		}
-		return nullptr;
-	}
-
-	const Model* Config::SpeakingModel() const
-	{
-		for (const auto& model : models) {
-			if (!model.enabled || !model.speaks) {
-				continue;
-			}
-			if (speakModel.empty() || model.id == speakModel) {
-				return &model;
-			}
-		}
-		return nullptr;
-	}
-
 	bool Config::Load()
 	{
 		std::error_code ec;
 		if (!std::filesystem::exists(kConfigPath, ec)) {
-			Loc::Error("$SPEECHBROKERVOICE_LOG_NO_SETTINGS", std::filesystem::path{ kConfigPath }.string());
+			Loc::Error("$SPEECHBROKERVOICE_LOG_NO_SETTINGS",
+				std::filesystem::path{ kConfigPath }.string());
 			return false;
 		}
 
@@ -395,36 +289,17 @@ namespace Voice
 			self.adapterId = adapter.value("id", self.adapterId);
 			self.adapterName = adapter.value("name", self.adapterName);
 
-			const auto service = doc.value("service", nlohmann::json::object());
-			self.service.url = service.value("url", self.service.url);
-			self.service.listenTimeoutSec =
-				service.value("listenTimeoutSec", self.service.listenTimeoutSec);
-			if (service.contains("autoStart")) {
-				self.service.autoStart = ReadAutoStart(service["autoStart"]);
-			}
-			self.service.token = MakeToken();
-
-			self.speakModel = doc.value("speakModel", self.speakModel);
 			self.language = doc.value("language", self.language);
-			self.correlateMs = doc.value("correlateMs", self.correlateMs);
-			self.retryDelayMs = doc.value("retryDelayMs", self.retryDelayMs);
-			self.healthTimeoutSec = doc.value("healthTimeoutSec", self.healthTimeoutSec);
-			self.listenGraceSec = doc.value("listenGraceSec", self.listenGraceSec);
-			self.idleSleepMs = doc.value("idleSleepMs", self.idleSleepMs);
-			self.sayTimeoutSec = doc.value("sayTimeoutSec", self.sayTimeoutSec);
 			self.idMapLimit = doc.value("idMapLimit", self.idMapLimit);
 
 			if (doc.contains("ears")) {
 				ReadEars(doc["ears"], self.ears);
 			}
+			if (doc.contains("models")) {
+				ReadHost(doc["models"], self.models);
+			}
 		} catch (const std::exception& e) {
 			Loc::Error("$SPEECHBROKERVOICE_LOG_SETTINGS_BROKEN", e.what());
-			return false;
-		}
-
-		if (!Loopback(self.service.url)) {
-			Loc::Error("$SPEECHBROKERVOICE_LOG_NOT_LOOPBACK",
-				self.service.url);
 			return false;
 		}
 
@@ -440,22 +315,10 @@ namespace Voice
 				self.ears.completeness.pauseFactor);
 		}
 
-		self.models = ReadModels();
-
-		// The adapter does not declare its capabilities but works them out: promising
-		// the bridge speech when not one installed model speaks means taking the work
-		// away from an adapter that can do it. This used to be a line in the settings
-		// file - that is, a promise backed by nothing.
-		const bool hears = std::any_of(self.models.begin(), self.models.end(),
-			[](const Model& a_model) { return a_model.enabled && a_model.hears; });
-		const bool speaks = self.SpeakingModel() != nullptr;
-		self.adapterProvides.clear();
-		if (hears) {
-			self.adapterProvides = "asr";
-		}
-		if (speaks) {
-			self.adapterProvides += self.adapterProvides.empty() ? "tts" : ",tts";
-		}
+		// At least one worker, or a closed pass is sealed by the timer and then
+		// assembled by nobody: every utterance of the session would be lost
+		// silently, which is the worst of the two failures this module knows.
+		self.models.workers = std::max(1, self.models.workers);
 
 		return true;
 	}

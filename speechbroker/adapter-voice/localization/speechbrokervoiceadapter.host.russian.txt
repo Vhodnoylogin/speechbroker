@@ -1,0 +1,103 @@
+# SpeechBrokerVoiceAdapter - половина, которая раздаёт звук моделям: хозяин, список
+# зарегистрированных, потоки моделей. Русский. ФРАГМЕНТ: сборщик вливает его в
+# localization/speechbrokervoiceadapter.russian.txt.
+#
+# Формат тот же, что у основной таблицы: ключ<TAB>текст, подстановки нумерованные,
+# {0} {1}, потому что в другом языке слова стоят в другом порядке.
+#
+# Что здесь намеренно НЕ переводится, потому что это данные, а не сообщение: имя
+# модели, имя функции контракта, код состояния, код сбоя и имя поля. Всё это
+# приходит аргументами внутрь этих строк.
+
+# --- слова: за что модель выведена из сессии ----------------------------------
+$SPEECHBROKERVOICE_WORD_EJECT_START_REFUSED	Start отказал
+$SPEECHBROKERVOICE_WORD_EJECT_START_EXHAUSTED	Start так и не удался
+$SPEECHBROKERVOICE_WORD_EJECT_FAULTED	сбой, и состояние на её стороне неизвестной формы
+$SPEECHBROKERVOICE_WORD_EJECT_BUSY_FINAL	занята и на последних прогонах тоже
+$SPEECHBROKERVOICE_WORD_EJECT_PROTOCOL	нарушила протокол
+
+# --- слова: что модель делает со своей моделью --------------------------------
+$SPEECHBROKERVOICE_WORD_KIND_INPROCESS	библиотека прямо в этом процессе
+$SPEECHBROKERVOICE_WORD_KIND_CHILD	процесс, который она запускает здесь
+$SPEECHBROKERVOICE_WORD_KIND_ATTACHED	то, что уже работает на этой машине
+$SPEECHBROKERVOICE_WORD_KIND_REMOTE	сервер на другой машине
+$SPEECHBROKERVOICE_WORD_KIND_UNKNOWN	род, которого этот адаптер не знает
+
+# --- слова: почему модель вышла из прогона и что сделала с ним в очереди ------
+$SPEECHBROKERVOICE_WORD_REMOVAL_UNSENT	так и не была отправлена
+$SPEECHBROKERVOICE_WORD_REMOVAL_UNREGISTERED	отключилась
+$SPEECHBROKERVOICE_WORD_REMOVAL_NOT_READY	говорит, что не готова
+$SPEECHBROKERVOICE_WORD_QUEUED_ACCEPTED	в очереди
+$SPEECHBROKERVOICE_WORD_QUEUED_REPLACING	в очереди, поверх более раннего прогона того же хода
+$SPEECHBROKERVOICE_WORD_QUEUED_REFUSED	отказано: она ещё держит более ранний
+
+# --- собственный поток модели -------------------------------------------------
+$SPEECHBROKERVOICE_LOG_MODEL_STARTED	модель {0} поднялась за {1} мс, с попытки {2}
+$SPEECHBROKERVOICE_LOG_MODEL_START_SLOW	модель {0}: Start идёт уже {1} мс, дольше заявленных {2} мс - таймаута на него нет, и больше на этом потоке никто не ждёт
+$SPEECHBROKERVOICE_LOG_MODEL_START_RETRY	модель {0}: Start ответил {1}, попытка {2} из {3} - ждём {4} мс и пробуем снова
+$SPEECHBROKERVOICE_LOG_MODEL_START_REFUSED	модель {0}: Start вернул {1} - это ни OK, ни «зайдите позже»
+$SPEECHBROKERVOICE_LOG_MODEL_START_LATE	модель {0}: Start вернул OK через {1} мс, но модель уже выведена - не берём
+$SPEECHBROKERVOICE_LOG_MODEL_EJECTED	МОДЕЛЬ {0} ВЫВЕДЕНА ДО КОНЦА СЕССИИ: {1}. Остальные работают как работали
+$SPEECHBROKERVOICE_LOG_MODEL_THREAD_THREW	модель {0}: её поток раздачи бросил исключение и завершился: {1}
+$SPEECHBROKERVOICE_LOG_MODEL_CALL_THREW	модель {0} бросила исключение из {1}: {2}
+$SPEECHBROKERVOICE_LOG_MODEL_FAULTED	модель {0} УПАЛА внутри {1}: {2} (код {3}) по адресу {4}
+$SPEECHBROKERVOICE_LOG_MODEL_PASS_CLOSED	модель {0}: прогон {1} уже был закрыт, когда до неё дошла очередь - не отправляем
+$SPEECHBROKERVOICE_LOG_MODEL_BUDGET_SPENT	модель {0}: срок прогона {1} вышел раньше, чем до неё дошла очередь - снято неотправленным, и с неё за это не спрашивают
+$SPEECHBROKERVOICE_LOG_MODEL_SUBMIT_SLOW	модель {0}: Submit занял {1} мс при мерке в {2} мс, на прогоне {3}
+$SPEECHBROKERVOICE_LOG_MODEL_SUBMIT_REFUSED	модель {0} отказалась от прогона {2} со статусом {1}
+$SPEECHBROKERVOICE_LOG_MODEL_BUSY_DEMOTED	модель {0} отвечает «занята» в {1:.2f} случаев при пределе {2:.2f} - дальше её спрашивают только на последнем прогоне хода
+$SPEECHBROKERVOICE_LOG_MODEL_SAID_NOT_READY	модель {0} говорит, что её модель не поднята - ничего не отправляем, пока она не скажет обратное
+$SPEECHBROKERVOICE_LOG_MODEL_PAID_THEN_REFUSED	модель {0} ответила на прогон {1} и следом от него отказалась - за принятый запрос полагается ровно один ответ
+$SPEECHBROKERVOICE_LOG_MODEL_READY_AGAIN	модель {0} снова готова
+$SPEECHBROKERVOICE_LOG_MODEL_PROBE_PASSED	модель {0} прошла проверку тишиной
+$SPEECHBROKERVOICE_LOG_MODEL_INVENTS	МОДЕЛЬ {0} ВЫДУМЫВАЕТ НА ТИШИНЕ: ей дали секунду цифровых нулей, а она ответила словами. Её голос дальше весит меньше
+
+# --- подъём половины ----------------------------------------------------------
+$SPEECHBROKERVOICE_LOG_HOST_NOT_CONFIGURED	половину раздачи так и не настроили - она не поднимется
+$SPEECHBROKERVOICE_LOG_HOST_NO_CALIBRATION_SET	файл калибровки в настройках не назван - все репутации начинают некалиброванными
+$SPEECHBROKERVOICE_LOG_HOST_CALIBRATION_OUTSIDE	файл калибровки «{0}» уводит за папку адаптера - читать не будем
+$SPEECHBROKERVOICE_LOG_HOST_NO_CALIBRATION	из {0} калибровка не прочиталась - все репутации начинают некалиброванными, и арифметика это умеет
+$SPEECHBROKERVOICE_LOG_HOST_CALIBRATION	калибровка прочитана из {0}
+$SPEECHBROKERVOICE_LOG_HOST_NO_EARS	МИКРОФОН НЕ ОТКРЫЛСЯ. Модели подняты, а слышать нечем
+$SPEECHBROKERVOICE_LOG_HOST_UP	половина раздачи поднята: моделей {0}, потоков разбора {1}, в запросе не больше {2} отсчётов
+$SPEECHBROKERVOICE_LOG_HOST_WORKER_THREW	поток разбора бросил исключение на прогоне {0}: {1}
+$SPEECHBROKERVOICE_LOG_HOST_FAULTED	модель {0} УПАЛА внутри нашего же {1}: {2} (код {3}) по адресу {4}. Она выведена до конца сессии
+$SPEECHBROKERVOICE_LOG_HOST_THREW	адаптер бросил исключение внутри своего {0}: {1}
+
+# --- знакомство ---------------------------------------------------------------
+$SPEECHBROKERVOICE_LOG_REGISTER_MALFORMED	регистрация отклонена как неправильная: {0}
+$SPEECHBROKERVOICE_LOG_REGISTER_VERSION	регистрация заявляет версию контракта {0} - на этой версии читать нечего
+$SPEECHBROKERVOICE_LOG_REGISTER_DUPLICATE	модель {0} уже зарегистрирована - побеждает первая регистрация
+$SPEECHBROKERVOICE_LOG_REGISTER_NOT_CONFIGURED	модель {0} пришла раньше, чем адаптер настроили - отказ, и это не её вина
+$SPEECHBROKERVOICE_LOG_REGISTER_TRUNCATED	модель {0}: переданная ею строка не закончилась в {1} байтах и обрезана, а не отвергнута
+$SPEECHBROKERVOICE_LOG_REGISTER_PROVIDES_UNKNOWN	модель {0} сообщает, что умеет «{1}», а адаптер такого не знает - эту часть пропускаем
+$SPEECHBROKERVOICE_LOG_REGISTER_KIND_REFUSED	модель {0} - это {1} (род {2}), а такой род в настройках не разрешён: отказ до того, как она куда-либо дотянулась
+$SPEECHBROKERVOICE_LOG_REGISTER_OK	модель {0} «{1}» зарегистрирована под номером {2}: {3}, язык «{4}», срок {5} мс, разом {6}, версия контракта {7}
+$SPEECHBROKERVOICE_LOG_REGISTER_LEAVES_MACHINE	модель {0} заявляет, что звук УХОДИТ С ЭТОЙ МАШИНЫ. Проверить это нечем - это заявление, и эта строка и есть всё, что вы за него получаете
+$SPEECHBROKERVOICE_LOG_UNREGISTER	модель {0} уходит
+$SPEECHBROKERVOICE_LOG_UNREGISTER_ABANDONED	модель {0} не вернулась за {1} мс - её номер остаётся в состоянии ухода навсегда, а сама она брошена, но не убита
+
+# --- что говорит модель -------------------------------------------------------
+$SPEECHBROKERVOICE_LOG_ANSWER_MALFORMED	модель {0}: её ответ неправильный и отвергается целиком: {1}
+$SPEECHBROKERVOICE_LOG_ANSWER_TRUNCATED	модель {0}: строка в ответе не закончилась в {1} байтах и обрезана
+$SPEECHBROKERVOICE_LOG_ANSWER_CLAMPED	модель {0}: время куска вышло за пределы буфера и поджато внутрь - в буфере {1} мс
+$SPEECHBROKERVOICE_LOG_ANSWER_TWICE	модель {0} ответила на прогон {1} дважды - второй ответ не ждали и не считаем
+$SPEECHBROKERVOICE_LOG_ANSWER_FAILED	прогон {0}: модель {1} сообщает об ошибке: {2}
+$SPEECHBROKERVOICE_LOG_ANSWER_CANCELLED	прогон {0}: модель {1} бросила работу по просьбе
+$SPEECHBROKERVOICE_LOG_MODEL_SAYS_READY	модель {0} говорит, что готова
+$SPEECHBROKERVOICE_LOG_MODEL_SAYS_NOT_READY	модель {0} говорит, что не готова: {1}
+$SPEECHBROKERVOICE_LOG_MODEL_LINE_DROPPED	модель {0} прислала строку журнала, которую нельзя принять: аргументов {1}, либо один из них пуст
+
+# --- прогоны ------------------------------------------------------------------
+$SPEECHBROKERVOICE_LOG_PASS_NO_ROSTER	ход {0}, прогон {1}: спрашивать некого - номер прогона всё равно потрачен, и дыра в нумерации это и есть запись о случившемся
+$SPEECHBROKERVOICE_LOG_PASS_ALL_FINAL_ONLY	все установленные модели просят спрашивать их только на последнем прогоне хода, поэтому промежуточных прогонов не будет вовсе. Каждый ход отвечается один раз, в конце
+$SPEECHBROKERVOICE_LOG_PASS_OPENED	ход {0}, прогон {1}: запрос {2} ушёл к {3} моделям, на ответ {4} мс
+$SPEECHBROKERVOICE_LOG_PASS_QUEUED	запрос {0} -> модель {1}: {2}
+$SPEECHBROKERVOICE_LOG_PASS_THREW	ход {0}, прогон {1}: раздача бросила исключение: {2}
+$SPEECHBROKERVOICE_LOG_PROBE_SENT	модель {0}: проверка тишиной ушла запросом {1}, {2} мс цифровых нулей
+$SPEECHBROKERVOICE_LOG_REMOVED	запрос {0}: номер {1} выведен из прогона - {2}. Модели это ничего не стоит
+$SPEECHBROKERVOICE_LOG_TIMEOUT	запрос {0}: модель {1} спросили, и она промолчала дольше срока
+$SPEECHBROKERVOICE_LOG_VOCABULARY_CLIPPED	словарь набрался в {0} фраз и урезан до {1}
+$SPEECHBROKERVOICE_LOG_SLICE	ход {0}: кусок {1} [{2}..{3}] «{4}», законченность {5:.2f}
+$SPEECHBROKERVOICE_LOG_TURN_SILENT	ход {0} закончился, и из него не вышло ни одного куска речи
+$SPEECHBROKERVOICE_LOG_PUBLISH_THREW	передача куска {0} дальше бросила исключение: {1}

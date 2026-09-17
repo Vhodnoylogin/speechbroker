@@ -6,6 +6,7 @@
 #include "turn/Completeness.h"
 #include "turn/SpeechTurn.h"  // LengthClass, SegmentSettings, TurnSettings
 
+#include <atomic>
 #include <cstdint>
 #include <mutex>
 #include <optional>
@@ -41,6 +42,17 @@ namespace Voice::Models
 		std::string  model;           // whose guess won this slot after the fold
 		std::int32_t agreed{ 1 };     // how many models said the same thing
 
+		// WHO SAID IT, and not only how many. The winner first, then every other
+		// model that arrived at the same text.
+		//
+		// `agreed` is the number the bridge reads; this is the number the
+		// STANDINGS read. Agreement is fed back into a reputation per model - "you
+		// were with the majority", "you were alone" - and a count cannot say which
+		// model to credit. Keeping only the winner's id would credit the loud one
+		// and charge the model that agreed with it, which is the opposite of what
+		// happened (Reputation::NoteAgreement, engine/arbiter.py:94-118).
+		std::vector<std::string> voters;
+
 		// The key two models are compared by: lower case, letters digits and
 		// spaces only, trimmed. Punctuation and case are not disagreements about
 		// what was heard (engine/parts.py:20-22).
@@ -75,6 +87,20 @@ namespace Voice::Models
 		// Pieces this one swallowed: a later, longer reading absorbing the short
 		// ones already sent. Ids of THIS list, never a model's numbering.
 		std::vector<std::int32_t> supersedes;
+
+		// THE ID OF A PIECE THIS ONE IS A BETTER READING OF, and 0 when it is a
+		// new piece of speech.
+		//
+		// It is not `supersedes` with one element and the difference is the whole
+		// point: a superseded piece is a DIFFERENT stretch of time that a longer
+		// reading has swallowed, while this is the SAME stretch read again by a
+		// later pass - same place in the turn, better text. The bridge does two
+		// unlike things with them (it cancels what it swallowed and it corrects
+		// what it refined), so telling it "id 7 absorbs id 7" would be a piece
+		// absorbing itself. The reference carried this as a decision of its own
+		// kind, ("hypotheses", id, [...]), and a second kind of return value is
+		// what this field replaces (engine/turn.py:131-142, :161-166).
+		std::int32_t refines{ 0 };
 
 		// How far into the turn the speech of this piece ended.
 		std::uint32_t speechElapsedMs{ 0 };
@@ -199,7 +225,16 @@ namespace Voice::Models
 	class TurnLedger
 	{
 	public:
-		TurnLedger(std::int64_t a_turnId, TurnSettings a_turn, SegmentSettings a_segments);
+		// a_nextSliceId IS THE SESSION'S COUNTER AND IS OWNED BY Host, not by this
+		// ledger, because a slice id is monotone FOR THE SESSION and not for a
+		// turn (Slice::id). A counter per ledger would hand the number 1 to the
+		// first piece of every turn, and the bridge - which maps our ids onto its
+		// own and holds pieces back against them - would see the piece of the turn
+		// before this one come back from the dead. It is an atomic and not an int
+		// under the ledger's lock for the same reason: two turns can be assembled
+		// by two workers at the same instant, and each holds only its own lock.
+		TurnLedger(std::int64_t a_turnId, TurnSettings a_turn, SegmentSettings a_segments,
+			std::atomic<std::int32_t>& a_nextSliceId);
 
 		std::int64_t TurnId() const noexcept { return _turnId; }
 
@@ -237,6 +272,12 @@ namespace Voice::Models
 		const std::int64_t _turnId;
 		TurnSettings       _turn;
 		SegmentSettings    _segments;
+
+		// A reference and not a copy: there is exactly one counter in the process
+		// and every ledger draws from it. It outlives every ledger - Host holds it
+		// and Host outlives the turns - which is what makes a reference the honest
+		// spelling of "borrowed, never owned".
+		std::atomic<std::int32_t>& _nextSliceId;
 
 		// THE TURN'S OWN LOCK. It guards the serial below and the pieces already
 		// sent, and it is held for the whole of Reconcile.

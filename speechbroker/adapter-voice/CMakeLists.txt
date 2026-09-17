@@ -80,14 +80,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(CommonLibSSE)
 
-FetchContent_Declare(
-    httplib
-    GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
-    GIT_TAG v0.18.3
-    GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(httplib)
-
 # ---------------------------------------------------------------- our plugin
 # The sources are gathered rather than listed, and CONFIGURE_DEPENDS is what makes
 # that honest: a new file under src/ - the ears arrived as fourteen of them, in
@@ -126,7 +118,6 @@ target_include_directories(SpeechBrokerVoiceAdapter PRIVATE
 target_link_libraries(SpeechBrokerVoiceAdapter PRIVATE
     CommonLibSSE::CommonLibSSE
     nlohmann_json::nlohmann_json
-    httplib::httplib
 
     # The ears: the microphone belongs to the adapter, so the adapter talks to
     # WASAPI itself.

@@ -6,30 +6,57 @@
     "name": "Voice models"
   },
 
-  "service": {
-    "url": "http://127.0.0.1:8931",
-    "listenTimeoutSec": 30,
-    "autoStart": {
-      "enabled": true,
-      "exec": "service/run.cmd",
-      "args": [],
-      "workingDir": "service",
-      "waitSec": 240,
-      "pollSec": 1,
-      "parentPidArg": "--parent-pid"
-    }
-  },
-
   "language": "auto",
-  "speakModel": "",
-
-  "correlateMs": 2500,
-  "retryDelayMs": 2000,
-  "healthTimeoutSec": 2,
-  "listenGraceSec": 10,
-  "idleSleepMs": 1000,
-  "sayTimeoutSec": 120,
   "idMapLimit": 256,
+
+  "models": {
+    "_": "The rules that apply to EVERY model mod, and not one model. A model is an SKSE plugin the player installed; it declares itself through the C ABI in contract/speechbroker-voice-model.h and the adapter learns of it at kDataLoaded. Naming one here would tie the adapter back to somebody else's mod.",
+
+    "allow": {
+      "_": "Which kinds of model a player permits. The kind is DECLARED by the shim and cannot be checked, so the adapter writes it into the log in words at every registration and refuses a forbidden one at Register - before the model has resolved a name, opened a socket or started a process. remote is off by default because it is the one kind where the sound of the room leaves this machine.",
+      "inProcess": true,
+      "child": true,
+      "attached": true,
+      "remote": false
+    },
+
+    "dispatch": {
+      "_": "One model's life. startAttempts is how many times Start is tried, waiting the model's own startupMs between attempts; there is deliberately NO timeout on a hung Start, because the adapter cannot kill a thread inside somebody else's code and will not pretend it can. probeSeconds is the digital silence every model is asked to recognise straight after it starts - a model that answers it with text is recorded as one that invents.",
+      "startAttempts": 5,
+      "defaultBudgetMs": 2000,
+      "bootstrapSlackMs": 1000,
+      "probeSeconds": 1.0,
+      "busyWindow": 20,
+      "busyRateLimit": 0.5,
+      "stackGuaranteeBytes": 65536,
+      "submitOverrunMs": 5,
+      "startComplaintMs": 0
+    },
+
+    "standing": {
+      "_": "What was measured, against what was declared. file is the calibration produced outside the game by tools/audiolab; it carries trust per model and the score distribution the normalisation falls back to before ten live scores exist. Latencies are NOT carried between runs: hardware and surroundings change, and a stored number would look like a measurement without being one.",
+      "file": "reputations.json",
+      "keep": 200,
+      "defaultTrust": 0.6,
+      "minSample": 10,
+      "latencyPercentile": 0.9,
+      "fastBelowMs": 800,
+      "latencySamplesNeeded": 5,
+      "maxFailurePenalty": 0.5,
+      "maxInventionPenalty": 0.8,
+      "minWeight": 0.05
+    },
+
+    "arbiter": {
+      "_": "How much of a stretch a second model's fragment must cover before its text counts as being about that stretch. Two numbers and the stricter wins: a floor in milliseconds for short stretches, a fraction for long ones. A weak overlap means the model was talking about the neighbouring phrase.",
+      "overlapMs": 250,
+      "overlapPercent": 50
+    },
+
+    "workers": 2,
+    "stackGuaranteeBytes": 65536,
+    "trustEarsFloor": true
+  },
 
   "ears": {
     "_": "The microphone and the cutting of speech into passes. Every number here was tuned in the game; the defaults are built into the plugin and this block is written out on first run, so a key that is missing is not a mistake. 16000 Hz is NOT here and must not be added: the contract fixes it, and changing it would hand every installed model a buffer it declared it cannot take.",

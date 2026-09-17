@@ -1,131 +1,120 @@
-# SpeechBrokerVoiceAdapter - the sound and the models
+# SpeechBrokerVoiceAdapter - the microphone and the models
 
 *In Russian: [README.ru.md](README.ru.md). English is the source language; the other is a translation.*
 
-The part of Speech Broker that answers for the voice: it **owns the microphone**, deals what it hears out
-to the installed models and carries their answers into the bridge.
+The part of Speech Broker that answers for the voice: it **owns the microphone**, cuts what it hears
+into passes, hands every pass to every installed model, settles the argument between their readings
+and carries the result to the bridge.
 
 This is a **module of its own**. The sources of the bridge are not here and must not be: the bridge
 is visible only through the contract it publishes in the `Speech Broker - SDK` package. Any other
-mod that wants to write an adapter will see it the same way - that is the point of the division.
+mod that wants to write an adapter sees it the same way - that is the point of the division.
 
 What Speech Broker is as a whole is in the [description of the module](../README.md).
 
-## The microphone belongs to the adapter
+## Everything happens inside the game, and nothing opens a socket
 
-Capturing the sound, the silence and the boundaries of phrases are the business of the adapter, not
-of the models. It is done by **its own service**: the service rides inside this very mod and comes
-up by itself at load. There is nothing for a player to start - they install the adapter like any
-other mod.
+There is no service, no port, no token and no process to start. Until 17.09 this adapter was an HTTP
+client to a python service that owned the microphone and loaded the models; the service is gone, and
+with it `Service.cpp`, `Listen.cpp`, `Speak.cpp` and the whole of the settings that described them.
 
-There is one service per game, and that is not a detail: a microphone is a device, and two models
-each bringing a capture of its own would fight over it.
+The reason is one sentence: **a microphone may have exactly one owner**, and the part of the system
+that hears the pause is the part that must decide where a phrase ends. Splitting that across a
+process boundary meant the adapter asked a stranger what it had just heard.
 
-A model in this arrangement is a **recogniser**: it is given sound and it gives back text. It has
-no program of its own.
+## The two halves under it
 
-## The adapter knows not one model by name
+    src\audio, src\turn     THE EARS      the device, the noise floor, the cutting into passes
+    src\models              THE DISPATCH  the registry of models, the deadlines, the arbitration
 
-It reads the folder
+Neither knows the other's business, and neither knows this mod. Nothing under `src\audio` or
+`src\turn` includes the settings, the contract or SKSE, so the whole listening half can be built and
+run from a wav with no game at all; nothing under `src\models` includes the settings or the bridge
+either. `src\main.cpp` is the only file that knows both, and `src\Config.cpp` the only one that
+fills them from a file.
 
-    Data\SKSE\Plugins\speechbroker\adapters\voice\models\
+### The ears
 
-and takes the declarations of the models out of it. Each listing is put there by a **separate mod** -
-a model mod; the weights are loaded by the service, and all the adapter wants from a listing is
-three things: what the model is called in the answers of the service, whether it gives a draft or a
-final answer, and what it can do.
-The full contract of a listing: [contract/speechbroker-voice-model.md](contract/speechbroker-voice-model.md).
+One capture device, chosen by name rather than by index - indices are not stable between reboots.
+The noise floor is measured once, at the start, and never adjusted: speech raises the level, so a
+threshold that followed it would climb after the speaker and stop telling one from the other.
 
-From this follows what it was done for:
+From the stream come **turns** and **passes**. A turn lasts from the block that opened the gate to
+the long silence that closes it, and it accumulates sound from zero. A pass is a complete re-reading
+of the turn so far, cut on a short pause or on a ceiling, with the trailing silence **already cut
+off** - Whisper invents filler over trailing silence with its own silence filter switched on, and
+the very first run of this system produced a whole sentence over nothing.
 
-- **the adapter can be released to people** - there is not one path, port or language in it that is
-  true only on the machine of its author;
-- **changing the model needs no new build** and not even an edit to the settings: a person installs
-  a different mod;
-- **two models at once** are simply two mods. The particular case of "a fast one plus an accurate
-  one", where the fast one gives a draft and the accurate one refines it, is arranged by installing,
-  not by code;
-- **somebody else can release a model of their own** without touching our code at all.
+Each pass also carries what only the side with the microphone can know: the anchors, which are the
+edges of the pauses measured from energy alone, and the speaker's own pitch range.
 
-What the adapter declares to the bridge - `asr`, `tts` or both - it **works out** from the installed
-models rather than taking it from its settings. Promising the bridge speech when not one model
-speaks means taking the work away from an adapter that can do it.
+### The dispatch
 
-## What the adapter does
+A model is an **SKSE plugin** - a shim - and it registers through the C ABI in
+[contract/speechbroker-voice-model.h](contract/speechbroker-voice-model.h). There is no folder of
+listings any more and nothing about a model is written in our settings: a model is **installed**,
+not configured.
 
-- **It knows both sides.** Into the game it speaks by calling a function through the C ABI of the
-  bridge, with no sockets. Outward, to the service, it goes over HTTP by itself: the transport is
-  the choice of the adapter and the bridge knows nothing about it.
-- **It answers for the life of the service.** It checks `/health`; if the service is already up it
-  simply connects and never kills a process that is not ours. If it is not, the adapter brings it
-  up by `autoStart` out of its settings and tells it the number of the process of the game, so that
-  it goes out together with the game.
-- **It polls the service.** One thread for the whole game: there is one service, and which model
-  recognised an utterance is said in the answer, in the `engine` field. An answer from a draft model
-  inside the `correlateMs` window counts as a draft the accurate one will refine.
-- **It speaks.** A `Speak` job from the bridge goes to the first model that declared `tts`, or to
-  the one named in `speakModel`.
+One thread per model, so a shim that misbehaves in one of its calls **starves only itself**. Every
+pass becomes a collector with one absolute deadline; a model that has not answered by then is
+recorded as a timeout and the pass is sealed without it. A silent model must not be able to stop a
+pass for ever - this project has already lost a whole evening of speech to a pass that was never
+assembled, and a silent loss is worse than a noisy failure.
 
-## Talking to the service
+**Declared is a hint, measured is a fact.** A model says how quick it is and how long it wants; the
+adapter believes that for five passes and then routes by the latency it measured. Straight after a
+model starts it is given one second of **digital silence** and asked to recognise it: a model that
+answers silence with text is recorded as one that invents, and its voice weighs less when two models
+disagree. A model that never answers the probe is never asked for anything.
 
-| Request | When | Answer |
-|---|---|---|
-| `GET /health` | before starting and after bringing the service up | `200` if it is alive |
-| `GET /listen?since=<number>` | endlessly, while the bridge keeps the adapter as the source | the new utterances from every model |
-| `POST /say` | on a job from the bridge | `200` if it was said |
+Two readings of one sound are folded onto **one lane** - the segmentation of a model that carries
+word timings, because its boundaries came from an alignment to the audio and are reproducible. Two
+models independently arriving at the same string is not two votes but one stronger reason, so equal
+texts are merged and their agreement counted.
 
-The answer to `/listen` is an object with an `utterances` array, and in every record:
+## What crosses to the bridge
 
-| Key | What it means |
-|---|---|
-| `id` | the number of the utterance at the service; the adapter translates it into the number at the bridge |
-| `text` | what was recognised |
-| `engine` | which model recognised it |
-| `score`, `margin` | the confidence and the margin over the second hypothesis |
-| `ms` | how long it took |
-| `complete` | how sure the service is that the phrase **ended**. By that number the bridge decides whether to hold it back or hand it over at once |
-| `lengthClass` | short, middle, long |
-| `supersedes` | the numbers of the pieces this utterance swallowed |
+A finished slice: the text, the alternatives the disagreement produced, how sure we are the sentence
+**ended**, and the numbers of the pieces this one swallowed. The bridge holds an unfinished phrase
+back - but only if it was told, and only the side that heard the pause can tell it.
+
+Our slice numbers and the bridge's utterance numbers are different numbers, and the translation
+between them lives in `main.cpp`, because the adapter is the only side that knows both.
+
+**This adapter hears and does not speak.** A `Speak` job is refused at once rather than left without
+an answer; speech is a model mod and an adapter of its own, and promising the bridge something we
+cannot produce takes the work away from an adapter that can.
 
 ## The settings
 
-`speechbroker-voice.json` describes **the adapter itself and its service**: where it is, how to bring it
-up, the deadlines, the width of the refinement window. There are no models in it and there must not
-be.
+`speechbroker-voice.json`, beside the mod. Three blocks, and the built-in defaults are the shipping
+behaviour, so a key that is missing is not a mistake.
 
-| Key | What it means |
+| Block | What it tunes |
 |---|---|
-| `service.url` | where the service is. Only the loopback is accepted: all the speech of the player goes through it |
-| `service.autoStart` | how to bring it up. `exec` only inside the folder of the adapter |
-| `service.listenTimeoutSec` | how long the service holds `/listen` before answering empty |
-| `speakModel` | who is to speak. Empty means the first speaking one among those installed |
-| `correlateMs` | the window in which an accurate answer counts as a refinement of a draft |
-| `retryDelayMs` | the pause after a failed `/listen` |
-| `healthTimeoutSec` | how long to wait for a connection on `/health` |
-| `listenGraceSec` | how much longer than the deadline of the service to wait for its answer |
-| `idleSleepMs` | the step of waiting while the bridge keeps the adapter in reserve |
-| `sayTimeoutSec` | how long to wait for an answer to `/say` |
-| `idMapLimit` | how many recent "number of the service -> number of the bridge" translations to remember per model |
+| `ears` | the device, the noise floor, the pauses, the tone, where a phrase is judged finished |
+| `models.allow` | which kinds of model a player permits. `remote` is off: it is the one kind where the sound of the room leaves the machine |
+| `models.dispatch` | one model's life - the attempts at starting it, the probe, what a busy model costs |
+| `models.standing` | what was measured against what was declared, and the calibration file behind it |
+| `models.arbiter` | how much of a stretch a second model must cover before its text counts as being about it |
 
-The adapter parses its own settings file **strictly**: a mistake in it is ours, and on one the
-adapter does not come up at all. Somebody else listing of a model, on the contrary, is parsed
-gently: a listing that does not parse is skipped with a line in the log while the other models
-work. A person who installed three model mods must not be left without all three because of one.
+The adapter parses its own file **strictly**: a mistake in it is ours, and on one the adapter does
+not come up at all.
+
+There is deliberately no sample rate in it. The contract fixes 16 kHz, and changing it would hand
+every installed model a buffer it declared it cannot take.
 
 ## The text of the adapter
 
 The adapter has no window and no notices: everything it says goes into the log. The log is
-translated like everything else in Speech Broker - not one line is written in the code, there are keys
-there, and the text lives in `Interface\Translations\SpeechBrokerVoiceAdapter_<language>.txt`. The
-reading is done by `speechbroker-loc.h` out of the SDK of the bridge: the adapter is a library of its own
-and writes its first lines before it has met the bridge.
+translated like everything else in Speech Broker - not one line is written in the code, there are
+keys there, and the text lives in
+`Interface\Translations\SpeechBrokerVoiceAdapter_<language>.txt`. The tables are kept as UTF-8 in
+`localization\`, split into sections by file, and turned into what the game reads by the script the
+bridge publishes in its SDK.
 
 What stays as it came is **the recognised speech**: what a person said is data and not a message,
 and it reaches the log in the language it was said in.
-
-The language comes from the `language` key in `speechbroker-voice.json`; `auto` is the language of the
-game itself. Every language goes inside the mod of the adapter - a translation is a part of the
-module and not a mod to install beside it.
 
 ## Building
 
@@ -136,18 +125,12 @@ tools\deploy.ps1 -Apply
 tools\package.ps1 -Apply
 ```
 
-`cmake` will refuse to configure until the bridge is laid out: the contract is taken from the SDK
-package, and the path to it is set in `config/build.json` under the `deploy.sdk` key. That is not
-an inconvenience but a check - an adapter built against a contract that does not exist would
-silently disagree with the bridge about the version of the interface.
+`cmake` refuses to configure until the bridge is laid out: the contract is taken from the SDK
+package, and the path to it is in `config/build.json` under `deploy.sdk`. That is a check, not an
+inconvenience - an adapter built against a contract that does not exist would silently disagree with
+the bridge about the version of the interface.
 
-## Talking to the service is protected
-
-The service is ours, but the channel to it is protected all the same, because the port can be taken
-by a program that is not ours: the address has to be the loopback, `exec` has to lie inside the
-folder of the adapter, and every request carries a one-off session secret in the `X-Speech Broker-Token`
-header. The adapter makes the secret up at load and hands it to the service with the
-`--speechbroker-token` argument.
+Lay out and pack only with the game closed.
 
 ## Compatibility with the bridge
 

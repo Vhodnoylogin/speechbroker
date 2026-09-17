@@ -462,8 +462,27 @@ namespace Voice::Models
 		// escaping a thread procedure is std::terminate, and that is a fail-fast
 		// nothing in the process observes.
 		//
+		// IT DETACHES THE THREAD, and that follows from the rule at the head of
+		// this class rather than being a separate decision: a Model is never
+		// destroyed, so there is no destructor that could join, and the one place
+		// that waits - WaitDrained - is explicitly allowed to give up and abandon
+		// the thread. A joinable std::thread member that nobody may ever join is a
+		// std::terminate waiting for the day somebody adds a destructor.
+		//
 		// THREAD: the host's bring-up worker. Never the game thread.
 		void Begin();
+
+		// HAS THE DISPATCH THREAD LEFT ITS LOOP. WaitDrained polls this with a
+		// bounded sleep rather than joining, because joining is exactly what the
+		// rule above forbids: the thread may be inside third-party code that never
+		// returns, and then the wait has to end while the thread does not.
+		//
+		// TRUE BEFORE Begin, deliberately. A model whose thread was never started
+		// has trivially left a loop it never entered, and without this an
+		// Unregister before bring-up would sit out the whole of stopMs waiting for
+		// a thread that does not exist.
+		// THREAD: any.
+		bool Done() const noexcept { return _done.load(std::memory_order_acquire); }
 
 		// Mark the handle draining. THE REGISTRY LOCK IS RELEASED BEFORE THE
 		// WAIT, always: Complete, Ready and Log on a draining handle read one
@@ -487,6 +506,18 @@ namespace Voice::Models
 
 		const Reputation& Standing() const noexcept { return _standing; }
 		double            BusyRate() const;
+
+		// THE TWO "ONCE PER MODEL" LATCHES OF Host::Complete, and they are here and
+		// not there because "once" is a property of the MODEL and not of the call:
+		// docs/model-host.md asks for the truncation to be logged "once per model,
+		// not once per string", and the clamping the same way. A model that sends a
+		// hundred over-long fragments in one answer, and another hundred in the
+		// next, is worth exactly one line either way.
+		//
+		// Each returns true the FIRST time and false ever after.
+		// THREAD: any model's thread, from inside Host::Complete.
+		bool FirstTruncation() noexcept;
+		bool FirstClamp() noexcept;
 
 	private:
 		Model(SpeechBrokerVoiceHandle a_handle, ModelInfo a_info,
@@ -514,6 +545,32 @@ namespace Voice::Models
 			std::int64_t             utteranceId{ 0 };  // Cancel
 		};
 
+		// THE DISPATCH THREAD, IN PIECES. It is one thread and one story - Start,
+		// the probe, then the queue for ever - and it is cut into these because
+		// every one of them holds a crossing into third-party code inside its own
+		// try/catch, and a single function carrying five of them would be a page
+		// where the retraction of one outcome could be read as the retraction of
+		// another. They are called from Run and from nowhere else.
+		//
+		// a_faulted travels down and back rather than being read off _life,
+		// because "ejected" does not say WHY, and Stop is owed by a model that was
+		// ejected for refusing to start and not by one that faulted.
+		void Run();
+		bool RunStart(bool& a_faulted);   // true when Start returned OK
+		void WaitBetweenStarts();
+		void RunQueue(bool& a_faulted);
+		bool RunControl(Control& a_control, bool& a_faulted);  // false - leave the loop
+		void RunEntry(DispatchEntry&& a_entry, bool& a_faulted, int& a_protocolBreaks);
+
+		// Complete came and then Submit said BUSY or NOT_READY for the same
+		// utterance. One is a defect; two is Ejection::ProtocolBroken.
+		void NoteProtocolBreak(std::int64_t a_utteranceId, int& a_protocolBreaks);
+
+		// On the way out: whatever is still queued belongs to a pass that is still
+		// waiting for it, and a pass must not sit to its deadline for a request
+		// nobody will ever send.
+		void DropPending();
+
 		const SpeechBrokerVoiceHandle _handle;
 		const ModelInfo               _info;
 
@@ -539,6 +596,17 @@ namespace Voice::Models
 
 		// Latched, so that the two demotion steps each say their line once.
 		std::atomic_bool _busyDemoted{ false };
+
+		// The two latches behind FirstTruncation and FirstClamp. Atomics rather
+		// than fields of _lock's estate because Complete arrives on the model's own
+		// threads, several at once is ordinary, and a log line must never be the
+		// reason a lock is taken.
+		std::atomic_bool _saidTruncated{ false };
+		std::atomic_bool _saidClamped{ false };
+
+		// See Done(). It starts TRUE and Begin clears it before it launches the
+		// thread, so that "never started" and "has left" read alike to a waiter.
+		std::atomic_bool _done{ true };
 
 		// Guards the queue, the debt and the busy window. NEVER HELD ACROSS A
 		// CALL INTO THE MODEL - the adapter holds no lock of its own across any

@@ -1,0 +1,104 @@
+# SpeechBrokerVoiceAdapter - the dispatch half: the host, the registry, the model
+# threads. English. A FRAGMENT: the integrator merges it into
+# localization/speechbrokervoiceadapter.english.txt and regenerates src/LocStrings.h.
+#
+# Same format as the main table: key<TAB>text, numbered placeholders {0} {1},
+# because another language puts the words in another order. A wrong number of them
+# does not silence the line - the adapter falls back to printing the bare key.
+#
+# What is NOT translated here, deliberately, because it is data and not a message:
+# the id of a model, the name of a contract function, a status code, a fault code
+# and the name of a field. They arrive as arguments inside these lines.
+
+# --- words: why a model was put out ------------------------------------------
+$SPEECHBROKERVOICE_WORD_EJECT_START_REFUSED	Start refused it
+$SPEECHBROKERVOICE_WORD_EJECT_START_EXHAUSTED	Start never succeeded
+$SPEECHBROKERVOICE_WORD_EJECT_FAULTED	it faulted, and the state on its side is of unknown shape
+$SPEECHBROKERVOICE_WORD_EJECT_BUSY_FINAL	busy on final passes too
+$SPEECHBROKERVOICE_WORD_EJECT_PROTOCOL	it broke the protocol
+
+# --- words: what a model does about its model ---------------------------------
+$SPEECHBROKERVOICE_WORD_KIND_INPROCESS	a library in this very process
+$SPEECHBROKERVOICE_WORD_KIND_CHILD	a process it starts here
+$SPEECHBROKERVOICE_WORD_KIND_ATTACHED	something already running on this machine
+$SPEECHBROKERVOICE_WORD_KIND_REMOTE	a server on another machine
+$SPEECHBROKERVOICE_WORD_KIND_UNKNOWN	a kind this adapter does not know
+
+# --- words: why a model left a pass, and what its queue did with one ----------
+$SPEECHBROKERVOICE_WORD_REMOVAL_UNSENT	it was never sent
+$SPEECHBROKERVOICE_WORD_REMOVAL_UNREGISTERED	it unregistered
+$SPEECHBROKERVOICE_WORD_REMOVAL_NOT_READY	it says it is not ready
+$SPEECHBROKERVOICE_WORD_QUEUED_ACCEPTED	queued
+$SPEECHBROKERVOICE_WORD_QUEUED_REPLACING	queued, over an earlier pass of the same turn
+$SPEECHBROKERVOICE_WORD_QUEUED_REFUSED	refused: it is still holding an earlier one
+
+# --- a model's own thread -----------------------------------------------------
+$SPEECHBROKERVOICE_LOG_MODEL_STARTED	model {0} started in {1} ms, on attempt {2}
+$SPEECHBROKERVOICE_LOG_MODEL_START_SLOW	model {0}: Start has taken {1} ms, longer than the {2} ms it asked for - there is no timeout on it and nothing else is waiting
+$SPEECHBROKERVOICE_LOG_MODEL_START_RETRY	model {0}: Start said {1}, attempt {2} of {3} - waiting {4} ms and trying again
+$SPEECHBROKERVOICE_LOG_MODEL_START_REFUSED	model {0}: Start returned {1}, which is neither OK nor "come back later"
+$SPEECHBROKERVOICE_LOG_MODEL_START_LATE	model {0}: Start returned OK after {1} ms, but the model was already out - ignoring it
+$SPEECHBROKERVOICE_LOG_MODEL_EJECTED	MODEL {0} IS OUT FOR THE SESSION: {1}. The others carry on untouched
+$SPEECHBROKERVOICE_LOG_MODEL_THREAD_THREW	model {0}: its dispatch thread threw and has ended: {1}
+$SPEECHBROKERVOICE_LOG_MODEL_CALL_THREW	model {0} threw out of {1}: {2}
+$SPEECHBROKERVOICE_LOG_MODEL_FAULTED	model {0} FAULTED inside {1}: {2} (code {3}) at {4}
+$SPEECHBROKERVOICE_LOG_MODEL_PASS_CLOSED	model {0}: pass {1} had already closed before it was reached - not sending it
+$SPEECHBROKERVOICE_LOG_MODEL_BUDGET_SPENT	model {0}: the budget of pass {1} was spent before it was reached - dropped unsent, and nothing is charged for it
+$SPEECHBROKERVOICE_LOG_MODEL_SUBMIT_SLOW	model {0}: Submit took {1} ms, over the {2} ms it is measured against, on pass {3}
+$SPEECHBROKERVOICE_LOG_MODEL_SUBMIT_REFUSED	model {0} refused pass {2} with status {1}
+$SPEECHBROKERVOICE_LOG_MODEL_BUSY_DEMOTED	model {0} answers busy {1:.2f} of the time, past the limit of {2:.2f} - it will be asked on final passes only from now on
+$SPEECHBROKERVOICE_LOG_MODEL_SAID_NOT_READY	model {0} says its model is not up - nothing will be submitted until it says otherwise
+$SPEECHBROKERVOICE_LOG_MODEL_PAID_THEN_REFUSED	model {0} answered pass {1} and then refused it - a model owes exactly one answer for a request it took
+$SPEECHBROKERVOICE_LOG_MODEL_READY_AGAIN	model {0} is ready again
+$SPEECHBROKERVOICE_LOG_MODEL_PROBE_PASSED	model {0} passed the silence probe
+$SPEECHBROKERVOICE_LOG_MODEL_INVENTS	MODEL {0} INVENTS ON SILENCE: it was given a second of digital zeros and answered with words. Its voice weighs less from here on
+
+# --- bringing the half up -----------------------------------------------------
+$SPEECHBROKERVOICE_LOG_HOST_NOT_CONFIGURED	the dispatch half was never configured - it will not start
+$SPEECHBROKERVOICE_LOG_HOST_NO_CALIBRATION_SET	no calibration file is named in the settings - every standing starts uncalibrated
+$SPEECHBROKERVOICE_LOG_HOST_CALIBRATION_OUTSIDE	the calibration file '{0}' leaves the folder of the adapter - not reading it
+$SPEECHBROKERVOICE_LOG_HOST_NO_CALIBRATION	no calibration was read from {0} - every standing starts uncalibrated, which the arithmetic handles
+$SPEECHBROKERVOICE_LOG_HOST_CALIBRATION	calibration read from {0}
+$SPEECHBROKERVOICE_LOG_HOST_NO_EARS	THE MICROPHONE DID NOT OPEN. The models are up and nothing will be heard
+$SPEECHBROKERVOICE_LOG_HOST_UP	the dispatch half is up: {0} models, {1} assembling threads, at most {2} samples in a request
+$SPEECHBROKERVOICE_LOG_HOST_WORKER_THREW	a worker threw while assembling pass {0}: {1}
+$SPEECHBROKERVOICE_LOG_HOST_FAULTED	model {0} FAULTED inside the adapter's own {1}: {2} (code {3}) at {4}. It is out for the session
+$SPEECHBROKERVOICE_LOG_HOST_THREW	the adapter threw inside its own {0}: {1}
+
+# --- the handshake ------------------------------------------------------------
+$SPEECHBROKERVOICE_LOG_REGISTER_MALFORMED	a registration was refused as malformed: {0}
+$SPEECHBROKERVOICE_LOG_REGISTER_VERSION	a registration declares contract version {0} - there is nothing that can be read at that version
+$SPEECHBROKERVOICE_LOG_REGISTER_DUPLICATE	model {0} is registered already - the first registration wins
+$SPEECHBROKERVOICE_LOG_REGISTER_NOT_CONFIGURED	model {0} tried to register before the adapter was configured - refused, and it is not its defect
+$SPEECHBROKERVOICE_LOG_REGISTER_TRUNCATED	model {0}: a string it handed over was not terminated within {1} bytes and was truncated rather than refused
+$SPEECHBROKERVOICE_LOG_REGISTER_PROVIDES_UNKNOWN	model {0} says it provides '{1}', which this adapter does not know - ignoring that part
+$SPEECHBROKERVOICE_LOG_REGISTER_KIND_REFUSED	model {0} is {1} (kind {2}) and that kind is not allowed in the settings - refused before it could reach anything
+$SPEECHBROKERVOICE_LOG_REGISTER_OK	model {0} '{1}' registered as handle {2}: {3}, language '{4}', {5} ms of budget, {6} at once, contract version {7}
+$SPEECHBROKERVOICE_LOG_REGISTER_LEAVES_MACHINE	model {0} declares that the sound LEAVES THIS MACHINE. Nothing here can check that - it is a declaration, and this line is what you get for it
+$SPEECHBROKERVOICE_LOG_UNREGISTER	model {0} is leaving
+$SPEECHBROKERVOICE_LOG_UNREGISTER_ABANDONED	model {0} did not come back within {1} ms - its handle stays draining for ever and the model is abandoned rather than killed
+
+# --- what a model says --------------------------------------------------------
+$SPEECHBROKERVOICE_LOG_ANSWER_MALFORMED	model {0}: its answer is malformed and is refused whole: {1}
+$SPEECHBROKERVOICE_LOG_ANSWER_TRUNCATED	model {0}: a string in an answer was not terminated within {1} bytes and was truncated
+$SPEECHBROKERVOICE_LOG_ANSWER_CLAMPED	model {0}: a fragment time lay outside the buffer and was clamped into it, which is {1} ms long
+$SPEECHBROKERVOICE_LOG_ANSWER_TWICE	model {0} answered pass {1} twice - the second is not owed and is not counted
+$SPEECHBROKERVOICE_LOG_ANSWER_FAILED	pass {0}: model {1} says it went wrong: {2}
+$SPEECHBROKERVOICE_LOG_ANSWER_CANCELLED	pass {0}: model {1} dropped the work on request
+$SPEECHBROKERVOICE_LOG_MODEL_SAYS_READY	model {0} says it is ready
+$SPEECHBROKERVOICE_LOG_MODEL_SAYS_NOT_READY	model {0} says it is not ready: {1}
+$SPEECHBROKERVOICE_LOG_MODEL_LINE_DROPPED	model {0} sent a log line this adapter cannot take: {1} arguments, or one of them was empty
+
+# --- the passes ---------------------------------------------------------------
+$SPEECHBROKERVOICE_LOG_PASS_NO_ROSTER	turn {0}, pass {1}: there is nobody to ask - the serial is spent and the gap in the numbers is the record of it
+$SPEECHBROKERVOICE_LOG_PASS_ALL_FINAL_ONLY	every installed model asks to be used on final passes only, so no interim pass will be run at all. Every turn is answered once, at its end
+$SPEECHBROKERVOICE_LOG_PASS_OPENED	turn {0}, pass {1}: utterance {2} to {3} models, {4} ms to answer in
+$SPEECHBROKERVOICE_LOG_PASS_QUEUED	utterance {0} -> model {1}: {2}
+$SPEECHBROKERVOICE_LOG_PASS_THREW	turn {0}, pass {1}: the dispatch of it threw: {2}
+$SPEECHBROKERVOICE_LOG_PROBE_SENT	model {0}: the silence probe is out as utterance {1}, {2} ms of digital zeros
+$SPEECHBROKERVOICE_LOG_REMOVED	utterance {0}: handle {1} is out of the pass - {2}. It costs that model nothing
+$SPEECHBROKERVOICE_LOG_TIMEOUT	utterance {0}: model {1} was asked and stayed silent past the deadline
+$SPEECHBROKERVOICE_LOG_VOCABULARY_CLIPPED	the vocabulary came to {0} phrases and was clipped to {1}
+$SPEECHBROKERVOICE_LOG_SLICE	turn {0}: piece {1} [{2}..{3}] '{4}', finished {5:.2f}
+$SPEECHBROKERVOICE_LOG_TURN_SILENT	turn {0} ended without one piece of speech coming out of it
+$SPEECHBROKERVOICE_LOG_PUBLISH_THREW	the handing on of piece {0} threw: {1}
