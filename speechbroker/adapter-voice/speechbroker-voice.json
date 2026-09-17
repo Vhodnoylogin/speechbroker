@@ -29,5 +29,101 @@
   "listenGraceSec": 10,
   "idleSleepMs": 1000,
   "sayTimeoutSec": 120,
-  "idMapLimit": 256
+  "idMapLimit": 256,
+
+  "ears": {
+    "_": "The microphone and the cutting of speech into passes. Every number here was tuned in the game; the defaults are built into the plugin and this block is written out on first run, so a key that is missing is not a mistake. 16000 Hz is NOT here and must not be added: the contract fixes it, and changing it would hand every installed model a buffer it declared it cannot take.",
+
+    "capture": {
+      "_": "Where the sound comes from. source 'file' makes a wav stand in for the microphone, so the whole of this half can be tried outside the game; the path is relative to the folder of the adapter and may not leave it. blockMs is a request - WASAPI in shared mode gives the period it likes.",
+      "source": "device",
+      "file": "",
+      "filePaced": false,
+      "fileLoop": false,
+      "blockMs": 20,
+      "ringMs": 4000,
+      "device": {
+        "_": "Names, not numbers: indices are not stable between reboots and names are. Best first; a pattern is a case-insensitive part of the name of the endpoint. inputApi is kept from the settings of the python this was ported from - here there is only WASAPI, and a name that is not it is reported once rather than obeyed in silence.",
+        "input": [
+          "Steam Streaming Microphone",
+          "Quest",
+          "Oculus",
+          "LG Monitor HP MIC",
+          "Realtek HD Audio Mic"
+        ],
+        "inputApi": [
+          "Windows WASAPI",
+          "MME",
+          "Windows DirectSound"
+        ],
+        "allowDefault": true,
+        "reopen": {
+          "tries": 3,
+          "delayMs": 1500
+        }
+      }
+    },
+
+    "vad": {
+      "_": "What silence sounds like and when speech has started. The floor is measured once, at the start, and never adjusted afterwards: speech raises the level, so a threshold that followed it would climb after the speaker and stop telling one from the other. Do not speak while it is measured. maxUttSec has a second duty - it is the largest buffer that can ever be sent to a model.",
+      "noiseFloorSec": 1.0,
+      "warmUpMs": 500,
+      "startFactor": 3.5,
+      "minRmsFloor": 120,
+      "startMs": 120,
+      "preRollMs": 800,
+      "endSilenceMs": 1600,
+      "maxUttSec": 20.0,
+      "minUttSec": 0.35,
+      "minPeak": 250
+    },
+
+    "pacer": {
+      "_": "When the models are asked. A short pause fires a pass and costs nothing when there is no pause; endSilenceMs is what ends a speaking turn; maxSpanMs is for somebody who never pauses at all.",
+      "sliceSilenceMs": 300,
+      "endSilenceMs": 1600,
+      "maxSpanMs": 4000
+    },
+
+    "turn": {
+      "_": "The tolerances of a turn. The anchors are the edges of the pauses, measured from the sound alone, and the slacks say how far a model's timing may be from one and still be called the same place.",
+      "anchorSlackMs": 60,
+      "snapSlackMs": 350,
+      "resumeQuietMs": 150,
+      "matchSlackMs": 200,
+      "minPassMs": 250
+    },
+
+    "prosody": {
+      "_": "Our own measurement of the tone, which the punctuation of a recogniser is no substitute for: its punctuation is three quarters language, and a fall to the bottom of the speaker's own range is a measurement.",
+      "minHz": 70.0,
+      "maxHz": 350.0,
+      "frameMs": 40,
+      "hopMs": 20,
+      "tailMs": 250,
+      "voicedNeeded": 8,
+      "voicedInTail": 3,
+      "peakRatio": 0.3,
+      "lowPercentile": 10,
+      "highPercentile": 90,
+      "minSpanMs": 100
+    },
+
+    "completeness": {
+      "_": "Whether the sentence finished on this piece. The pause is weighed against the speaker's own tempo rather than against a fixed number of milliseconds.",
+      "pauseFactor": 2.5,
+      "withTerminalMark": 0.8,
+      "withoutTerminalMark": 0.2,
+      "junkNoSpeechProb": 0.6,
+      "pitchWeight": 0.5
+    },
+
+    "segments": {
+      "_": "Where short, middle and long part company, in words.",
+      "shortMaxWords": 3,
+      "middleMaxWords": 8
+    },
+
+    "consumerPollMs": 5
+  }
 }

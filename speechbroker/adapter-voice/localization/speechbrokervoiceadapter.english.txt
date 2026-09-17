@@ -52,3 +52,84 @@ $SPEECHBROKERVOICE_LOG_SERVICE_UP	the service is up
 $SPEECHBROKERVOICE_LOG_SERVICE_TIMEOUT	the service did not answer within the time allowed
 $SPEECHBROKERVOICE_LOG_NO_SPEAKER	speech {0}: not one installed model can speak
 $SPEECHBROKERVOICE_LOG_SPOKE	speech {0} by model {1}: {2}
+$SPEECHBROKERVOICE_LOG_RING_READY	ring: room for {0} samples, {1} kB
+$SPEECHBROKERVOICE_LOG_RING_NO_ROOM	ring: built with no room at all - every sample of the microphone will be counted as lost
+$SPEECHBROKERVOICE_LOG_PACER_READY	pacer: a pass on a pause of {0} ms, a turn is over after {1} ms of silence, and a pass at least every {2} ms
+$SPEECHBROKERVOICE_LOG_PACER_SPAN_TOO_SHORT	pacer: maxSpanMs {0} is not longer than sliceSilenceMs {1} - the ceiling will come up before a pause ever can, and every pass will be cut mid-word
+$SPEECHBROKERVOICE_LOG_PACER_SPAN	pacer: {0} ms without a pause - a pass by the ceiling
+$SPEECHBROKERVOICE_LOG_RESAMPLE_DIRECT	resampler: the source is already at {0} Hz - the samples go over untouched
+$SPEECHBROKERVOICE_LOG_RESAMPLE_AVERAGE	resampler: {0} Hz -> {1} Hz, averaging whole groups of {2} samples
+$SPEECHBROKERVOICE_LOG_RESAMPLE_INTERPOLATE	resampler: {0} Hz -> {1} Hz, interpolating with the phase carried from block to block
+$SPEECHBROKERVOICE_LOG_RESAMPLE_NO_RATE	resampler: the source rate was not given - taking it as {0} Hz and passing the samples through
+$SPEECHBROKERVOICE_LOG_JUDGE_BAD_INPUT	completeness: a fragment came with a number that is not a probability - noSpeechProb {0:.3f}, lastWordProb {1:.3f}, terminalFall {2:.3f} (-1 there means 'not given') - taking it as not given. Said once for the run
+$SPEECHBROKERVOICE_LOG_FLOOR_MEASURING	gate: measuring what the room sounds like - {0} ms of warm-up, then {1} ms of listening. Nobody should speak while it lasts
+$SPEECHBROKERVOICE_LOG_FLOOR	gate: noise floor {0:.0f}, trigger {1:.0f}
+$SPEECHBROKERVOICE_LOG_PROSODY_BAND	prosody: frames of {0} ms every {1} ms, lags {2}..{3} - that is {4:.0f} to {5:.0f} Hz
+$SPEECHBROKERVOICE_LOG_PROSODY_NO_BAND	prosody: frameMs {0}, hopMs {1}, minHz {2} and maxHz {3} leave no band to search in - the tone will not be measured
+$SPEECHBROKERVOICE_LOG_PROSODY_FALL	prosody: terminal fall {0:.2f} on {1} voiced frames of the tail, the speaker sits between {2:.0f} and {3:.0f} Hz
+$SPEECHBROKERVOICE_LOG_PROSODY_NO_RANGE	prosody: no opinion on the tone - the range of the speaker is not known yet, {0} voiced frames against the {1} needed
+$SPEECHBROKERVOICE_LOG_PROSODY_SHORT	prosody: no opinion on the tone - {0} ms of sound, and a fall is not measured below {1} ms
+$SPEECHBROKERVOICE_LOG_PROSODY_NO_VOICE	prosody: no opinion on the tone - {0} voiced frames in the tail against the {1} needed
+$SPEECHBROKERVOICE_LOG_TURN_NO_CEILING	the turn has no ceiling: maxUttSec resolved to zero samples, so a turn will never end on its length
+$SPEECHBROKERVOICE_LOG_TURN_OVERFULL	turn {0}: {1} samples came in past the ceiling of {2} and were dropped - that block should have opened a new turn
+$SPEECHBROKERVOICE_LOG_TURN_PASS_SHORT	turn {0} pass {1}: {2} ms left after the trim against a floor of {3} ms - nothing sent
+$SPEECHBROKERVOICE_LOG_TURN_PASS_QUIET	turn {0} pass {1}: the loudest sample is {2:.0f} against a floor of {3:.0f} - that is silence, nothing sent
+$SPEECHBROKERVOICE_LOG_TURN_FINAL_REPEAT	turn {0}: the last cut was refused, handing the previous buffer out again as pass {1}, final
+$SPEECHBROKERVOICE_LOG_AUDIO_ENUM_FAILED	microphone: the capture endpoints of this machine could not be listed, code {0} - there is nothing to listen with
+$SPEECHBROKERVOICE_LOG_AUDIO_NO_INPUTS	microphone: not one capture endpoint of this machine is active
+$SPEECHBROKERVOICE_LOG_AUDIO_ENDPOINT	microphone: found the endpoint {0}
+$SPEECHBROKERVOICE_LOG_AUDIO_ENDPOINT_DEFAULT	microphone: found the endpoint {0} - the default one of the system
+$SPEECHBROKERVOICE_LOG_AUDIO_ENDPOINT_SKIPPED	microphone: an endpoint gave neither its name nor its id, code {0} - skipping it
+$SPEECHBROKERVOICE_LOG_AUDIO_NO_DEFAULT	microphone: the system has no default capture endpoint, code {0}
+$SPEECHBROKERVOICE_LOG_AUDIO_PATTERN_UNMATCHED	microphone: no endpoint matches the pattern '{0}'
+$SPEECHBROKERVOICE_LOG_AUDIO_CANDIDATE	microphone: candidate {0} - {1}
+$SPEECHBROKERVOICE_LOG_AUDIO_NO_CANDIDATES	microphone: not one of the {0} patterns in the settings matches any of the {1} endpoints of this machine, and the default one is not allowed - there is nothing to listen with
+$SPEECHBROKERVOICE_LOG_AUDIO_API_IGNORED	microphone: the settings ask for the sound interface '{0}' - inside the game there is only WASAPI, and I go on using it
+$SPEECHBROKERVOICE_WORD_PASS_INTERIM	interim
+$SPEECHBROKERVOICE_WORD_PASS_FINAL	final
+$SPEECHBROKERVOICE_LOG_EARS_NO_SOURCE	ears: not one sound source opened - there is nothing to listen to
+$SPEECHBROKERVOICE_LOG_EARS_STARTED	ears: listening - a turn ends at {0} ms, and a pass shorter than {1} ms or quieter than a peak of {2:.0f} is not sent
+$SPEECHBROKERVOICE_LOG_EARS_STOPPED	ears: stopped - {0} samples heard, {1} of them missing, {2} turns, {3} passes
+$SPEECHBROKERVOICE_LOG_EARS_DEVICE	ears: the sound comes from {0} at {1} Hz, {2} channels - converting it to {3} Hz mono
+$SPEECHBROKERVOICE_LOG_EARS_DEVICE_CHANGED	ears: the sound source was reopened - {0} samples of the old one thrown away, the open turn is closed and the room will be measured again
+$SPEECHBROKERVOICE_LOG_EARS_RING_SHORT	ears: the source gives {0} Hz and the ring was sized for {1} Hz - it holds {2} ms instead of {3} ms
+$SPEECHBROKERVOICE_LOG_EARS_RING_TINY	ears: ringMs {0} is shorter than two blocks of the device - taking {1} ms instead
+$SPEECHBROKERVOICE_LOG_EARS_FLOOR	ears: the room is measured - floor {0:.0f}, trigger {1:.0f}
+$SPEECHBROKERVOICE_LOG_EARS_TURN_BEGAN	ears: turn {0} began
+$SPEECHBROKERVOICE_LOG_EARS_TURN_ENDED	ears: turn {0} ended - {1} ms, {2} passes
+$SPEECHBROKERVOICE_LOG_EARS_CEILING	ears: turn {0} reached the ceiling of {1} ms - it ends here and the next sample starts a new one
+$SPEECHBROKERVOICE_LOG_EARS_CEILING_LOW	ears: the ceiling of a turn is {0} ms and the floor of a pass is {1} ms - nothing can ever be sent; check maxUttSec, minUttSec and minPassMs
+$SPEECHBROKERVOICE_LOG_EARS_PASS	ears: turn {0} pass {1} ({2}) - {3} ms, {4} ms of tail silence cut off, {5} samples missing
+$SPEECHBROKERVOICE_LOG_EARS_PASS_SHORT	ears: turn {0} pass {1} came to {2} ms and the floor is {3} ms - not sending it
+$SPEECHBROKERVOICE_LOG_EARS_PASS_QUIET	ears: turn {0} pass {1} never reached a peak of {2:.0f} - it is silence, and a model would invent words over it
+$SPEECHBROKERVOICE_LOG_EARS_SINK_THREW	ears: whoever takes the passes threw on turn {0} pass {1}: {2} - swallowed, and the listening goes on
+$SPEECHBROKERVOICE_LOG_EARS_END_SILENCE_SPLIT	ears: vad.endSilenceMs is {0} and pacer.endSilenceMs is {1} - a turn is ended by the second, and the first is not read at all
+$SPEECHBROKERVOICE_LOG_EARS_SOURCE_SPENT	ears: the recording is spent - closing the open turn
+$SPEECHBROKERVOICE_LOG_EARS_HOLE	ears: {0} samples of sound are missing - the ring overran or the device went away; they go on as silence, so that the clock does not shift
+
+$SPEECHBROKERVOICE_LOG_CAPTURE_REFUSED	capture: {0} did not open - {1} says {2}
+$SPEECHBROKERVOICE_LOG_CAPTURE_FORMAT_UNSUPPORTED	capture: {0} offers {1} bits of format {2} over {3} channels, which this build cannot convert - taking the next candidate
+$SPEECHBROKERVOICE_LOG_CAPTURE_OPENED	capture: listening to {0} - {1} Hz, {2} channels, period asked for {3} ms, open number {4}
+$SPEECHBROKERVOICE_LOG_CAPTURE_ROUND_FAILED	capture: not one input opened on round {0} of {1} - waiting {2} ms, because a process that has just been killed still holds the endpoint
+$SPEECHBROKERVOICE_LOG_CAPTURE_NONE_OPENED	capture: not one input opened - there is nothing to listen to
+$SPEECHBROKERVOICE_LOG_CAPTURE_SILENT	capture: {0} has given nothing for {1} ms, which is longer than the ring can hold - taking it as gone and opening again
+$SPEECHBROKERVOICE_LOG_CAPTURE_LOST	capture: {0} went away, code {1} - opening again
+$SPEECHBROKERVOICE_LOG_CAPTURE_CLOSED	capture: {0} closed - {1} samples delivered, {2} missing in {3} holes
+$SPEECHBROKERVOICE_LOG_CAPTURE_HOLE_CAPPED	capture: {0} samples of a hole could not be filled - the ring holds {1}, and a hole longer than that outlives any turn anyway
+$SPEECHBROKERVOICE_LOG_CAPTURE_COM	capture: COM would not start on the pump thread, code {0} - there will be no microphone
+$SPEECHBROKERVOICE_LOG_CAPTURE_NO_MMCSS	capture: the multimedia scheduler refused this thread, code {0} - the pump will run at ordinary priority
+$SPEECHBROKERVOICE_LOG_CAPTURE_EVENTS	capture: the wake handles could not be made, code {0}
+$SPEECHBROKERVOICE_LOG_CAPTURE_THREAD	capture: the pump thread did not start - {0}
+$SPEECHBROKERVOICE_LOG_CAPTURE_CRASHED	capture: the pump thread fell over and the microphone is no longer being read
+$SPEECHBROKERVOICE_LOG_CAPTURE_STOPPED	capture: stopped
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_NOT_SET	capture: the source is set to 'file' and no file is named in the settings
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_OUTSIDE	capture: the wav '{0}' leaves the folder the adapter works from - I will not read it
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_MISSING	capture: no wav at '{0}'
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_BROKEN	capture: '{0}' is not a wav this build can read - the {1} block is missing or cut short
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_UNSUPPORTED	capture: '{0}' holds {1} bits of format {2} over {3} channels, which this build cannot convert
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_EMPTY	capture: '{0}' has no sound in it
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_OPENED	capture: '{0}' stands in for the microphone - {1} Hz, {2} channels, {3} ms of sound, block {4} ms, paced {5}
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_END	capture: '{0}' is spent - {1} samples fed
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_LOOP	capture: '{0}' starts again
+$SPEECHBROKERVOICE_LOG_SETTINGS_SOURCE_UNKNOWN	settings: ears.capture.source is '{0}', which is neither 'device' nor 'file' - the microphone is taken
+$SPEECHBROKERVOICE_LOG_SETTINGS_PAUSE_FACTOR	settings: ears.completeness.pauseFactor is {0:.2f} - below one the rule that forgives a hurried pause can never fire, and at or below nothing every pause reads as the end of a sentence

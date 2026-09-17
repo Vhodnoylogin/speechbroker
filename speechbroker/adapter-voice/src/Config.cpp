@@ -122,6 +122,149 @@ namespace Voice
 			return out;
 		}
 
+		// ------------------------------------------------------------------ the ears
+		// The microphone and the cutting of the stream into passes.
+		//
+		// Every reader below obeys the rule of this file without an exception: a key
+		// that is missing leaves the field at the value its struct was built with,
+		// and those values are the ones the python shipped. A settings file written
+		// before this block existed behaves exactly as it did.
+		//
+		// THE READING GOES ONE WAY ONLY. These structs live in src/audio and
+		// src/turn, and not one file there includes this one - which is what lets
+		// the whole listening half be built and run from a wav, outside the game.
+		// Config fills them; nothing fills Config back.
+		void ReadDevice(const nlohmann::json& a_doc, DeviceSettings& a_out)
+		{
+			a_out.input = a_doc.value("input", a_out.input);
+			a_out.inputApi = a_doc.value("inputApi", a_out.inputApi);
+			a_out.allowDefault = a_doc.value("allowDefault", a_out.allowDefault);
+
+			const auto reopen = a_doc.value("reopen", nlohmann::json::object());
+			a_out.reopen.tries = reopen.value("tries", a_out.reopen.tries);
+			a_out.reopen.delayMs = reopen.value("delayMs", a_out.reopen.delayMs);
+		}
+
+		void ReadCapture(const nlohmann::json& a_doc, CaptureSettings& a_out)
+		{
+			const auto source = a_doc.value("source", std::string{});
+			if (source == "file") {
+				a_out.source = Source::File;
+			} else if (!source.empty() && source != "device") {
+				// A word this build does not know is not obeyed and is not passed
+				// over either: the microphone is taken and the player is told which
+				// of the two words they meant to write.
+				Loc::Warn("$SPEECHBROKERVOICE_LOG_SETTINGS_SOURCE_UNKNOWN", source);
+			}
+
+			// The wav is pinned to the folder of the adapter HERE, because the
+			// capture cannot do it: audio/ may not include this file and therefore
+			// does not know where that folder is. It resolves what it is handed
+			// against the working directory and refuses anything that climbs out;
+			// what it is handed is already relative to the adapter.
+			const std::filesystem::path home{ kHome };
+			const auto                  file = a_doc.value("file", std::string{});
+			a_out.file = ResolveInside(file, home);
+			if (!file.empty() && a_out.file.empty()) {
+				Loc::Error("$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_OUTSIDE", file);
+			}
+
+			a_out.filePaced = a_doc.value("filePaced", a_out.filePaced);
+			a_out.fileLoop = a_doc.value("fileLoop", a_out.fileLoop);
+			a_out.blockMs = a_doc.value("blockMs", a_out.blockMs);
+			a_out.ringMs = a_doc.value("ringMs", a_out.ringMs);
+
+			if (a_doc.contains("device")) {
+				ReadDevice(a_doc["device"], a_out.device);
+			}
+		}
+
+		void ReadVad(const nlohmann::json& a_doc, VadSettings& a_out)
+		{
+			a_out.noiseFloorSec = a_doc.value("noiseFloorSec", a_out.noiseFloorSec);
+			a_out.warmUpMs = a_doc.value("warmUpMs", a_out.warmUpMs);
+			a_out.startFactor = a_doc.value("startFactor", a_out.startFactor);
+			a_out.minRmsFloor = a_doc.value("minRmsFloor", a_out.minRmsFloor);
+			a_out.startMs = a_doc.value("startMs", a_out.startMs);
+			a_out.preRollMs = a_doc.value("preRollMs", a_out.preRollMs);
+			a_out.endSilenceMs = a_doc.value("endSilenceMs", a_out.endSilenceMs);
+			a_out.maxUttSec = a_doc.value("maxUttSec", a_out.maxUttSec);
+			a_out.minUttSec = a_doc.value("minUttSec", a_out.minUttSec);
+			a_out.minPeak = a_doc.value("minPeak", a_out.minPeak);
+		}
+
+		void ReadPacer(const nlohmann::json& a_doc, PacerSettings& a_out)
+		{
+			a_out.sliceSilenceMs = a_doc.value("sliceSilenceMs", a_out.sliceSilenceMs);
+			a_out.endSilenceMs = a_doc.value("endSilenceMs", a_out.endSilenceMs);
+			a_out.maxSpanMs = a_doc.value("maxSpanMs", a_out.maxSpanMs);
+		}
+
+		void ReadTurn(const nlohmann::json& a_doc, TurnSettings& a_out)
+		{
+			a_out.anchorSlackMs = a_doc.value("anchorSlackMs", a_out.anchorSlackMs);
+			a_out.snapSlackMs = a_doc.value("snapSlackMs", a_out.snapSlackMs);
+			a_out.resumeQuietMs = a_doc.value("resumeQuietMs", a_out.resumeQuietMs);
+			a_out.matchSlackMs = a_doc.value("matchSlackMs", a_out.matchSlackMs);
+			a_out.minPassMs = a_doc.value("minPassMs", a_out.minPassMs);
+		}
+
+		void ReadProsody(const nlohmann::json& a_doc, ProsodySettings& a_out)
+		{
+			a_out.minHz = a_doc.value("minHz", a_out.minHz);
+			a_out.maxHz = a_doc.value("maxHz", a_out.maxHz);
+			a_out.frameMs = a_doc.value("frameMs", a_out.frameMs);
+			a_out.hopMs = a_doc.value("hopMs", a_out.hopMs);
+			a_out.tailMs = a_doc.value("tailMs", a_out.tailMs);
+			a_out.voicedNeeded = a_doc.value("voicedNeeded", a_out.voicedNeeded);
+			a_out.voicedInTail = a_doc.value("voicedInTail", a_out.voicedInTail);
+			a_out.peakRatio = a_doc.value("peakRatio", a_out.peakRatio);
+			a_out.lowPercentile = a_doc.value("lowPercentile", a_out.lowPercentile);
+			a_out.highPercentile = a_doc.value("highPercentile", a_out.highPercentile);
+			a_out.minSpanMs = a_doc.value("minSpanMs", a_out.minSpanMs);
+		}
+
+		void ReadCompleteness(const nlohmann::json& a_doc, CompletenessSettings& a_out)
+		{
+			a_out.pauseFactor = a_doc.value("pauseFactor", a_out.pauseFactor);
+			a_out.withTerminalMark = a_doc.value("withTerminalMark", a_out.withTerminalMark);
+			a_out.withoutTerminalMark = a_doc.value("withoutTerminalMark", a_out.withoutTerminalMark);
+			a_out.junkNoSpeechProb = a_doc.value("junkNoSpeechProb", a_out.junkNoSpeechProb);
+			a_out.pitchWeight = a_doc.value("pitchWeight", a_out.pitchWeight);
+		}
+
+		void ReadSegments(const nlohmann::json& a_doc, SegmentSettings& a_out)
+		{
+			a_out.shortMaxWords = a_doc.value("shortMaxWords", a_out.shortMaxWords);
+			a_out.middleMaxWords = a_doc.value("middleMaxWords", a_out.middleMaxWords);
+		}
+
+		void ReadEars(const nlohmann::json& a_doc, EarsSettings& a_out)
+		{
+			if (a_doc.contains("capture")) {
+				ReadCapture(a_doc["capture"], a_out.capture);
+			}
+			if (a_doc.contains("vad")) {
+				ReadVad(a_doc["vad"], a_out.vad);
+			}
+			if (a_doc.contains("pacer")) {
+				ReadPacer(a_doc["pacer"], a_out.pacer);
+			}
+			if (a_doc.contains("turn")) {
+				ReadTurn(a_doc["turn"], a_out.turn);
+			}
+			if (a_doc.contains("prosody")) {
+				ReadProsody(a_doc["prosody"], a_out.prosody);
+			}
+			if (a_doc.contains("completeness")) {
+				ReadCompleteness(a_doc["completeness"], a_out.completeness);
+			}
+			if (a_doc.contains("segments")) {
+				ReadSegments(a_doc["segments"], a_out.segments);
+			}
+			a_out.consumerPollMs = a_doc.value("consumerPollMs", a_out.consumerPollMs);
+		}
+
 		Model ReadModel(const nlohmann::json& a_doc, const std::filesystem::path& a_file)
 		{
 			Model out;
@@ -270,6 +413,10 @@ namespace Voice
 			self.idleSleepMs = doc.value("idleSleepMs", self.idleSleepMs);
 			self.sayTimeoutSec = doc.value("sayTimeoutSec", self.sayTimeoutSec);
 			self.idMapLimit = doc.value("idMapLimit", self.idMapLimit);
+
+			if (doc.contains("ears")) {
+				ReadEars(doc["ears"], self.ears);
+			}
 		} catch (const std::exception& e) {
 			Loc::Error("$SPEECHBROKERVOICE_LOG_SETTINGS_BROKEN", e.what());
 			return false;
@@ -279,6 +426,18 @@ namespace Voice
 			Loc::Error("$SPEECHBROKERVOICE_LOG_NOT_LOOPBACK",
 				self.service.url);
 			return false;
+		}
+
+		// The judge of completeness does not police its own weights, and must not:
+		// it is const, it holds no state and it runs once per fragment of an answer.
+		// So the one weight that can be set to a value which quietly disables a whole
+		// branch is checked here, where the number is read. Below one, the rule that
+		// forgives a hurried pause can never fire; at or below nothing, every pause
+		// reads as the end of a sentence. Neither shows up anywhere as an error - the
+		// verdicts simply come out wrong.
+		if (self.ears.completeness.pauseFactor < 1.0) {
+			Loc::Warn("$SPEECHBROKERVOICE_LOG_SETTINGS_PAUSE_FACTOR",
+				self.ears.completeness.pauseFactor);
 		}
 
 		self.models = ReadModels();

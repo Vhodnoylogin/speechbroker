@@ -1,5 +1,7 @@
 #pragma once
 
+#include "turn/Ears.h"
+
 #include <optional>
 #include <string>
 #include <vector>
@@ -106,6 +108,16 @@ namespace Voice
 		int idleSleepMs{ 1000 };     // the step of waiting while the bridge keeps us in reserve
 		int sayTimeoutSec{ 120 };    // how long to wait for an answer to /say
 		int idMapLimit{ 256 };       // how many recent "service number -> bridge number" translations to remember per model; 0 - no limit
+
+		// The ears: the microphone, the cutting of the stream into passes. Every
+		// tuned number in it comes from the python this is ported from, and the
+		// defaults in the structs are its shipped values - see src/turn/Ears.h and
+		// the headers it gathers, where each one quotes the line it came from.
+		//
+		// It is a field of Config and not a reader of it: nothing under src/audio
+		// or src/turn includes this file, which is what lets the whole listening
+		// half be built and tested with a wav, outside the game.
+		EarsSettings ears;
 
 	private:
 		Config() = default;

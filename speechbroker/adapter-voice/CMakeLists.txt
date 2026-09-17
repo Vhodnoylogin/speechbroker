@@ -89,8 +89,18 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(httplib)
 
 # ---------------------------------------------------------------- our plugin
+# The sources are gathered rather than listed, and CONFIGURE_DEPENDS is what makes
+# that honest: a new file under src/ - the ears arrived as fourteen of them, in
+# src/audio and src/turn - is picked up by the next build without anybody having to
+# remember this line. The headers are named for the same reason the sources are:
+# they compile nothing, but a header that is in the target shows up in the solution
+# and is searched by the IDE, and a header nobody can find is a header nobody reads.
 file(GLOB_RECURSE ADAPTER_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
-add_library(SpeechBrokerVoiceAdapter SHARED ${ADAPTER_SOURCES})
+file(GLOB_RECURSE ADAPTER_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h")
+add_library(SpeechBrokerVoiceAdapter SHARED ${ADAPTER_SOURCES} ${ADAPTER_HEADERS})
+
+# So that the folders of the ears do not arrive in the solution as one flat heap.
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" FILES ${ADAPTER_SOURCES} ${ADAPTER_HEADERS})
 
 if(MSVC)
     target_compile_options(SpeechBrokerVoiceAdapter PRIVATE
@@ -117,4 +127,17 @@ target_link_libraries(SpeechBrokerVoiceAdapter PRIVATE
     CommonLibSSE::CommonLibSSE
     nlohmann_json::nlohmann_json
     httplib::httplib
+
+    # The ears: the microphone belongs to the adapter, so the adapter talks to
+    # WASAPI itself.
+    #
+    # ole32 is already in the default libraries CMake passes to MSVC; it is named
+    # here anyway, because from now on this target depends on COM deliberately
+    # rather than by inheritance, and a default that changes must not take the
+    # capture with it. avrt is the multimedia class scheduler
+    # (AvSetMmThreadCharacteristics): the capture pump asks to be scheduled as
+    # audio, which is what keeps it from being starved by a game that is using
+    # every core it can reach.
+    ole32
+    avrt
 )

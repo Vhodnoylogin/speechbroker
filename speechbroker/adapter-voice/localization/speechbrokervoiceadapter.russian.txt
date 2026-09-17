@@ -47,3 +47,84 @@ $SPEECHBROKERVOICE_LOG_SERVICE_UP	служба поднялась
 $SPEECHBROKERVOICE_LOG_SERVICE_TIMEOUT	служба не ответила за отведённое время
 $SPEECHBROKERVOICE_LOG_NO_SPEAKER	озвучка {0}: ни одна установленная модель не умеет говорить
 $SPEECHBROKERVOICE_LOG_SPOKE	озвучка {0} моделью {1}: {2}
+$SPEECHBROKERVOICE_LOG_RING_READY	кольцо: место на {0} отсчётов, {1} кБ
+$SPEECHBROKERVOICE_LOG_RING_NO_ROOM	кольцо: построено без места вовсе - каждый отсчёт микрофона будет считаться потерянным
+$SPEECHBROKERVOICE_LOG_PACER_READY	темп: прогон на паузе {0} мс, ход закончен после {1} мс тишины, и прогон не реже чем раз в {2} мс
+$SPEECHBROKERVOICE_LOG_PACER_SPAN_TOO_SHORT	темп: maxSpanMs {0} не больше sliceSilenceMs {1} - потолок наступит раньше, чем пауза, и каждый прогон будет обрезан посреди слова
+$SPEECHBROKERVOICE_LOG_PACER_SPAN	темп: {0} мс без паузы - прогон по потолку
+$SPEECHBROKERVOICE_LOG_RESAMPLE_DIRECT	пересчёт частоты: источник и так на {0} Гц - отсчёты идут дальше как есть
+$SPEECHBROKERVOICE_LOG_RESAMPLE_AVERAGE	пересчёт частоты: {0} Гц -> {1} Гц, усредняю целые группы по {2} отсчёта
+$SPEECHBROKERVOICE_LOG_RESAMPLE_INTERPOLATE	пересчёт частоты: {0} Гц -> {1} Гц, интерполяция с переносом фазы между блоками
+$SPEECHBROKERVOICE_LOG_RESAMPLE_NO_RATE	пересчёт частоты: частота источника не задана - считаю её равной {0} Гц и пропускаю отсчёты как есть
+$SPEECHBROKERVOICE_LOG_JUDGE_BAD_INPUT	завершённость: у куска пришло число, которое не является вероятностью - noSpeechProb {0:.3f}, lastWordProb {1:.3f}, terminalFall {2:.3f} (-1 там означает «не задано») - считаю его незаданным. Говорю об этом один раз за запуск
+$SPEECHBROKERVOICE_LOG_FLOOR_MEASURING	порог: измеряю, как звучит комната - {0} мс прогрева, затем {1} мс прослушивания. Пока это идёт, говорить нельзя
+$SPEECHBROKERVOICE_LOG_FLOOR	порог: уровень шума {0:.0f}, порог срабатывания {1:.0f}
+$SPEECHBROKERVOICE_LOG_PROSODY_BAND	тон: кадры по {0} мс с шагом {1} мс, задержки {2}..{3} - это от {4:.0f} до {5:.0f} Гц
+$SPEECHBROKERVOICE_LOG_PROSODY_NO_BAND	тон: при frameMs {0}, hopMs {1}, minHz {2} и maxHz {3} искать негде - тон измеряться не будет
+$SPEECHBROKERVOICE_LOG_PROSODY_FALL	тон: терминальное падение {0:.2f} по {1} озвонченным кадрам хвоста, диапазон говорящего от {2:.0f} до {3:.0f} Гц
+$SPEECHBROKERVOICE_LOG_PROSODY_NO_RANGE	тон: судить не по чему - диапазон говорящего ещё не известен, {0} озвонченных кадров против нужных {1}
+$SPEECHBROKERVOICE_LOG_PROSODY_SHORT	тон: судить не по чему - {0} мс звука, а падение не меряется короче {1} мс
+$SPEECHBROKERVOICE_LOG_PROSODY_NO_VOICE	тон: судить не по чему - {0} озвонченных кадров в хвосте против нужных {1}
+$SPEECHBROKERVOICE_LOG_TURN_NO_CEILING	у речевого хода нет потолка: maxUttSec дал ноль отсчётов, и по длине ход не закончится никогда
+$SPEECHBROKERVOICE_LOG_TURN_OVERFULL	ход {0}: {1} отсчётов пришло за потолок {2} и было отброшено - этот блок должен был начать новый ход
+$SPEECHBROKERVOICE_LOG_TURN_PASS_SHORT	ход {0}, прогон {1}: после обрезки осталось {2} мс при пороге {3} мс - ничего не отдаю
+$SPEECHBROKERVOICE_LOG_TURN_PASS_QUIET	ход {0}, прогон {1}: самый громкий отсчёт {2:.0f} при пороге {3:.0f} - это тишина, ничего не отдаю
+$SPEECHBROKERVOICE_LOG_TURN_FINAL_REPEAT	ход {0}: последний срез отклонён, отдаю прежний буфер заново как прогон {1}, последний
+$SPEECHBROKERVOICE_LOG_AUDIO_ENUM_FAILED	микрофон: не удалось перечислить устройства записи этой машины, код {0} - слушать нечем
+$SPEECHBROKERVOICE_LOG_AUDIO_NO_INPUTS	микрофон: ни одно устройство записи этой машины не включено
+$SPEECHBROKERVOICE_LOG_AUDIO_ENDPOINT	микрофон: найдено устройство {0}
+$SPEECHBROKERVOICE_LOG_AUDIO_ENDPOINT_DEFAULT	микрофон: найдено устройство {0} - оно же системное по умолчанию
+$SPEECHBROKERVOICE_LOG_AUDIO_ENDPOINT_SKIPPED	микрофон: устройство не назвало ни имени, ни идентификатора, код {0} - пропускаю
+$SPEECHBROKERVOICE_LOG_AUDIO_NO_DEFAULT	микрофон: в системе нет устройства записи по умолчанию, код {0}
+$SPEECHBROKERVOICE_LOG_AUDIO_PATTERN_UNMATCHED	микрофон: образцу «{0}» не соответствует ни одно устройство
+$SPEECHBROKERVOICE_LOG_AUDIO_CANDIDATE	микрофон: кандидат {0} - {1}
+$SPEECHBROKERVOICE_LOG_AUDIO_NO_CANDIDATES	микрофон: ни один из {0} образцов в настройках не совпал ни с одним из {1} устройств этой машины, а брать устройство по умолчанию не разрешено - слушать нечем
+$SPEECHBROKERVOICE_LOG_AUDIO_API_IGNORED	микрофон: в настройках указан звуковой интерфейс «{0}» - внутри игры есть только WASAPI, продолжаю работать через него
+$SPEECHBROKERVOICE_WORD_PASS_INTERIM	черновой
+$SPEECHBROKERVOICE_WORD_PASS_FINAL	последний
+$SPEECHBROKERVOICE_LOG_EARS_NO_SOURCE	уши: ни один источник звука не открылся - слушать нечего
+$SPEECHBROKERVOICE_LOG_EARS_STARTED	уши: слушаю - ход кончается на {0} мс, проход короче {1} мс или тише пика {2:.0f} не отправляется
+$SPEECHBROKERVOICE_LOG_EARS_STOPPED	уши: остановлены - услышано {0} отсчётов, из них потеряно {1}, ходов {2}, проходов {3}
+$SPEECHBROKERVOICE_LOG_EARS_DEVICE	уши: звук идёт с {0}, {1} Гц, каналов {2} - привожу к {3} Гц моно
+$SPEECHBROKERVOICE_LOG_EARS_DEVICE_CHANGED	уши: источник звука переоткрыт - {0} отсчётов прежнего выброшено, открытый ход закрыт, тишину комнаты измерю заново
+$SPEECHBROKERVOICE_LOG_EARS_RING_SHORT	уши: источник даёт {0} Гц, а кольцо рассчитано на {1} Гц - в нём помещается {2} мс вместо {3} мс
+$SPEECHBROKERVOICE_LOG_EARS_RING_TINY	уши: ringMs {0} короче двух блоков устройства - беру {1} мс
+$SPEECHBROKERVOICE_LOG_EARS_FLOOR	уши: комната измерена - фон {0:.0f}, порог срабатывания {1:.0f}
+$SPEECHBROKERVOICE_LOG_EARS_TURN_BEGAN	уши: речевой ход {0} начался
+$SPEECHBROKERVOICE_LOG_EARS_TURN_ENDED	уши: речевой ход {0} закончен - {1} мс, проходов {2}
+$SPEECHBROKERVOICE_LOG_EARS_CEILING	уши: речевой ход {0} упёрся в потолок {1} мс - он кончается здесь, следующий отсчёт начинает новый
+$SPEECHBROKERVOICE_LOG_EARS_CEILING_LOW	уши: потолок хода {0} мс, а нижняя граница прохода {1} мс - отправить нельзя будет ничего; проверьте maxUttSec, minUttSec и minPassMs
+$SPEECHBROKERVOICE_LOG_EARS_PASS	уши: ход {0}, проход {1} ({2}) - {3} мс, срезано {4} мс хвостовой тишины, потеряно отсчётов {5}
+$SPEECHBROKERVOICE_LOG_EARS_PASS_SHORT	уши: ход {0}, проход {1} вышел {2} мс при нижней границе {3} мс - не отправляю
+$SPEECHBROKERVOICE_LOG_EARS_PASS_QUIET	уши: ход {0}, проход {1} не дотянул до пика {2:.0f} - это тишина, и модель выдумает по ней слова
+$SPEECHBROKERVOICE_LOG_EARS_SINK_THREW	уши: тот, кто принимает проходы, бросил исключение на ходе {0}, проходе {1}: {2} - проглочено, слушаю дальше
+$SPEECHBROKERVOICE_LOG_EARS_END_SILENCE_SPLIT	уши: vad.endSilenceMs равен {0}, а pacer.endSilenceMs равен {1} - ход закрывается по второму, первый не читается вовсе
+$SPEECHBROKERVOICE_LOG_EARS_SOURCE_SPENT	уши: запись кончилась - закрываю открытый ход
+$SPEECHBROKERVOICE_LOG_EARS_HOLE	уши: пропало {0} отсчётов звука - переполнилось кольцо или пропало устройство; вместо них идёт тишина, чтобы часы не сдвинулись
+
+$SPEECHBROKERVOICE_LOG_CAPTURE_REFUSED	захват: {0} не открылся - {1} отвечает {2}
+$SPEECHBROKERVOICE_LOG_CAPTURE_FORMAT_UNSUPPORTED	захват: {0} отдаёт {1} бит формата {2} по {3} каналам, и эта сборка такое не преобразует - беру следующего кандидата
+$SPEECHBROKERVOICE_LOG_CAPTURE_OPENED	захват: слушаю {0} - {1} Гц, каналов {2}, период запрошен {3} мс, открытие номер {4}
+$SPEECHBROKERVOICE_LOG_CAPTURE_ROUND_FAILED	захват: ни один вход не открылся на заходе {0} из {1} - жду {2} мс: только что убитый процесс ещё держит точку записи
+$SPEECHBROKERVOICE_LOG_CAPTURE_NONE_OPENED	захват: не открылся ни один вход - слушать нечего
+$SPEECHBROKERVOICE_LOG_CAPTURE_SILENT	захват: {0} ничего не отдал за {1} мс - это дольше, чем вмещает кольцо; считаю его пропавшим и открываю заново
+$SPEECHBROKERVOICE_LOG_CAPTURE_LOST	захват: {0} пропал, код {1} - открываю заново
+$SPEECHBROKERVOICE_LOG_CAPTURE_CLOSED	захват: {0} закрыт - отдано {1} отсчётов, потеряно {2} в {3} дырах
+$SPEECHBROKERVOICE_LOG_CAPTURE_HOLE_CAPPED	захват: {0} отсчётов дыры заполнить нечем - в кольце {1}, а дыра длиннее него всё равно переживает любую реплику
+$SPEECHBROKERVOICE_LOG_CAPTURE_COM	захват: COM не поднялся на потоке накачки, код {0} - микрофона не будет
+$SPEECHBROKERVOICE_LOG_CAPTURE_NO_MMCSS	захват: мультимедийный планировщик отказал потоку, код {0} - накачка пойдёт с обычным приоритетом
+$SPEECHBROKERVOICE_LOG_CAPTURE_EVENTS	захват: не удалось создать сигнальные объекты, код {0}
+$SPEECHBROKERVOICE_LOG_CAPTURE_THREAD	захват: поток накачки не запустился - {0}
+$SPEECHBROKERVOICE_LOG_CAPTURE_CRASHED	захват: поток накачки упал, и микрофон больше не читается
+$SPEECHBROKERVOICE_LOG_CAPTURE_STOPPED	захват: остановлен
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_NOT_SET	захват: источником выбран 'file', а файл в настройках не назван
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_OUTSIDE	захват: wav '{0}' выходит за рабочую папку адаптера - читать не буду
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_MISSING	захват: по пути '{0}' wav нет
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_BROKEN	захват: '{0}' - не тот wav, который эта сборка умеет читать: блок {1} отсутствует или обрезан
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_UNSUPPORTED	захват: в '{0}' лежит {1} бит формата {2} по {3} каналам, и эта сборка такое не преобразует
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_EMPTY	захват: в '{0}' нет звука
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_OPENED	захват: вместо микрофона '{0}' - {1} Гц, каналов {2}, звука {3} мс, блок {4} мс, с темпом {5}
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_END	захват: '{0}' исчерпан - подано {1} отсчётов
+$SPEECHBROKERVOICE_LOG_CAPTURE_FILE_LOOP	захват: '{0}' начинается заново
+$SPEECHBROKERVOICE_LOG_SETTINGS_SOURCE_UNKNOWN	настройки: ears.capture.source задан как '{0}', а это не 'device' и не 'file' - берётся микрофон
+$SPEECHBROKERVOICE_LOG_SETTINGS_PAUSE_FACTOR	настройки: ears.completeness.pauseFactor равен {0:.2f} - меньше единицы правило о торопливой паузе не сработает никогда, а при нуле и ниже любая пауза читается как конец фразы
