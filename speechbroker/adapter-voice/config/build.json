@@ -12,7 +12,7 @@
       "header": "{root}/src/LocStrings.h"
     },
     "version": "0.1.0",
-    "indexScript": "D:/Skyrim VR Modding/Claude Code/Skyrim VR/index/update-index.ps1",
+    "indexScript": "D:/Skyrim VR Modding/Claude Skyrim VR/claude-projects/skyrim-vr/index/update-index.ps1",
     "indexOwner": "chat-speechbroker-voice",
     "downloadsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/downloads",
     "sevenZip": "C:/Program Files/7-Zip/7z.exe",
