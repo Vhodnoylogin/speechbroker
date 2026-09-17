@@ -22,6 +22,7 @@
     "settings": "{root}/speechbroker-voice.json",
     "settingsTargetRel": "SKSE/Plugins/speechbroker/adapters/voice",
     "publish": [
+      "{root}/contract/speechbroker-voice-model.h",
       "{root}/contract/speechbroker-voice-model.md",
       "{root}/contract/speechbroker-voice-model.ru.md",
       "{root}/localization/speechbrokervoiceadapter.english.txt",
