@@ -98,8 +98,9 @@ reads the count back, because *it registered nothing* has to become a sentence.
    exactly this. Put them in `child/runtime/` in the source tree — the lay-out copies anything in
    there next to the child — or straight into
    `<mod>/SKSE/Plugins/speechbroker/models/whisper-ru/child/`.
-2. The weights in **GGML** format, one `.bin` in `weights/<id>/`, with a `SHA256SUMS` beside them
-   (`tools\weights.ps1 -Write`). GGML, not CTranslate2: `model.bin` with a `config.json` and a
+2. The weights in **GGML** format, one `.bin` in `weights/<id>/`. They are not in the repository and
+   `tools\weights.ps1 -Fetch` brings them down and verifies them; [the weights README](../weights/README.md)
+   says where from and what else works. GGML, not CTranslate2: `model.bin` with a `config.json` and a
    `vocabulary.json` beside it is a faster-whisper conversion and this backend cannot read it.
 3. Nothing else. `--library`, `--weights`, `--device`, `--beam-size`, `--threads` and `--language`
    the shim already passes.

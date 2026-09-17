@@ -57,7 +57,7 @@ child/             a console program of its own, with its own CMakeLists and its
 docs/child-protocol.md   the wire, precisely enough that somebody could write another child
 models/*.json      the settings - PRIVATE to this mod now, see below
 localization/      the log, as key<TAB>text, English and Russian
-weights/<id>/      where the weights go, through Git LFS
+weights/<id>/      where the weights go - fetched, not versioned; SOURCE and SHA256SUMS say how
 tools/deploy.ps1   put it into mods\
 tools/weights.ps1  verify SHA256SUMS beside the weights, or write them
 tools/package.ps1  pack it into an archive and install through MO2
@@ -93,25 +93,33 @@ the code ships with.
 
 ## Where the weights go
 
-`weights/<id>/`, beside the settings, through **Git LFS** — `.gitattributes` in this folder covers
-the model binary formats by kind rather than by size.
+`weights/<id>/`, beside the settings — and **the files themselves are not in this repository.** What
+is here is the recipe: `SOURCE` says where each set comes from, `SHA256SUMS` says which bytes are the
+right ones, and [weights/README.md](weights/README.md) says the rest. One command turns the recipe
+back into the files:
 
-**A plain `git clone` must not download them.** GitHub gives 10 GiB of LFS bandwidth a month and
-these are about a gigabyte after quantisation; `git clone` was never meant to be the player's
-download channel, and what a player installs is the archive `tools/package.ps1` builds. The
-`.lfsconfig` at the **root of the repository** excludes this folder, so a clone fetches pointers for
-the weights and the bytes for everything else.
+```
+tools\weights.ps1 -Fetch
+```
 
-Two things about that, and both bite:
+The format is **GGML** — one `.bin`, whole, the format whisper.cpp reads. Not a CTranslate2
+conversion; those are easy to mistake for it, because the big file is called `model.bin` in both.
 
-- **git-lfs reads `.lfsconfig` from the root of the working tree only.** It is not per-directory the
-  way `.gitattributes` is, so the rule this module owns cannot live in this folder - a copy here
-  would be read by nobody. It names this weights folder rather than excluding everything, because
-  every plugin in the repository goes through LFS too and a clone that fetched a pointer instead of
-  a 275-byte `.esp` would lay that pointer into the build and look like a broken plugin.
-- **`git lfs pull --include=...` does nothing on its own.** The exclude wins over it and git-lfs
-  reports success while fetching nothing. `--exclude=""` on the same command line is what clears it:
-  `git lfs pull --exclude="" --include="…/weights/whisper-ru-small"`.
+### Why they are not versioned, stated so it is not re-litigated
+
+They were, for one afternoon, through Git LFS. Two things decided it back:
+
+- **An LFS object cannot be taken back.** Once pushed it stays in the remote's storage after the file
+  is gone from every commit; GitHub's own answer is to delete and recreate the repository, or to
+  write to support. Two gigabytes against a one-gigabyte free allowance is therefore not a mistake
+  you correct — it is one you do not make twice.
+- **A recipe reproduces them exactly.** These are unmodified public releases: the same bytes for
+  everybody, fetched by name, with a checksum that proves it. That is the opposite of a plugin or a
+  recorded take, which exist nowhere else — and those stay in LFS for exactly that reason.
+
+There is a third thing, quieter and worth knowing: with no LFS rule for `*.bin`, GitHub **refuses**
+any file over 100 MB at push time. The mistake costs one rejected push. With the rule, the push
+succeeds and the bytes are there for good. The loud free failure is the better one.
 
 ### And they are verified before the child is raised
 
@@ -170,17 +178,70 @@ Two more things are knowingly left:
   and pays the debt from the reply for one that has. Aborting needs a second thread in the child and
   a backend that can be interrupted, and it buys a saving nobody has measured.
 
-## Building and laying out
+## From a fresh clone to a working mod
 
-The bridge first, then the adapter, then this — the reverse of the dependency. The shim builds
-against the **installed** SDK of the adapter, exactly as a third party's model mod would; when that
-is not laid out it falls back to the contract in the repository and says so in the configure output.
+Nothing binary is versioned in this module. A clone is source plus two recipes, and **three things
+come from outside** - this table is all of them, with the exact names, because "download whisper.cpp"
+is not an instruction anybody can follow twice the same way.
 
-```
-cd child           && cmake -B build -S . && cmake --build build --config Release
-cd model-whisper-ru && cmake -B build -S . && cmake --build build --config Release
-tools\weights.ps1
-tools\deploy.ps1 -Apply
-```
+| What | Exactly which file | Size | From |
+|---|---|---|---|
+| the recognition runtime | `whisper-bin-x64.zip` (processor only) **or** `whisper-cublas-12.4.0-bin-x64.zip` (CUDA 12) | 8.6 MB / 675 MB | [whisper.cpp release **b5130**](https://github.com/ggml-org/whisper.cpp/releases/tag/b5130) |
+| the accurate model | `ggml-large-v3-turbo.bin` | 1.62 GB | [ggerganov/whisper.cpp](https://huggingface.co/ggerganov/whisper.cpp) |
+| the fast model | `ggml-small.bin` | 488 MB | the same repository |
 
-Both targets are built at `/W4 /WX`. Lay out and pack only with the game closed.
+**b5130 is the build the headers in `child/vendor/whisper.cpp/` are pinned to.** A different build is
+allowed - the backend asks the DLL for its own default parameters at start-up and checks a dozen
+fields across the struct - but if the layout has moved it refuses by name rather than answering
+rubbish, and then this is the number to come back to.
+
+What is **not** wanted, because it is the one mistake that looks right: a CTranslate2 conversion,
+which is what faster-whisper reads. Its big file is also called `model.bin`, it sits beside a
+`config.json` and a `vocabulary.json`, and this backend cannot read a byte of it.
+
+### The five steps
+
+1. **The runtime.** Unpack the zip and put `whisper.dll`, `ggml.dll` and every `ggml-*.dll` into
+   `child/runtime/`. The lay-out copies whatever is in there next to the child. Nothing is renamed
+   and nothing goes on `PATH`.
+2. **The weights.** One command, and no URL is typed by hand:
+
+   ```
+   tools\weights.ps1 -Fetch
+   ```
+
+   It reads `SOURCE` and `SHA256SUMS` in each `weights/<id>/`, fetches what is missing, and then
+   verifies everything against the sums. A file already present is left alone. See
+   [weights/README.md](weights/README.md) for what else fits there - the quantised models are much
+   smaller for very little accuracy.
+3. **Build**, the bridge first, then the adapter, then this - the reverse of the dependency. The shim
+   builds against the **installed** SDK of the adapter, exactly as a third party's model mod would;
+   when that is not laid out it falls back to the contract in the repository and says so in the
+   configure output.
+
+   ```
+   cd child            && cmake -B build -S . && cmake --build build --config Release
+   cd model-whisper-ru && cmake -B build -S . && cmake --build build --config Release
+   ```
+
+   Both targets are built at `/W4 /WX`.
+4. **Check it before the game**, which costs a second and saves a headset:
+
+   ```
+   child\build\Release\SpeechBrokerWhisperChild.exe --weights weights\whisper-ru-turbo ^
+       --library child\runtime\whisper.dll --device cpu --language ru --beam-size 5 ^
+       --wav ..\tools\audiolab\takes\fireball-ru.wav
+       --wav ..	oolsudiolab	akesireball-ru.wav
+   ```
+
+   It should print one piece and the words that were spoken. If it refuses, the refusal names the
+   file it wanted.
+5. **Lay out and pack**, and only with the game closed.
+
+   ```
+   tools\deploy.ps1 -Apply
+   tools\package.ps1 -Apply
+   ```
+
+What a player installs is the archive step 5 builds, with the weights already inside it. `git clone`
+was never meant to be a download channel - that is the other half of why the weights are not here.

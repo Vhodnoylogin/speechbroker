@@ -97,9 +97,10 @@ cmake --build build --config Release
    `whisper-bin-x64.zip` (только процессор) и `whisper-cublas-*-bin-x64.zip` (CUDA) несут ровно это.
    Положить в `child/runtime/` в дереве исходников — раскладка копирует оттуда всё рядом с потомком —
    либо прямо в `<мод>/SKSE/Plugins/speechbroker/models/whisper-ru/child/`.
-2. Веса в формате **GGML**, один `.bin` в `weights/<id>/`, и рядом `SHA256SUMS`
-   (`tools\weights.ps1 -Write`). Именно GGML, не CTranslate2: `model.bin` с `config.json` и
-   `vocabulary.json` рядом — это конверсия faster-whisper, и этот движок её не прочтёт.
+2. Веса в формате **GGML**, один `.bin` в `weights/<id>/`. В репозитории их нет:
+   `tools\weights.ps1 -Fetch` скачивает и сверяет, а откуда и что ещё подойдёт — в
+   [README весов](../weights/README.ru.md). Именно GGML, не CTranslate2: `model.bin` с `config.json`
+   и `vocabulary.json` рядом — это конверсия faster-whisper, и этот движок её не прочтёт.
 3. Больше ничего. `--library`, `--weights`, `--device`, `--beam-size`, `--threads` и `--language`
    прослойка передаёт сама.
 

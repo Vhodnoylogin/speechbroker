@@ -1,42 +1,29 @@
-# The weights of this module go through Git LFS: git keeps a pointer of a few
-# lines and the file itself lies beside it in the LFS store. Without this the
-# history swells without bound - git holds a whole copy of a two-gigabyte binary
-# on every change and shows no diff for it - and a shallow clone of the branch
-# stops being possible at all.
+# THIS MODULE PUTS NOTHING THROUGH GIT LFS, and that is a decision rather than
+# an omission. The repository's own .gitattributes still routes the plugins, the
+# recorded takes and the meshes through it - those exist nowhere else, and a
+# recipe cannot reproduce them. Weights are the opposite kind of thing.
 #
-# WHAT BELONGS HERE is what a recipe cannot express and what changes rarely. A
-# converted and quantised model is exactly that: it is the OUTPUT of a conversion
-# nobody will run again the same way, so the recipe is not a substitute for the
-# file. The cost, stated because it decides the list: LFS does not compress one
-# version against another, so every re-conversion is stored whole.
+# WHY THE MODEL FORMATS ARE DELIBERATELY ABSENT FROM THE LIST BELOW.
 #
-# THE LIST IS BY KIND AND NOT BY SIZE. A sentencepiece model is under a megabyte
-# today; it is still a binary blob whose diff means nothing, and a rule applied
-# only once it hurts is a rule nobody applies.
+# The obvious move is to keep "*.bin filter=lfs" as a safety net, so that a
+# weight file committed by accident becomes a pointer instead of two gigabytes
+# in the history. It is the wrong move, and the reason is worth the paragraph:
 #
-# The repository's own .gitattributes already covers *.dll, *.7z and the plugin
-# formats. These are the ones a model mod adds.
-
-# ggml / whisper.cpp and llama.cpp family
-*.bin           filter=lfs diff=lfs merge=lfs -text
-*.gguf          filter=lfs diff=lfs merge=lfs -text
-*.ggml          filter=lfs diff=lfs merge=lfs -text
-
-# the formats a conversion may be taken FROM, so that a checked-in source is not
-# the thing that swells the history either
-*.safetensors   filter=lfs diff=lfs merge=lfs -text
-*.pt            filter=lfs diff=lfs merge=lfs -text
-*.pth           filter=lfs diff=lfs merge=lfs -text
-*.ckpt          filter=lfs diff=lfs merge=lfs -text
-*.npz           filter=lfs diff=lfs merge=lfs -text
-*.onnx          filter=lfs diff=lfs merge=lfs -text
-
-# tokenisers and vocabularies that are binary
-*.model         filter=lfs diff=lfs merge=lfs -text
-*.spm           filter=lfs diff=lfs merge=lfs -text
+#   WITHOUT the rule, GitHub refuses any file over 100 MB at push time. The
+#   mistake costs one rejected push and is over.
+#
+#   WITH the rule, the push SUCCEEDS. Two gigabytes land in the remote's LFS
+#   store, count against a one-gigabyte free allowance, and - measured, not
+#   feared - CANNOT BE REMOVED by deleting the file afterwards. An LFS object
+#   stays in the remote's storage after it is gone from every commit; GitHub's
+#   own answer is to delete and recreate the repository, or to write to support.
+#
+# So the "safety net" turns a loud, free, reversible failure into a quiet,
+# billed, permanent one. The net is weights/.gitignore instead, and the hard
+# limit behind it is GitHub's.
 
 # SHA256SUMS is TEXT and must never be an LFS pointer. It is the one file that
-# has to be readable in a plain clone - it is what says whether the pointers,
-# once fetched, brought back the right bytes - and a checksum file behind a
-# pointer is a checksum nobody can check.
+# has to be readable in a plain clone - it is what says whether a downloaded
+# weight file is the right one - and a checksum file behind a pointer is a
+# checksum nobody can check.
 SHA256SUMS      text eol=lf -filter -diff -merge

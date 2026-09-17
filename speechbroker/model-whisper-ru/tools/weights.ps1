@@ -1,8 +1,14 @@
-# The weights, and whether they are the weights.
+﻿# The weights, and whether they are the weights.
 #
 #   tools\weights.ps1                       verify every weights\<id>
 #   tools\weights.ps1 -Id whisper-ru-small  verify one
+#   tools\weights.ps1 -Fetch                download what is missing, then verify
 #   tools\weights.ps1 -Write                write SHA256SUMS beside each set
+#
+# THE WEIGHTS ARE NOT IN THE REPOSITORY. They are unmodified public releases and
+# a recipe reproduces them exactly, so what is versioned is the recipe: SOURCE
+# says where each set comes from, SHA256SUMS says which bytes are right, and
+# weights\README.md says the rest. -Fetch is those two files made to run.
 #
 # WHY THIS EXISTS AT ALL, and it is measured rather than feared: five hundred
 # bytes flipped inside a converted model.bin produce NO error of any kind - not
@@ -22,9 +28,17 @@
 # them about is the integrator's business and not a script's.
 param(
     [string]$Id,
-    [switch]$Write
+    [switch]$Write,
+    [switch]$Fetch
 )
 $ErrorActionPreference = 'Stop'
+
+if ($Fetch -and $Write) {
+    # Signing what was just downloaded would record whatever arrived as correct,
+    # which is the one thing SHA256SUMS exists to prevent. -Write is for the
+    # person who PRODUCED a set of weights; -Fetch is for everybody after them.
+    throw "-Fetch and -Write together would sign an unverified download. Fetch first, look at what it says, then decide."
+}
 
 $root = Split-Path -Parent $PSScriptRoot
 $cfg  = Get-Content -LiteralPath (Join-Path $root 'config\build.json') -Raw | ConvertFrom-Json
@@ -48,13 +62,70 @@ $bad = 0
 foreach ($set in $sets) {
     $sumsFile = Join-Path $set.FullName 'SHA256SUMS'
 
+    if ($Fetch) {
+        # FETCHING IS A SEPARATE PASS AND THEN FALLS THROUGH TO VERIFYING, which
+        # is the whole point: a download that is not checked has bought nothing.
+        # What to fetch comes from the two files that ARE versioned - SHA256SUMS
+        # names the files, SOURCE names where they come from - so this script
+        # knows no URLs of its own and a new set needs no edit here.
+        $sourceFile = Join-Path $set.FullName 'SOURCE'
+        if (-not (Test-Path -LiteralPath $sourceFile)) {
+            Write-Warning "  $($set.Name): no SOURCE file - nothing says where these weights come from. See weights\README.md."
+            $bad++
+            continue
+        }
+        if (-not (Test-Path -LiteralPath $sumsFile)) {
+            Write-Warning "  $($set.Name): no SHA256SUMS - nothing says WHICH files to fetch."
+            $bad++
+            continue
+        }
+        $base = (Get-Content -LiteralPath $sourceFile -Encoding UTF8 |
+            Where-Object { $_ -and -not $_.StartsWith('#') } | Select-Object -First 1).Trim().TrimEnd('/')
+
+        foreach ($line in (Get-Content -LiteralPath $sumsFile -Encoding UTF8)) {
+            if ($line -notmatch '^([0-9a-fA-F]{64})[ *]+(.+)$') { continue }
+            $rel = $Matches[2]
+            if ($rel -match '\.\.' -or $rel -match '^[/\\]' -or $rel -match ':') {
+                Write-Warning "  $($set.Name): $rel leaves the folder - refusing to fetch it"
+                $bad++
+                continue
+            }
+            $path = Join-Path $set.FullName $rel
+            # Already there and already right: gigabytes are not re-fetched to
+            # prove a point. A file that is there but WRONG is left alone too -
+            # the verify pass below reports it, and deleting somebody's file
+            # because a hash disagreed is not this script's decision to make.
+            if (Test-Path -LiteralPath $path) {
+                '  {0,-24} {1} already here' -f $set.Name, $rel
+                continue
+            }
+            $url = "$base/$rel"
+            '  {0,-24} fetching {1}' -f $set.Name, $url
+            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $path) | Out-Null
+            # curl.exe streams to disk; Invoke-WebRequest buffers the whole body
+            # in memory, and these files are measured in gigabytes.
+            $curl = (Get-Command curl.exe -ErrorAction SilentlyContinue)
+            if ($curl) {
+                & $curl.Source -L --fail --retry 3 -o $path $url
+                if ($LASTEXITCODE -ne 0) { throw "curl failed with $LASTEXITCODE on $url" }
+            } else {
+                Invoke-WebRequest -Uri $url -OutFile $path -UseBasicParsing
+            }
+        }
+        # and on to the verification, which is the part that matters
+    }
+
     if ($Write) {
         # Files are listed in a stable order so that two runs of this script on
         # the same folder produce the same file and git shows no diff where
         # nothing changed.
         $lines = @()
+        # SHA256SUMS cannot sign itself, and the other two are the RECIPE rather
+        # than the weights: SOURCE says where to fetch from, README says the rest.
+        # Signing them would make -Fetch try to download its own instructions.
+        $notWeights = @('SHA256SUMS', 'SOURCE', 'README.md', 'README.ru.md')
         foreach ($file in (Get-ChildItem -LiteralPath $set.FullName -Recurse -File | Sort-Object FullName)) {
-            if ($file.Name -eq 'SHA256SUMS') { continue }
+            if ($notWeights -contains $file.Name) { continue }
             $rel = $file.FullName.Substring($set.FullName.Length).TrimStart('\') -replace '\\', '/'
             $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
             $lines += "$hash  $rel"
