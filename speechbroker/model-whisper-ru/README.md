@@ -202,8 +202,11 @@ which is what faster-whisper reads. Its big file is also called `model.bin`, it 
 ### The five steps
 
 1. **The runtime.** Unpack the zip and put `whisper.dll`, `ggml.dll` and every `ggml-*.dll` into
-   `child/runtime/`. The lay-out copies whatever is in there next to the child. Nothing is renamed
-   and nothing goes on `PATH`.
+   `child/runtime/` — **the files themselves, flat, not the `Release` folder the zip contains.**
+   `tools/deploy.ps1` copies that folder's files next to the child and **does not recurse**, so a
+   nested folder is skipped in silence and the child then refuses at start-up naming `whisper.dll`.
+   Nothing is renamed and nothing goes on `PATH`. If the folder is absent the mod still lays out
+   cleanly: the backend is third-party and is not ours to ship.
 2. **The weights.** One command, and no URL is typed by hand:
 
    ```
