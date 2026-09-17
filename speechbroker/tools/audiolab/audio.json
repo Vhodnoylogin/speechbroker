@@ -1,5 +1,91 @@
 {
+  "_": "The settings of the tooling. Nothing here reaches a player: the runtime is the C++ under adapter-voice/src/. Every path is relative to the folder of audiolab, and no absolute path may appear in this file - it travels with the repository.",
+
   "takes": "takes",
   "blockMs": 32,
-  "voice": "../voice/models/piper/ru_RU-irina-medium.onnx"
+  "reports": "reports",
+  "liveOnly": true,
+
+  "_voice": "The synthesis voice for `corpus`. It is NOT shipped here - it belonged to the service that is being dissolved, and speech becomes a model mod of its own. Put a piper voice into `voices/` (that folder is ignored by git) or point this key wherever it lies.",
+  "voice": "voices/ru_RU-irina-medium.onnx",
+
+  "_calibration": "The labelling manifest: the ground truth of the corpus. A file of its own because it is data rather than settings - the only record of which of the takes recorded before the -end/-open convention are finished phrases and which are cut off.",
+  "calibration": "calibration.json",
+
+  "_weightsRoot": "Where the weights of the models lie, as folders `<weightsRoot>/<models.*.weights>`. The ids are the ones the listings of model-whisper-ru use, so the tooling and the mod look at the same files. Override on a machine where they lie elsewhere: the environment variable AUDIOLAB_WEIGHTS, which replaces this key whole.",
+  "weightsRoot": "../../model-whisper-ru/weights",
+
+  "_models": "The python model driver - the reference one, not the one that runs in the game. These are the settings `voice.json` ran with, kept verbatim so that a word error rate measured today is comparable with docs/measurements.md. The pair fast+accurate stays: the race between two models is what the adapter has to be able to demonstrate.",
+  "models": {
+    "whisper-small": {
+      "weights": "whisper-ru-small/small",
+      "class": "fast",
+      "budgetMs": 700,
+      "beamSize": 1,
+      "wordTimestamps": true,
+      "vadFilter": true,
+      "usePrompt": true,
+      "language": "ru",
+      "device": "cuda",
+      "compute": "float16"
+    },
+    "whisper-turbo": {
+      "weights": "whisper-ru-turbo/large-v3-turbo",
+      "class": "accurate",
+      "budgetMs": 2500,
+      "beamSize": 5,
+      "wordTimestamps": true,
+      "vadFilter": true,
+      "usePrompt": false,
+      "language": "ru",
+      "device": "cuda",
+      "compute": "float16"
+    }
+  },
+
+  "_engineSettings": "The tuned numbers of the ears are NOT copied here. They are read from the settings of the adapter, so that a replay always runs with the numbers the game runs with; a missing file is not an error, because the defaults built into the python are the same numbers. Override: the environment variable AUDIOLAB_ENGINE.",
+  "engineSettings": "../../adapter-voice/speechbroker-voice.json",
+
+  "_vocabulary": "The hint of words to expect. The model is free not to use it; measured on the bench corpus, a prompt turns «Пайербол» into «фаербол» for both models and costs the small one a whole sentence on the long take.",
+  "vocabulary": [
+    "фаербол",
+    "отступаем",
+    "прикрой меня"
+  ],
+
+  "reputations": {
+    "_": "The product of the calibration: how far each model may be believed. The adapter reads a COPY shipped inside its own mod, not this file.",
+    "file": "reputations.json",
+    "defaultTrust": 0.6,
+    "minCalibrationSamples": 10
+  },
+
+  "bench": {
+    "_": "The synthesised corpus: the reference text is known EXACTLY because we pronounced it ourselves. Deliberately uneven - single commands, four sentences in a row, the case of «a command that turned out to be the beginning of a phrase», and plain silence as a check against invention. `gapsMs` are the pauses between sentences: piper makes none of its own, it voices what it was given.",
+    "folder": "samples/bench",
+    "items": {
+      "cmd-fireball": {"sentences": ["Фаербол."], "gapsMs": []},
+      "cmd-retreat": {"sentences": ["Отступаем!"], "gapsMs": []},
+      "cmd-cover": {"sentences": ["Прикрой меня."], "gapsMs": []},
+      "four-sentences": {
+        "sentences": ["Фаербол.", "Отступаем!", "Прикрой меня.", "Ты зачем надел эту броню?"],
+        "gapsMs": [350, 300, 400]
+      },
+      "fireball-is-a-school": {
+        "sentences": ["Фаербол", "это школа огня."],
+        "gapsMs": [320]
+      },
+      "long-question": {
+        "sentences": ["Ты зачем надел эту броню, она же тяжёлая и медленная?"],
+        "gapsMs": []
+      },
+      "silence": {"sentences": [], "gapsMs": []}
+    }
+  },
+
+  "scenario": {
+    "_": "The joint of the two halves: the engine writes the lines the bridge is checked against, instead of a person writing them by hand. `out` is a key and not a hard-coded path on purpose - the bridge may be checked out anywhere; the file itself is derived and is not versioned.",
+    "out": "../../bridge/tests/scenarios/live.json",
+    "stage": "../../bridge/tests/scenarios/stage.json"
+  }
 }

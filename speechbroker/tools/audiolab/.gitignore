@@ -1,0 +1,10 @@
+# Derived and local things of the tooling. The reports are rebuilt by the
+# commands that wrote them, so what is worth keeping out of a run goes into
+# docs/measurements.md by hand and the run itself does not.
+reports/
+
+# The voice of the synthesis: weights, and they belong to whoever ships them.
+voices/
+
+# The environment of the tooling, if one is made here (requirements.txt).
+.venv/

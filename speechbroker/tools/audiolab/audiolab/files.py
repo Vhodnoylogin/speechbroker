@@ -17,6 +17,33 @@ import numpy as np
 
 RATE = 16000
 
+# What `name.src` says about where the voice came from. The words are Russian
+# because the forty-five takes on disk already carry them and the studio page
+# shows them as they are; they are data, not interface text. Everything that
+# tells a live take from a synthesised one compares against these two names.
+SOURCE_LIVE = "живой"
+SOURCE_SYNTH = "синтез"
+
+
+def read_wav(path) -> np.ndarray:
+    """A wav as mono float32 at RATE, whatever it was on disk.
+
+    One reader for the whole tooling: the calibration, the replay, the prosody
+    check and the studio all read the same way, so that a difference between
+    two reports can never be a difference in how the file was opened.
+    """
+    with wave.open(str(path), "rb") as wav:
+        rate, channels = wav.getframerate(), wav.getnchannels()
+        raw = wav.readframes(wav.getnframes())
+    pcm = np.frombuffer(raw, dtype="<i2").astype("float32") / 32768.0
+    if channels > 1:
+        pcm = pcm.reshape(-1, channels).mean(axis=1)
+    if rate != RATE:
+        want = int(len(pcm) * RATE / rate)
+        pcm = np.interp(np.linspace(0, len(pcm) - 1, want),
+                        np.arange(len(pcm)), pcm).astype("float32")
+    return pcm
+
 
 @dataclass
 class Take:
@@ -24,8 +51,17 @@ class Take:
     path: pathlib.Path
     seconds: float
     reference: str
-    source: str            # "живой" | "синтез"
+    source: str            # SOURCE_LIVE | SOURCE_SYNTH
     peak: float
+
+    @property
+    def live(self) -> bool:
+        return self.source == SOURCE_LIVE
+
+    @property
+    def is_silence(self) -> bool:
+        """An empty reference is not "no text" but the claim "there is silence here"."""
+        return not self.reference.strip()
 
     def as_json(self) -> dict:
         return {"name": self.name, "seconds": round(self.seconds, 2),
@@ -55,17 +91,7 @@ class Library:
         return self.take(name)
 
     def read(self, name: str) -> np.ndarray:
-        with wave.open(str(self.path(name)), "rb") as wav:
-            rate, channels = wav.getframerate(), wav.getnchannels()
-            raw = wav.readframes(wav.getnframes())
-        pcm = np.frombuffer(raw, dtype="<i2").astype("float32") / 32768.0
-        if channels > 1:
-            pcm = pcm.reshape(-1, channels).mean(axis=1)
-        if rate != RATE:
-            want = int(len(pcm) * RATE / rate)
-            pcm = np.interp(np.linspace(0, len(pcm) - 1, want),
-                            np.arange(len(pcm)), pcm).astype("float32")
-        return pcm
+        return read_wav(self.path(name))
 
     def take(self, name: str) -> Optional[Take]:
         path = self.path(name)
@@ -92,6 +118,12 @@ class Library:
         files = sorted(self.root.glob("*.wav"),
                        key=lambda f: f.stat().st_mtime, reverse=True)
         out = [self.take(f.stem) for f in files]
+        return [t for t in out if t is not None]
+
+    def by_name(self) -> List[Take]:
+        """Alphabetical, for the reports: a measurement must read the same way
+        twice, and the order of editing does not."""
+        out = [self.take(f.stem) for f in sorted(self.root.glob("*.wav"))]
         return [t for t in out if t is not None]
 
     def delete(self, name: str) -> bool:

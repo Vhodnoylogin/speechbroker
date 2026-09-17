@@ -34,8 +34,12 @@ class Studio:
         self.recorder = Recorder(int(s.get("blockMs", 32)))
         self.player = Player()
 
+        # The voice of the synthesis is resolved against the folder of the
+        # module, not against the current directory: a command is started from
+        # wherever it is started, and a relative path in the settings means
+        # "inside the module" - it has to travel with it.
         voice = s.get("voice")
-        self.synth = Synth(pathlib.Path(voice)) if voice else None
+        self.synth = Synth(self._resolve(voice)) if voice else None
 
         self.input_index: Optional[int] = None
         self.output_index: Optional[int] = None

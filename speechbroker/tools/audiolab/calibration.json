@@ -1,0 +1,143 @@
+{
+  "_": "THE GROUND TRUTH OF THE CORPUS. Not settings - data, and the only copy of it: `audio.json` points here by its `calibration` key, and what is written here is merged over it. Trust is checked against a reference TEXT, which lies beside every take as `name.txt`. Completeness is checked against a reference LABEL - was the phrase cut off or finished - and a label cannot be got out of the sound. That is what this file keeps.",
+
+  "completeness": {
+    "_": "The label comes from the name of the take: ending in `openSuffix` means the phrase was cut off, in `endSuffix` that it was finished. The person chooses the name while recording, so the label needs neither a separate file nor a separate action. The two lists below add the takes recorded BEFORE that rule appeared - fourteen of them, and nothing else remembers what they are. Without these lists the completeness corpus falls from twenty-two labelled takes to eight.",
+    "endSuffix": "-end",
+    "openSuffix": "-open",
+    "finished": [
+      "door-closed",
+      "door-continued",
+      "two-commands",
+      "fireball-ru",
+      "fireball-en",
+      "english",
+      "whisper",
+      "near-miss",
+      "command-question",
+      "middle-question",
+      "mentioned",
+      "long-speech",
+      "long-command"
+    ],
+    "unfinished": [
+      "door-unfinished"
+    ]
+  },
+
+  "prompts": [
+    {
+      "_": "The list `record` walks a person through. Deliberately built of minimal pairs: the same words said two ways. The difference between them is what our measurement of the tone has to catch - and it is the one thing synthesis cannot produce, because its intonation is flat by construction. A prompt that says whether its phrase is `finished` gets the -end/-open suffix on the name of the take, so a recording made through this list is labelled without a separate action.",
+      "name": "door",
+      "text": "Закрой дверь.",
+      "finished": true,
+      "how": "Say it and fall silent at once. An ordinary finished command, the voice going down."
+    },
+    {
+      "name": "door",
+      "text": "Закрой дверь...",
+      "finished": false,
+      "how": "THE DECISIVE PAIR. The SAME words and the same silence after them - do not finish the intonation: keep the voice up, as if the phrase were going on. Word-for-word checking gives both takes a clean sheet; only the tone tells them apart."
+    },
+    {
+      "name": "fireball",
+      "text": "Огненный шар.",
+      "finished": true,
+      "how": "Finished, the voice going down."
+    },
+    {
+      "name": "fireball",
+      "text": "Огненный шар...",
+      "finished": false,
+      "how": "The same words, the voice held up."
+    },
+    {
+      "name": "heal",
+      "text": "Лечи меня.",
+      "finished": true,
+      "how": "Finished, the voice going down."
+    },
+    {
+      "name": "heal",
+      "text": "Лечи меня...",
+      "finished": false,
+      "how": "The same words, the voice held up."
+    },
+    {
+      "name": "retreat",
+      "text": "Отступаем!",
+      "finished": true,
+      "how": "A shout, but a finished one."
+    },
+    {
+      "name": "retreat",
+      "text": "Отступаем...",
+      "finished": false,
+      "how": "The same word, the voice held up."
+    },
+    {
+      "name": "two",
+      "text": "Закрой дверь. Запри на замок.",
+      "finished": true,
+      "how": "Two separate commands. After the first - a short pause and the voice going down."
+    },
+    {
+      "name": "two",
+      "text": "Закрой двери...",
+      "finished": false,
+      "how": "The beginning of the same pair, cut off after the first command."
+    },
+    {
+      "name": "long",
+      "text": "Пройди вперёд десять шагов и подожди меня там.",
+      "finished": true,
+      "how": "A long command, said in one breath, finished."
+    },
+    {
+      "name": "long",
+      "text": "Пройди вперёд десять шагов и...",
+      "finished": false,
+      "how": "The same beginning, cut off in the middle."
+    },
+    {
+      "name": "false-pause",
+      "text": "Закрой дверь когда будешь уходить.",
+      "how": "THE MOST IMPORTANT RECORDING, and it carries no label: what it checks is the pacer, not completeness. Say «закрой дверь», hold a pause of a second, and go on «когда будешь уходить». Do NOT finish the intonation on «дверь» - keep the voice up, as if the phrase had not ended. One phrase must come out of it, not two."
+    },
+    {
+      "name": "mentioned",
+      "text": "Я закрыл дверь как ты просил.",
+      "finished": true,
+      "how": "An ordinary phrase in which a command is only mentioned, not given."
+    },
+    {
+      "name": "free-speech",
+      "text": "Что вокруг меня сейчас происходит и стоит ли идти дальше.",
+      "finished": true,
+      "how": "Free speech, said as it would be to a companion."
+    },
+    {
+      "name": "lock",
+      "text": "Запри на замок.",
+      "finished": true,
+      "how": "A short command - one of those the word error rate is measured on."
+    },
+    {
+      "name": "cover",
+      "text": "Прикрой меня.",
+      "finished": true,
+      "how": "A short command."
+    },
+    {
+      "name": "stand",
+      "text": "Стой на месте.",
+      "finished": true,
+      "how": "A short command."
+    },
+    {
+      "name": "silence",
+      "text": "",
+      "how": "SAY NOTHING. Breathe as usual, do not take the headset off. An empty reference text is not «there is no text» but «there is silence here», and the calibration checks by it whether a model invents words out of nothing."
+    }
+  ]
+}
