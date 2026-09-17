@@ -903,21 +903,62 @@ struct SpeechBrokerVoiceAnswer
  * holds no lock of its own across any of them, so a shim may answer from inside
  * the very call it was given.
  *
- * NO EXCEPTION MAY CROSS THIS LINE, IN EITHER DIRECTION, AND BOTH HALVES ARE
- * MECHANISMS RATHER THAN HOPES. Your half: a C++ shim catches everything at its
- * own boundary and turns it into a FAILED answer with the message as text. The
- * adapter's half, in this direction: IT WRAPS EVERY CALL IT MAKES INTO THIS
- * TABLE IN catch(...). An exception escaping Start, Stop, Submit, SetVocabulary
- * or Cancel is caught at the call site, logged against your id as a protocol
- * violation, and treated exactly as if that call had returned REFUSED - which
- * for Submit means the outstanding utterance is retracted, the same retraction a
- * non-OK return performs. It will not take the game down. That is a safety net
- * and not a licence: an exception crossing this line is a defect and is counted
- * against you. It matters because the header REQUIRES you to allocate inside
- * Submit, up to 1.28 MB of it, and a std::bad_alloc out of an otherwise perfect
- * shim would otherwise unwind through the adapter's frame with no handler and
- * take SkyrimVR.exe down through std::terminate. The same promise is made in the
- * other direction at the head of struct SpeechBrokerVoiceHost.
+ * NOTHING MAY CROSS THIS LINE UNCAUGHT, IN EITHER DIRECTION, AND THE ADAPTER'S
+ * HALF IS TWO MECHANISMS RATHER THAN ONE. Your half: a C++ shim catches
+ * everything at its own boundary and turns it into a FAILED answer with the
+ * message as text.
+ *
+ * The adapter's half, in this direction, is a C++ handler AND a structured one,
+ * because they catch different things and an earlier wording of this header
+ * named only the first:
+ *
+ *   A THROW - a std::runtime_error out of a library that could not find its own
+ *   CUDA DLL is the ordinary case, and the message is the diagnostic - is caught
+ *   by catch(...) at the call site, logged against your id with what() where
+ *   there is one, and treated exactly as if that call had returned REFUSED.
+ *   For Submit that means the outstanding utterance is retracted, the same
+ *   retraction a non-OK return performs.
+ *
+ *   A FAULT - an access violation, an illegal instruction, a division by zero -
+ *   is not a C++ exception and a catch(...) compiled the ordinary way does not
+ *   see it at all. So the call site is additionally wrapped in a structured
+ *   exception guard: __try/__except in MSVC terms, which needs no special
+ *   compiler flag and is the same thing SKSE itself does around a plugin's entry
+ *   point. It is logged with your id, the exception code and the faulting
+ *   address, and then YOU ARE EJECTED FOR THE SESSION - see below for why there
+ *   is no second chance.
+ *
+ * Neither will take the game down. That is a safety net and not a licence: both
+ * are defects and both are counted against you.
+ *
+ * WHY A FAULT COSTS YOU THE SESSION AND A THROW DOES NOT. __except unwinds
+ * without running a destructor in any frame between, and the frames between are
+ * yours: your locks stay held, your device buffers and your workspace leak, and
+ * the state your next call would read is of unknown shape. Containment here
+ * means the GAME survived, not that the model did. Returning to you afterwards
+ * would be the adapter choosing to keep talking to code it has just watched go
+ * wrong, so it does not.
+ *
+ * WHAT NEITHER MECHANISM COVERS, said here rather than discovered later. A fault
+ * on a thread of YOUR OWN, outside a call to this table, is on nobody's stack
+ * the adapter can reach; it goes to the process and takes the game with it. So
+ * does a fail-fast - abort(), std::terminate, a corrupted heap, a second OpenMP
+ * runtime - which Windows delivers in a way that bypasses every handler in the
+ * process, the player's crash logger included, so that not even a crash log is
+ * left behind. And a library that calls ExitProcess on a missing dependency,
+ * which some GPU runtimes do, simply ends the game with an exit code and no
+ * exception at all.
+ *
+ * THAT IS WHAT THE KIND IS FOR. If your model is a third-party runtime capable
+ * of any of the above, declare SPEECHBROKERVOICE_KIND_CHILD and let it do it in
+ * a process of its own, where its exit code is a number the adapter reads and
+ * turns into an ordinary ejection. INPROCESS is for a model whose failures you
+ * can actually return: it is the fastest arrangement and the least forgiving
+ * one, and choosing it is choosing to be trusted with the player's game.
+ *
+ * The matching promise in the other direction is at the head of struct
+ * SpeechBrokerVoiceHost, and it is NOT a mirror image - read it, because the
+ * threads are the other way round there.
  * ------------------------------------------------------------------------- */
 struct SpeechBrokerVoiceModel
 {
@@ -1177,18 +1218,56 @@ struct SpeechBrokerVoiceSession
 };
 
 /* ------------------------------------------------------------------------- *
- * NONE OF THESE FUNCTIONS THROWS.
+ * NONE OF THESE FUNCTIONS THROWS, AND NONE OF THEM ENDS THE GAME IF WHAT YOU
+ * HAND IT IS BROKEN.
  *
- * The rule is symmetric with the one over struct SpeechBrokerVoiceModel, and it
- * has to be, because every one of them allocates on your behalf: Complete copies
- * the whole fragment array and every string in it, Register copies the info, the
- * table and its strings, Log formats. The adapter catches everything at its own
- * boundary and turns it into a status - REFUSED out of Register and Complete,
- * silence out of Unregister, Ready and Log - and writes its own log line about
- * it. It never lets std::bad_alloc, or anything else, unwind into your frame.
- * An adapter-side failure is REFUSED and never MALFORMED, and it is NEVER
- * counted against your standing: this contract blames a model only for what the
- * model controls.
+ * TWO PROMISES, NOT ONE, AND THEY ARE KEPT BY DIFFERENT MEANS. An earlier
+ * wording of this header made only the first and wrote it as though it covered
+ * both. It does not, and the difference is the threads: everything below runs ON
+ * YOUR THREAD, inside a call the adapter never made, over memory you supplied.
+ *
+ * 1. NOTHING UNWINDS INTO YOUR FRAME. Every one of these allocates on your
+ *    behalf: Complete copies the whole fragment array and every string in it,
+ *    Register copies the info, the table and its strings, Log formats. The
+ *    adapter catches every C++ exception at its own boundary and turns it into a
+ *    status - REFUSED out of Register and Complete, silence out of Unregister,
+ *    Ready and Log - and writes its own log line. Your shim may be compiled as
+ *    C, or with /EHs-, in which case there is no handler between such a throw
+ *    and the top of your worker thread, and std::terminate would take
+ *    SkyrimVR.exe down. An adapter-side failure is REFUSED and never MALFORMED,
+ *    and it is NEVER counted against your standing: this contract blames a model
+ *    only for what the model controls.
+ *
+ * 2. A BROKEN POINTER FROM YOU DOES NOT KILL THE PROCESS. This is the harder
+ *    promise and it needs the other mechanism. a_answer and every char* inside
+ *    it, a_reason, the key and arguments of a log line - all of it is memory the
+ *    adapter did not allocate and cannot validate by looking. A stale or garbage
+ *    pointer faults inside ADAPTER code with no C++ exception anywhere in it,
+ *    and the catch of promise 1 cannot see an access violation. So every entry
+ *    point below is additionally wrapped in a structured exception guard
+ *    (__try/__except), the same guard the adapter puts around its own calls into
+ *    your table.
+ *
+ *    WHAT IT BUYS: the game stays up, and the log names you, the exception code
+ *    and the faulting address. WHAT IT DOES NOT BUY: your shim being usable
+ *    afterwards. The fault was on your thread and the unwind ran no destructor
+ *    of yours, so you are ejected for the session exactly as you would be for
+ *    faulting inside one of your own entry points. The call does not return to
+ *    you, because there is nothing safe for it to return into.
+ *
+ *    YOUR HALF is the ordinary one and is not excused by the guard: every
+ *    pointer you hand over is valid for the length of the call, every string is
+ *    NUL-terminated within SPEECHBROKERVOICE_MAX_STRING_BYTES, fragmentCount
+ *    describes the array you actually allocated, and fragmentStride is the size
+ *    your own build gave a fragment. The guard exists because defects happen,
+ *    not so that these rules become optional.
+ *
+ * WHAT NEITHER PROMISE REACHES is the same short list as in the other direction:
+ * a fault on a thread of yours outside these calls, and any fail-fast - abort(),
+ * std::terminate, a corrupted heap, a duplicate OpenMP runtime - which Windows
+ * delivers past every handler in the process and past the player's crash logger,
+ * leaving no log of any kind. Nothing in a shared address space can hold those.
+ * SPEECHBROKERVOICE_KIND_CHILD can.
  *
  * The reason is not tidiness. Your shim may be compiled as C, or with /EHs-, in
  * which case there is no handler between that throw and the top of your worker

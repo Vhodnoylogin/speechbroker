@@ -48,10 +48,54 @@ submitted to looks statistically perfect.
 **`maxInFlight` is honoured against the debt.** Do not enter `Submit` while that many `Complete`s
 are outstanding for that model. Without this the field is a promise backed by nothing.
 
-**One `catch(...)` around every call into the model table**, and the handler must perform the same
-retraction a non-`OK` return performs, or the debt ledger is left half-updated. The host's own entry
-points keep their `catch(...)` as well: the header promises neither side throws, and every host
-function allocates.
+**Two guards around every crossing, not one, and they catch different things.** A `catch(...)` takes
+the C++ throw — the realistic one is a `std::runtime_error` out of a third-party library that could
+not load its own dependency, not a `std::bad_alloc`, so log `what()`, it is the diagnostic. A
+`__try`/`__except(EXCEPTION_EXECUTE_HANDLER)` takes the access violation, which no `catch` sees. The
+handler of either must perform the same retraction a non-`OK` return performs, or the debt ledger is
+left half-updated; a fault additionally ejects the model for the session, because `__except` unwinds
+without running a destructor in any frame between and the state on the far side is of unknown shape.
+
+**`__try` needs no compiler flag, and reaching for one is a trap.** Structured exception handling is
+always available — MSVC generates support for it regardless of `/EH`, and SKSE's own plugin manager
+wraps a plugin's entry point in `__try`/`__except` without `/EHa`. Do **not** switch this target to
+`/EHa`: Microsoft counter-recommends mixing it with `/EHs`/`/EHsc` in one module, and `/EHsc` is set
+twice in this build (the target's compile options and the cached `CMAKE_CXX_FLAGS`), so appending
+would produce a contradictory command line rather than a change. What `__try` does need is its own
+small non-inline function taking POD arguments: MSVC refuses `__try` in a function holding anything
+with a destructor, so the C++ dispatch loop calls into the guard rather than containing it.
+
+**Both directions are guarded, and the second one is the likelier fault.** The host table —
+`Register`, `Complete`, `Ready`, `Log`, `Unregister` — is adapter code executed on the *model's* own
+thread, over pointers the shim supplied. A stale `char*` from third-party code is the most probable
+in-process fault in the whole design, and it lands inside the adapter on a thread the adapter never
+created, inside a call the adapter never made. Each host entry point therefore carries its own POD
+guard. Without it the contract's promise in that direction is unkeepable.
+
+**The exception filter must pass through what it does not own.** Examine `ExceptionCode`: let
+`0xE06D7363` reach the C++ handler and let the thread-naming exception `0x406D1388` pass, or the
+structured guard swallows C++ throws before `catch(...)` and the ledger records the wrong failure.
+
+**Supporting pieces.** `SetThreadStackGuarantee` of 64 KB on every dispatch thread, and
+`_resetstkoflw()` called from the **body** of the `__except`, never from the filter. A `catch(...)`
+at the top of every thread entry function: an exception escaping a thread procedure is
+`std::terminate`, and that is a fail-fast nothing in the process observes.
+
+**What no guard reaches, and what to do instead.** A fault on a thread the model created; any
+fail-fast — `abort()`, `std::terminate`, heap corruption, a duplicate OpenMP runtime — which Windows
+delivers past every handler including the player's crash logger, leaving no log at all; and a
+library that calls `ExitProcess` on a missing dependency. Measured on this machine, 17.09.2026:
+loading `cudnn64_9.dll` with a sub-library unreachable exits the process with code **127**, no
+exception of any kind. That is why our own ready-made model declares
+`SPEECHBROKERVOICE_KIND_CHILD`: in a child, 127 is a number `GetExitCodeProcess` returns and the
+adapter routes into an ordinary ejection.
+
+**Two things not to build.** `SetUnhandledExceptionFilter` is a single slot rather than a chain, and
+the crash logger installed in this build re-arms its own from inside a vectored handler on every
+exception dispatch — ours would be overwritten silently. And never `TerminateThread` a hung model
+call: it leaves every lock that thread held permanently held, including CRT and loader locks, which
+turns a hung recogniser into a hung game and, at exit, into the case where MO2 still believes the
+game is running. Wait `stopMs`, log once, abandon the thread, never free its state.
 
 ## The deadline, and what closes a pass
 
