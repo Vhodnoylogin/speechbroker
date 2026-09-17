@@ -1,5 +1,5 @@
 {
-  "_": "Where this module is laid out and what it is built from. Every path and name of the lay-out lives here and nowhere else, so that nothing in the sources or the scripts is true only on one machine. The weights are the exception and are deliberately not copied by anything here: they are gigabytes, they live under weights/ through Git LFS, and the lay-out puts a junction on them.",
+  "_": "Where this module is laid out and what it is built from. Every path and name of the lay-out lives here and nowhere else, so that nothing in the sources or the scripts is true only on one machine. THE WEIGHTS ARE SPLIT IN TWO and the split is the point: `weights` is the RECIPE, versioned with the module - SOURCE says where each set comes from and SHA256SUMS says which bytes are right; `weightsStore` is where the BYTES actually lie, outside the repository, in the modding root beside MO2 and SSEEdit like every other thing somebody else wrote. The lay-out copies neither: it puts a junction on the store.",
 
   "deploy": {
     "modsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods",
@@ -24,8 +24,12 @@
     "localizationRel": "localization",
     "weightsRel": "weights",
 
+    "_weightsStore": "Where the weight FILES lie, one folder per set, outside the repository. They are gigabytes of somebody else's unmodified releases, so they live in the modding root by the same rule as MO2 and SSEEdit rather than inside a mod. Split by format, because two engines read two formats and one folder for both is how a CTranslate2 conversion ends up signed as a GGML model: `ggml` is what whisper.cpp reads and what this module uses; `ctranslate2` is what faster-whisper reads and what tools/audiolab uses. Absent - everything falls back to the recipe folder, which is what it used to be.",
+    "weightsStore": "D:/Skyrim VR Modding/Speech Models/ggml",
+
     "settings": "{root}/models",
     "localization": "{root}/localization",
+    "_weights": "The RECIPE, versioned: SOURCE and SHA256SUMS per set, and the README pair. The bytes are in weightsStore.",
     "weights": "{root}/weights",
 
     "docs": [

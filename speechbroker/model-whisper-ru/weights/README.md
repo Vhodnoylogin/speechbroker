@@ -2,15 +2,23 @@
 
 *In Russian: [README.ru.md](README.ru.md). English is the source language; the other is a translation.*
 
-**The weight files are not in this repository and are not meant to be.** This folder holds what says
-which bytes are the right ones — a `SHA256SUMS` beside each set — and this file, which says where to
-get them. The bytes themselves you fetch once.
+**The weight files are not in this repository and are not meant to be.** This folder is the RECIPE:
+`SOURCE` says where each set comes from, `SHA256SUMS` says which bytes are the right ones, and this
+file says the rest. The bytes themselves you fetch once.
 
-They were versioned here for exactly one afternoon, and the reason they are not is worth stating
-rather than discovering: an LFS object, once pushed, **stays in the remote's storage after the file
-is removed from every commit**. Deleting it does not give the space back — GitHub's own answer is to
-delete and recreate the repository, or to write to support. Two gigabytes against a one-gigabyte free
-allowance is therefore not a mistake you correct; it is one you do not make twice.
+The bytes lie **outside the repository**, in the modding root beside MO2 and SSEEdit, by the same
+rule as every other thing somebody else wrote:
+
+```
+D:\Skyrim VR Modding\Speech Models\ggml\<id>\        what whisper.cpp reads - this module
+D:\Skyrim VR Modding\Speech Models\ctranslate2\         what faster-whisper reads - tools/audiolab
+D:\Skyrim VR Modding\Speech Models\piper\               the voices of the synthesis
+```
+
+Split by format on purpose: one folder for both engines is how a CTranslate2 conversion ends
+up signed as a GGML model and fetched from the wrong repository. The path is one key -
+`weightsStore` in `config/build.json` - and nothing else in the module knows it.
+
 
 And they do not need versioning. These are unmodified public releases: the same bytes for everybody,
 fetched by name, with a checksum that proves it. A plugin or a recorded take is the opposite — it
@@ -36,18 +44,18 @@ no account.
 | `whisper-ru-small` | `ggml-small.bin` | 488 MB | the **fast** model, asked on interim passes too |
 
 ```
-tools\weights.ps1 -Fetch                        both sets, into weights\<id>\
+tools\weights.ps1 -Fetch                        both sets, into the store
 tools\weights.ps1 -Fetch -Id whisper-ru-small   one of them
 tools\weights.ps1                               verify what is there against SHA256SUMS
 ```
 
-`-Fetch` downloads from the URL each set's `SHA256SUMS` names, into the folder that set's settings
-file points at, and verifies afterwards. By hand it is the same two files:
+`-Fetch` reads `SOURCE` and `SHA256SUMS` from this folder, downloads into the store, copies the sums
+in beside the bytes and verifies. By hand it is the same two files:
 
 ```
-curl -L -o weights\whisper-ru-turbo\ggml-large-v3-turbo.bin ^
+curl -L -o "D:\Skyrim VR Modding\Speech Models\ggml\whisper-ru-turbo\ggml-large-v3-turbo.bin" ^
     https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin
-curl -L -o weights\whisper-ru-small\ggml-small.bin ^
+curl -L -o "D:\Skyrim VR Modding\Speech Models\ggml\whisper-ru-small\ggml-small.bin" ^
     https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin
 ```
 
@@ -83,9 +91,9 @@ To swap one in: put the new `.bin` in the set's folder **as the only `.bin` ther
 baked into the file, and there is no setting for it.
 
 A set of your own needs a listing of its own beside `models\`: copy `models\whisper-ru.json`, give it
-a new `id`, and point its `weights` at `weights\<your id>`. The path may not leave this module — the
-weights, the sums and the archive a player installs are one unit, and a path leading out of the mod
-means the thing that was verified and the thing that was shipped are not the same thing.
+a new `id`, and point its `weights` at `weights\<your id>` — that path names the RECIPE and may not
+leave the module, because the sums and the settings are ours and are versioned together. The bytes it
+stands for are found under `weightsStore` by the same name.
 
 ## What a player installs
 

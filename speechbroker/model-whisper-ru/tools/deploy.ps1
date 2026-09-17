@@ -1,4 +1,4 @@
-# Laying the model mod out into mods\. Every path and name is in
+﻿# Laying the model mod out into mods\. Every path and name is in
 # config\build.json.
 #
 #   tools\deploy.ps1            show what would be done
@@ -120,9 +120,21 @@ $meta = @(
 # Reported separately and never copied. A set that is not there is a warning and
 # not a refusal: the shim lays out, the model refuses at Start with a line naming
 # the folder, and the other model may still work.
-$weightsRoot = Expand-Path $d.weights
+# The RECIPE says which sets exist; the STORE holds their bytes and is what the
+# junction points at. They are two folders now: the recipe is versioned with the
+# module, the bytes live in the modding root beside MO2 and SSEEdit like every
+# other thing somebody else wrote. weightsStore absent - they are the same folder,
+# which is what this was before the bytes moved out.
+$recipeRoot = Expand-Path $d.weights
+$storeRoot  = if ($d.PSObject.Properties['weightsStore']) { Expand-Path $d.weightsStore } else { $recipeRoot }
 $sets = @()
-if (Test-Path -LiteralPath $weightsRoot) { $sets = @(Get-ChildItem -LiteralPath $weightsRoot -Directory) }
+if (Test-Path -LiteralPath $recipeRoot) {
+    foreach ($named in (Get-ChildItem -LiteralPath $recipeRoot -Directory)) {
+        $here = Join-Path $storeRoot $named.Name
+        if (Test-Path -LiteralPath $here) { $sets += (Get-Item -LiteralPath $here) }
+        else { Write-Warning "  $($named.Name): the recipe is here but the weights are not - $here. Run tools\weights.ps1 -Fetch." }
+    }
+}
 if ($sets) {
     foreach ($set in $sets) {
         $sums = Join-Path $set.FullName 'SHA256SUMS'
@@ -130,7 +142,7 @@ if ($sets) {
         '  weights {0,-24} {1}' -f $set.Name, $signed
     }
 } else {
-    Write-Warning "there are no weights in $weightsRoot - the models will refuse at Start. See README.md, 'Where the weights go'."
+    Write-Warning "there are no weights in $storeRoot - the models will refuse at Start. See README.md, 'Where the weights go'."
 }
 
 if (-not $Apply) { ''; 'dry run - add -Apply'; return }

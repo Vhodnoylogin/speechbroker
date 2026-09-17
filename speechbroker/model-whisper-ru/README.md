@@ -93,9 +93,11 @@ the code ships with.
 
 ## Where the weights go
 
-`weights/<id>/`, beside the settings — and **the files themselves are not in this repository.** What
-is here is the recipe: `SOURCE` says where each set comes from, `SHA256SUMS` says which bytes are the
-right ones, and [weights/README.md](weights/README.md) says the rest. One command turns the recipe
+`weights/<id>/` beside the settings is the **recipe** — `SOURCE` says where each set comes from,
+`SHA256SUMS` says which bytes are the right ones, and [weights/README.md](weights/README.md) says the
+rest. The **files** are not in this repository at all: they lie in `D:\Skyrim VR Modding\Speech Models\ggml\<id>\`,
+in the modding root beside MO2 and SSEEdit, by the same rule as every other thing somebody else
+wrote. One key says where — `weightsStore` in `config/build.json` — and one command turns the recipe
 back into the files:
 
 ```
@@ -111,8 +113,8 @@ They were, for one afternoon, through Git LFS. Two things decided it back:
 
 - **An LFS object cannot be taken back.** Once pushed it stays in the remote's storage after the file
   is gone from every commit; GitHub's own answer is to delete and recreate the repository, or to
-  write to support. Two gigabytes against a one-gigabyte free allowance is therefore not a mistake
-  you correct — it is one you do not make twice.
+  write to support. GitHub's free allowance is ten gibibytes, so two gigabytes is a fifth of it and
+  costs nothing today — but it is a fifth that never comes back on its own, and that is enough.
 - **A recipe reproduces them exactly.** These are unmodified public releases: the same bytes for
   everybody, fetched by name, with a checksum that proves it. That is the opposite of a plugin or a
   recorded take, which exist nowhere else — and those stay in LFS for exactly that reason.
@@ -213,7 +215,8 @@ which is what faster-whisper reads. Its big file is also called `model.bin`, it 
    tools\weights.ps1 -Fetch
    ```
 
-   It reads `SOURCE` and `SHA256SUMS` in each `weights/<id>/`, fetches what is missing, and then
+   It reads `SOURCE` and `SHA256SUMS` in each `weights/<id>/`, fetches what is missing into the store
+   outside the repository, copies the sums in beside the bytes, and then
    verifies everything against the sums. A file already present is left alone. See
    [weights/README.md](weights/README.md) for what else fits there - the quantised models are much
    smaller for very little accuracy.

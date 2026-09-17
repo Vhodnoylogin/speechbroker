@@ -13,7 +13,8 @@
 #   mistake costs one rejected push and is over.
 #
 #   WITH the rule, the push SUCCEEDS. Two gigabytes land in the remote's LFS
-#   store, count against a one-gigabyte free allowance, and - measured, not
+#   store, count against the allowance - ten gibibytes on a free account, so two
+#   gigabytes is a fifth of it - and, measured rather than
 #   feared - CANNOT BE REMOVED by deleting the file afterwards. An LFS object
 #   stays in the remote's storage after it is gone from every commit; GitHub's
 #   own answer is to delete and recreate the repository, or to write to support.

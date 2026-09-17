@@ -45,14 +45,25 @@ $cfg  = Get-Content -LiteralPath (Join-Path $root 'config\build.json') -Raw | Co
 $d    = $cfg.deploy
 function Expand-Path([string]$p) { $p.Replace('{root}', $root) }
 
-$weightsRoot = Expand-Path $d.weights
-if (-not (Test-Path -LiteralPath $weightsRoot)) {
-    throw "there is no weights folder: $weightsRoot. It is where weights\<id>\ goes; the module ships none, and the README says where they come from."
+# TWO ROOTS, AND THE SPLIT IS THE WHOLE IDEA OF THIS SCRIPT.
+#
+#   the RECIPE  weights\<id>\   - SOURCE and SHA256SUMS, versioned with the module, ours
+#   the STORE   <weightsStore>\<id>\ - the files themselves, outside the repository
+#
+# The recipe decides which sets exist: a folder in the store that no recipe names
+# is not a set of weights, it is somebody's folder, and this script does not touch
+# it. weightsStore absent means the two are the same folder, which is what this
+# was before the bytes moved out to the modding root.
+$recipeRoot = Expand-Path $d.weights
+$storeRoot  = if ($d.PSObject.Properties['weightsStore']) { Expand-Path $d.weightsStore } else { $recipeRoot }
+if (-not (Test-Path -LiteralPath $recipeRoot)) {
+    throw "there is no weights recipe: $recipeRoot. It is where weights\<id>\ with SOURCE and SHA256SUMS goes; the module ships no weight files at all, and weights\README.md says where they come from."
 }
 
-$sets = @(Get-ChildItem -LiteralPath $weightsRoot -Directory)
+$sets = @(Get-ChildItem -LiteralPath $recipeRoot -Directory)
 if ($Id) { $sets = @($sets | Where-Object { $_.Name -eq $Id }) }
-if (-not $sets) { throw "no set of weights found in $weightsRoot$(if ($Id) { " under the name $Id" })" }
+if (-not $sets) { throw "no set of weights found in $recipeRoot$(if ($Id) { " under the name $Id" })" }
+if ($storeRoot -ne $recipeRoot) { "  store: $storeRoot" }
 
 # UTF-8 without a byte order mark: sha256sum and every other tool reads this
 # file as plain bytes, and a BOM would become part of the first hash.
@@ -60,7 +71,13 @@ $enc = New-Object Text.UTF8Encoding($false)
 $bad = 0
 
 foreach ($set in $sets) {
-    $sumsFile = Join-Path $set.FullName 'SHA256SUMS'
+    # The recipe is read from the repository; every weight FILE is resolved
+    # against the store. SHA256SUMS is authored here and copied there, because the
+    # shim verifies it beside the weights at Start and the lay-out shows the mod
+    # the store through a junction - so the copy has to travel with the bytes.
+    $recipe   = $set.FullName
+    $store    = Join-Path $storeRoot $set.Name
+    $sumsFile = Join-Path $recipe 'SHA256SUMS'
 
     if ($Fetch) {
         # FETCHING IS A SEPARATE PASS AND THEN FALLS THROUGH TO VERIFYING, which
@@ -68,7 +85,7 @@ foreach ($set in $sets) {
         # What to fetch comes from the two files that ARE versioned - SHA256SUMS
         # names the files, SOURCE names where they come from - so this script
         # knows no URLs of its own and a new set needs no edit here.
-        $sourceFile = Join-Path $set.FullName 'SOURCE'
+        $sourceFile = Join-Path $recipe 'SOURCE'
         if (-not (Test-Path -LiteralPath $sourceFile)) {
             Write-Warning "  $($set.Name): no SOURCE file - nothing says where these weights come from. See weights\README.md."
             $bad++
@@ -90,7 +107,7 @@ foreach ($set in $sets) {
                 $bad++
                 continue
             }
-            $path = Join-Path $set.FullName $rel
+            $path = Join-Path $store $rel
             # Already there and already right: gigabytes are not re-fetched to
             # prove a point. A file that is there but WRONG is left alone too -
             # the verify pass below reports it, and deleting somebody's file
@@ -112,6 +129,11 @@ foreach ($set in $sets) {
                 Invoke-WebRequest -Uri $url -OutFile $path -UseBasicParsing
             }
         }
+        # The sums travel WITH the bytes: the shim checks SHA256SUMS beside the
+        # weights at Start, the lay-out shows the mod the store through a
+        # junction, and beside the weights is therefore the store.
+        New-Item -ItemType Directory -Force $store | Out-Null
+        Copy-Item -LiteralPath $sumsFile -Destination (Join-Path $store 'SHA256SUMS') -Force
         # and on to the verification, which is the part that matters
     }
 
@@ -119,19 +141,24 @@ foreach ($set in $sets) {
         # Files are listed in a stable order so that two runs of this script on
         # the same folder produce the same file and git shows no diff where
         # nothing changed.
+        if (-not (Test-Path -LiteralPath $store)) {
+            Write-Warning "  $($set.Name): nothing to sign - $store does not exist"
+            continue
+        }
         $lines = @()
         # SHA256SUMS cannot sign itself, and the other two are the RECIPE rather
         # than the weights: SOURCE says where to fetch from, README says the rest.
         # Signing them would make -Fetch try to download its own instructions.
         $notWeights = @('SHA256SUMS', 'SOURCE', 'README.md', 'README.ru.md')
-        foreach ($file in (Get-ChildItem -LiteralPath $set.FullName -Recurse -File | Sort-Object FullName)) {
+        foreach ($file in (Get-ChildItem -LiteralPath $store -Recurse -File | Sort-Object FullName)) {
             if ($notWeights -contains $file.Name) { continue }
-            $rel = $file.FullName.Substring($set.FullName.Length).TrimStart('\') -replace '\\', '/'
+            $rel = $file.FullName.Substring($store.Length).TrimStart('\') -replace '\\', '/'
             $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
             $lines += "$hash  $rel"
         }
         if (-not $lines) { Write-Warning "  $($set.Name): the folder is empty - nothing to sign"; continue }
         [IO.File]::WriteAllLines($sumsFile, $lines, $enc)
+        Copy-Item -LiteralPath $sumsFile -Destination (Join-Path $store 'SHA256SUMS') -Force
         '  {0,-24} written, {1} files' -f $set.Name, $lines.Count
         continue
     }
@@ -159,7 +186,7 @@ foreach ($set in $sets) {
             $failed += "$rel  leaves the folder"
             continue
         }
-        $path = Join-Path $set.FullName $rel
+        $path = Join-Path $store $rel
         if (-not (Test-Path -LiteralPath $path)) { $failed += "$rel  missing"; continue }
         $actual = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
         if ($actual -ne $expected) { $failed += "$rel  $actual"; continue }
