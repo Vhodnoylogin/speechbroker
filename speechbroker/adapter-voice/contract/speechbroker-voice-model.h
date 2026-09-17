@@ -355,28 +355,50 @@ enum SpeechBrokerVoiceStatus
    convert. */
 #define SPEECHBROKERVOICE_FMT_FLOAT32 1  /* 32-bit float, native endian, nominally [-1, 1] */
 
-/* Where the model actually runs. It is a DECLARATION and the adapter cannot
-   check it - and that is exactly why it is here. The contract this header
-   replaces forbade a model to name an address or a program, and that rule was
-   enforceable because a model was then a data file somebody parsed. A model mod
-   is now a DLL the player chose to install, so the guarantee moves out of a
-   parser and into the open: the shim declares its kind, the adapter writes it
-   into the log in words at every registration, and the player may forbid REMOTE
-   in the settings of the adapter. A shim that declares INPROCESS and then opens
-   a socket is lying, and lying is the one thing this interface cannot catch.
+/* WHAT YOU DO ABOUT YOUR MODEL, and whether the sound leaves this machine.
+
+   A MODEL MOD IS A SHIM, NOT A MODEL, and the difference is what these values
+   are for. The shim is an SKSE plugin the game starts. On one side it speaks
+   this contract. On the other it does exactly one of three things: it IS the
+   model, it RAISES the model, or it ATTACHES to a model that is already running.
+   Nothing here requires the model to be a program of yours, or a program at all.
+
+   THE THREE THINGS ARE FOUR VALUES, because attaching splits on the one question
+   the player's setting actually asks - does the sound leave this machine. A shim
+   that attaches to a service already running beside the game keeps the sound
+   here; a shim that attaches to a server does not; and they are otherwise the
+   same shim doing the same work. Folding them together would force the local one
+   to declare a lie.
+
+   It is a DECLARATION and the adapter cannot check it - and that is exactly why
+   it is here. The contract this header replaces forbade a model to name an
+   address or a program, and that rule was enforceable because a model was then a
+   data file somebody parsed. A shim is a DLL the player chose to install, so the
+   guarantee moves out of a parser and into the open: the shim declares its kind,
+   the adapter writes it into the log in words at every registration, and the
+   player may forbid a kind in the settings of the adapter. A shim that declares
+   INPROCESS and then opens a socket is lying, and lying is the one thing this
+   interface cannot catch.
 
    THE GATE IS EVALUATED AT Register AND NOWHERE LATER. A kind the player has
-   forbidden is refused there, before Start is ever called, so a forbidden remote
-   model never resolves a name, never opens a socket and never contacts anybody:
-   the refusal has to happen before bring-up or it is not a refusal at all. Do
-   not open your transport in Register; that is what Start is for, and Start does
-   not come for a model that was refused. */
+   forbidden is refused there, before Start is ever called, so a forbidden model
+   never resolves a name, never opens a socket, never starts a process and never
+   contacts anybody: the refusal has to happen before bring-up or it is not a
+   refusal at all. Do not open your transport and do not start your process in
+   Register; that is what Start is for, and Start does not come for a model that
+   was refused. */
 enum SpeechBrokerVoiceKind
 {
-	SPEECHBROKERVOICE_KIND_INPROCESS = 1,  /* a library inside SkyrimVR.exe */
-	SPEECHBROKERVOICE_KIND_CHILD     = 2,  /* a process this shim started */
-	SPEECHBROKERVOICE_KIND_REMOTE    = 3   /* another machine */
+	SPEECHBROKERVOICE_KIND_INPROCESS = 1,  /* you ARE the model: a library inside SkyrimVR.exe */
+	SPEECHBROKERVOICE_KIND_CHILD     = 2,  /* you RAISE it: a process you started, on this machine */
+	SPEECHBROKERVOICE_KIND_ATTACHED  = 3,  /* you ATTACH to one already running on this machine */
+	SPEECHBROKERVOICE_KIND_REMOTE    = 4   /* you ATTACH to one on another machine */
 };
+
+/* The question the player's setting asks, named once so that a value added later
+   cannot answer it by accident. Every kind but REMOTE keeps the sound on this
+   machine; a version that adds a kind adds a line here at the same time. */
+#define SPEECHBROKERVOICE_KIND_LEAVES_MACHINE(k) ((k) == SPEECHBROKERVOICE_KIND_REMOTE)
 
 /* How quick you say you are. It decides ONE thing and only until it is measured:
    who is asked on an INTERIM pass. The final pass of a turn always asks
@@ -456,7 +478,8 @@ struct SpeechBrokerVoiceModelInfo
 	   known value is refused MALFORMED. NULL is read as "asr". */
 	const char* provides;
 
-	uint32_t    kind;  /* SpeechBrokerVoiceKind - declared, unverifiable, logged, gated at Register */
+	uint32_t    kind;  /* SpeechBrokerVoiceKind - what you do about your model;
+	                      declared, unverifiable, logged, gated at Register */
 
 	/* How long you ask to be given for a final pass, and how long Start may take.
 

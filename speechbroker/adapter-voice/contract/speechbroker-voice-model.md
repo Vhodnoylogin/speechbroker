@@ -16,13 +16,21 @@ itself and is published beside this file.
 **The microphone belongs to the adapter.** Capturing the sound, finding the silence and deciding
 where an utterance begins and ends are its business alone. A model is never asked to listen.
 
-**A model mod is a program.** It is an ordinary SKSE plugin, loaded into the same process of the
-game as the adapter, and that is why the two talk by calling a function rather than over a network.
-It is made of two halves: a thin shim that speaks this contract, and the model itself. The model may
-be anything at all — a library linked into this very process, a child process the shim starts, a
-server on another machine. The adapter is never told which, beyond one declared word, and never
-cares. The shim knows exactly two things: **how to bring its model up, and how to hand it the
-sound.**
+**A model mod is a shim, not a model.** It is an ordinary SKSE plugin, started by the game and
+loaded into the same process as the adapter — which is why the two talk by calling a function rather
+than over a network. On one side it speaks this contract. On the other it does exactly one of three
+things:
+
+| The shim … | and the model is |
+|---|---|
+| **is** the model | a library inside this very process |
+| **raises** the model | a process it started, on this machine |
+| **attaches** to the model | something already running — beside the game, or on another machine |
+
+Nothing here requires the model to be a program of the shim's own, or a program at all. The adapter
+is never told which of the three it is beyond one declared word, and cares about exactly one
+consequence of that word. The shim knows exactly two things: **how to bring its model up, and how to
+hand it the sound.**
 
 **A model never speaks to the bridge.** It answers the adapter, and the adapter carries the text on.
 There is no way to reach the bridge from this contract and no mention of it in the header.
@@ -92,17 +100,22 @@ in a headset, and there is no forgiving that.
 **1. The weights lie inside their own mod.** A model mod resolves its files relative to its own DLL
 and points at nothing it did not bring with it. That rule is unchanged in substance; what changed is
 its enforcer. It used to be a parse rule over a path in a JSON file, checked by the adapter. A shim
-is a program, so nobody can check its file names for it — the rule now rests on the shim, and the
+is code and not data, so nobody can check its file names for it — the rule now rests on the shim, and the
 adapter states it here so that a model mod which breaks it does so knowingly.
 
 **2. A model mod declares what kind of thing it is, and the player decides.** The old contract
 forbade a listing to name an address or an executable, because a fifteen-line JSON file from
 somebody else's mod could otherwise have sent all of a player's speech to the internet. That
-guarantee cannot survive as a parse rule now: a model mod **is** an executable, and it can open any
-socket it likes without telling anyone. So the guarantee moves to where it can still be kept:
+guarantee cannot survive as a parse rule now: a shim is **code, not data** - it can open any socket
+it likes without telling anyone, and there is nothing left to parse. So the guarantee moves to where it can still be kept:
 
-- `SpeechBrokerVoiceModelInfo::kind` declares `INPROCESS`, `CHILD` or `REMOTE`. It is **declared and
-  unverifiable** — the header says so in those words rather than pretending otherwise.
+- `SpeechBrokerVoiceModelInfo::kind` declares `INPROCESS`, `CHILD`, `ATTACHED` or `REMOTE` — the
+  three relationships above, with attaching split by the only question the setting actually asks:
+  **does the sound leave this machine.** The two attaching cases are otherwise the same shim doing
+  the same work, and folding them together would force the local one to declare a lie. The header
+  names the axis once, as `SPEECHBROKERVOICE_KIND_LEAVES_MACHINE`, so that a value added in a later
+  version cannot answer it by accident. It is **declared and unverifiable** — the header says so in
+  those words rather than pretending otherwise.
 - The adapter **gates registration on it**, against the player's own setting, before `Start` and
   before any transport of the model is opened.
 - The adapter **writes it in the log, in words**, for every model that registers.
