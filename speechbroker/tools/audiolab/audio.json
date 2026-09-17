@@ -7,18 +7,19 @@
   "liveOnly": true,
 
   "_voice": "The synthesis voice for `corpus`. It is NOT shipped here - it belonged to the service that is being dissolved, and speech becomes a model mod of its own. Put a piper voice into `voices/` (that folder is ignored by git) or point this key wherever it lies.",
-  "voice": "voices/ru_RU-irina-medium.onnx",
+  "_voice": "The voice of the synthesis, in the same store and for the same reason. Piper reads ONNX and nothing else here does.",
+  "voice": "D:/Skyrim VR Modding/Speech Models/piper/ru_RU-irina-medium.onnx",
 
   "_calibration": "The labelling manifest: the ground truth of the corpus. A file of its own because it is data rather than settings - the only record of which of the takes recorded before the -end/-open convention are finished phrases and which are cut off.",
   "calibration": "calibration.json",
 
-  "_weightsRoot": "Where the weights of the models lie, as folders `<weightsRoot>/<models.*.weights>`. The ids are the ones the listings of model-whisper-ru use, so the tooling and the mod look at the same files. Override on a machine where they lie elsewhere: the environment variable AUDIOLAB_WEIGHTS, which replaces this key whole.",
-  "weightsRoot": "../../model-whisper-ru/weights",
+  "_weightsRoot": "Where the weights of the models lie, as folders `<weightsRoot>/<models.*.weights>`. They are OUTSIDE the repository, in the modding root beside MO2 and SSEEdit, by the same rule as every other thing somebody else wrote - and split by format, because this tooling reads CTranslate2 (faster-whisper) while model-whisper-ru reads GGML (whisper.cpp). One folder for both is how a conversion of one engine ends up signed as a model of the other. Override on a machine where they lie elsewhere: the environment variable AUDIOLAB_WEIGHTS, which replaces this key whole.",
+  "weightsRoot": "D:/Skyrim VR Modding/Speech Models/ctranslate2",
 
   "_models": "The python model driver - the reference one, not the one that runs in the game. These are the settings `voice.json` ran with, kept verbatim so that a word error rate measured today is comparable with docs/measurements.md. The pair fast+accurate stays: the race between two models is what the adapter has to be able to demonstrate.",
   "models": {
     "whisper-small": {
-      "weights": "whisper-ru-small/small",
+      "weights": "small",
       "class": "fast",
       "budgetMs": 700,
       "beamSize": 1,
@@ -30,7 +31,7 @@
       "compute": "float16"
     },
     "whisper-turbo": {
-      "weights": "whisper-ru-turbo/large-v3-turbo",
+      "weights": "large-v3-turbo",
       "class": "accurate",
       "budgetMs": 2500,
       "beamSize": 5,
