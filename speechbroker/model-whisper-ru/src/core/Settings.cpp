@@ -64,7 +64,6 @@ namespace WhisperRu
 			child["library"] = a_model.child.library;
 			child["preload"] = a_model.child.preload;
 			child["device"] = a_model.child.device;
-			child["computeType"] = a_model.child.computeType;
 			child["beamSize"] = a_model.child.beamSize;
 			child["threads"] = a_model.child.threads;
 			child["promptPhrases"] = a_model.child.promptPhrases;
@@ -124,7 +123,6 @@ namespace WhisperRu
 				model.child.exec = Str(*child, "exec", model.child.exec);
 				model.child.library = Str(*child, "library", model.child.library);
 				model.child.device = Str(*child, "device", model.child.device);
-				model.child.computeType = Str(*child, "computeType", model.child.computeType);
 				model.child.beamSize = Int(*child, "beamSize", model.child.beamSize);
 				model.child.threads = Int(*child, "threads", model.child.threads);
 				model.child.promptPhrases = Int(*child, "promptPhrases", model.child.promptPhrases);

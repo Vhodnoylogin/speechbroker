@@ -44,7 +44,6 @@ namespace WhisperRu
 		std::vector<std::string> preload;
 
 		std::string device{ "cuda" };       // "cuda" or "cpu"; the child decides what it can honour
-		std::string computeType{ "int8" };  // the quantisation the weights were converted to
 		std::int32_t beamSize{ 5 };
 		std::int32_t threads{ 0 };          // 0 - let the backend choose
 

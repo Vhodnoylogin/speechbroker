@@ -147,11 +147,17 @@ verify the weights, raise a child under a job object, take buffers without ever 
 one `Complete` per accepted utterance, clip and forward the vocabulary, answer `Cancel`, survive a
 child that dies, and say all of it through localisation keys in both directions.
 
-**It does not recognise speech yet.** `whisper.cpp` is neither vendored nor built by this repository,
-and the child's backend is a **seam with a clean refusal**: it loads the library by full path,
-checks that the entry points of whisper.cpp's C API are actually in it — which is what tells a real
-`whisper.dll` from a file somebody renamed — and answers a failure naming what is missing. What a
-person drops in, and what is left to wire, is in [child/README.md](child/README.md).
+**And it recognises speech.** The child calls whisper.cpp's C API out of a DLL it loads by full
+path — seventeen entry points, all of them or none, which is also what tells a real `whisper.dll`
+from a file somebody renamed. The headers it was built against are vendored and pinned, because
+`whisper_full` takes its parameter block by value, and the agreement with the DLL is **measured** at
+start-up rather than assumed. What a person drops in — a whisper.cpp release and the weights in GGML
+format — is in [child/README.md](child/README.md), along with `--wav`, which runs one take through
+the real path without the game.
+
+`whisper.cpp` itself is still neither vendored nor built here, and should not be: it is a release
+somebody publishes, its CUDA variant is 675 MB, and a repository that built it would be building a
+dependency instead of a mod.
 
 Two more things are knowingly left:
 

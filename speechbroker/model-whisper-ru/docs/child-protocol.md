@@ -248,7 +248,6 @@ line is true only on one machine.
 --library <full path>    the backend DLL, loaded by full path
 --preload <full path>    repeatable, in order, loaded by full path before the library
 --device cuda|cpu
---compute-type <name>    the quantisation the weights were converted to
 --beam-size <n>
 --threads <n>            0 - let the backend choose
 --language <iso>
@@ -256,11 +255,35 @@ line is true only on one machine.
 --parent-pid <pid>       appended by the shim, always, and never by hand
 ```
 
+One more argument the shim never passes, because it is for a person:
+
+```
+--wav <file>             recognise one 16 kHz mono wav, print what came back, leave
+```
+
+`--wav` opens the backend by exactly the path the protocol opens it — the same preload, the same
+library, the same layout check, the same weights — and then runs one buffer through `Recognise`
+instead of serving the pipe. Nothing in it is a mock. It exists because the loop was otherwise
+*lay the mod out, start Skyrim, put on a headset and talk* for a question that takes a second to
+answer, and a loop that long is a loop nobody runs — which is how a backend ends up shipped
+untested. A refusal prints as its localisation KEY and arguments rather than as a `Log` frame:
+nobody holds the far end of the pipe in this mode, and a frame written to a console is a line of
+binary.
+
 `--parent-pid` arms the watchdog: the child opens that process and waits on it, and leaves the
 instant it ends. It is the **belt to the Job Object's braces** — the shim also puts the child in a
 job with `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`, whose handle the kernel closes when `SkyrimVR.exe`
 ends by any means at all. Both are wanted, because `Stop` may never be called, and a surviving child
 keeps the graphics card and MO2's belief that the game is still running.
+
+`ggml.dll` is **not** in `--preload` and must not be: the child loads it itself, from the library's
+own folder, and then asks it to register the compute devices from that same folder. This is not
+tidiness. Since ggml went modular, `whisper.dll` computes nothing by itself — the processor, CUDA
+and Vulkan each live in a `ggml-<name>.dll` that has to be registered before a model is loaded, and
+`whisper.dll` does not do it. With none registered, loading the model trips `GGML_ASSERT(device)`
+deep inside ggml and **aborts the process**: no error return, no exception, the child simply gone
+and the shim holding an exit code for a question nobody asked. So the count is read back afterwards,
+and zero becomes a sentence.
 
 **Never PATH, never `SetDefaultDllDirectories`.** Dependencies are brought up by full path with
 `LoadLibraryW`; a later bare-name load then finds the already-loaded module and resolves without any

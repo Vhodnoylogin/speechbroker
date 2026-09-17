@@ -69,7 +69,6 @@ namespace WhisperRu::Child
 			std::filesystem::path              library;
 			std::vector<std::filesystem::path> preload;
 			std::string                        device;
-			std::string                        computeType;
 			std::string                        language;
 			std::int32_t                       beamSize{ 5 };
 			std::int32_t                       threads{ 0 };

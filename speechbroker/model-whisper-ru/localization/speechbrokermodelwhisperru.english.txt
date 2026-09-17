@@ -57,6 +57,11 @@ $SBWHISPERRU_LOG_BACKEND_WRONG	{0} loaded but has no {1} - that file is not whis
 $SBWHISPERRU_LOG_PRELOAD_MISSING	a dependency named in the settings is not there: {0}
 $SBWHISPERRU_LOG_PRELOAD_FAILED	the dependency {0} would not load: Windows error {1}
 $SBWHISPERRU_LOG_WEIGHTS_MISSING	the weights folder is not there: {0}
+$SBWHISPERRU_LOG_WEIGHTS_NOT_ONE	the weights folder {0} holds {1} files ending .bin and a GGML model is exactly one - leave only the one that is meant
+$SBWHISPERRU_LOG_WEIGHTS_UNREADABLE	whisper.cpp would not load the weights {0} - the file is not a GGML model, or it is truncated
+$SBWHISPERRU_LOG_BACKEND_MISMATCH	{0} is whisper.cpp but not the build this mod was made against ({1}): its parameter block is laid out differently, and using it would hand the model settings nobody typed
+$SBWHISPERRU_LOG_GGML_MISSING	ggml.dll is not beside the recognition library: {0} - whisper.cpp ships it and computes nothing without it
+$SBWHISPERRU_LOG_NO_COMPUTE	the recognition library registered no compute device from {0} - the ggml-cpu and ggml-cuda files that do the arithmetic are missing from that folder
 
 # --- working ----------------------------------------------------------------
 $SBWHISPERRU_LOG_VOCABULARY	vocabulary: keeping {0} phrases of the {1} offered

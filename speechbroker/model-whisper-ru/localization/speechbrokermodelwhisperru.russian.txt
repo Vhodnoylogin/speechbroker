@@ -48,6 +48,11 @@ $SBWHISPERRU_LOG_BACKEND_WRONG	{0} загрузилась, но в ней нет
 $SBWHISPERRU_LOG_PRELOAD_MISSING	зависимости, названной в настройках, нет: {0}
 $SBWHISPERRU_LOG_PRELOAD_FAILED	зависимость {0} не загрузилась: ошибка Windows {1}
 $SBWHISPERRU_LOG_WEIGHTS_MISSING	папки с весами нет: {0}
+$SBWHISPERRU_LOG_WEIGHTS_NOT_ONE	в папке весов {0} файлов .bin: {1}, а модель GGML - ровно один; оставить только нужный
+$SBWHISPERRU_LOG_WEIGHTS_UNREADABLE	whisper.cpp не смог прочитать веса {0} - это либо не модель GGML, либо файл оборван
+$SBWHISPERRU_LOG_BACKEND_MISMATCH	{0} - это whisper.cpp, но не та сборка, под которую сделан мод ({1}): блок параметров лежит в ней иначе, и модель получила бы настройки, которых никто не задавал
+$SBWHISPERRU_LOG_GGML_MISSING	рядом с библиотекой распознавания нет ggml.dll: {0} - whisper.cpp поставляет её, и без неё не считает ничего
+$SBWHISPERRU_LOG_NO_COMPUTE	библиотека распознавания не зарегистрировала ни одного вычислителя из {0} - в этой папке нет файлов ggml-cpu и ggml-cuda, которые и считают
 
 # --- working ----------------------------------------------------------------
 $SBWHISPERRU_LOG_VOCABULARY	словарь: оставляем {0} фраз из предложенных {1}

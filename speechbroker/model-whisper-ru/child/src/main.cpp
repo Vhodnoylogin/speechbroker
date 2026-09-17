@@ -19,6 +19,7 @@
 // console this process does not have is not a place to put a message.
 
 #include "Recogniser.h"
+#include "SelfTest.h"
 
 #include "Wire.h"
 
@@ -115,10 +116,10 @@ namespace
 	{
 		std::string modelId;
 		std::string device;
-		std::string computeType;
 		std::string language{ "ru" };
 		std::filesystem::path weights;
 		std::filesystem::path library;
+		std::filesystem::path wav;
 		std::vector<std::filesystem::path> preload;
 		std::int32_t beamSize{ 5 };
 		std::int32_t threads{ 0 };
@@ -144,10 +145,10 @@ namespace
 				a_out.library = std::filesystem::path(value);
 			} else if (name == "--preload") {
 				a_out.preload.emplace_back(value);
+			} else if (name == "--wav") {
+				a_out.wav = std::filesystem::path(value);
 			} else if (name == "--device") {
 				a_out.device = value;
-			} else if (name == "--compute-type") {
-				a_out.computeType = value;
 			} else if (name == "--language") {
 				a_out.language = value;
 			} else if (name == "--beam-size") {
@@ -194,7 +195,6 @@ int main(int a_count, char** a_values)
 	options.library = arguments.library;
 	options.preload = arguments.preload;
 	options.device = arguments.device;
-	options.computeType = arguments.computeType;
 	options.language = arguments.language;
 	options.beamSize = arguments.beamSize;
 	options.threads = arguments.threads;
@@ -204,9 +204,31 @@ int main(int a_count, char** a_values)
 		// The clean refusal. One line naming the file that is missing, and an
 		// exit code the shim turns into a permanent refusal rather than a retry
 		// - because no amount of waiting installs a DLL.
-		Tell(3, why.key, why.args);
-		const bool aboutWeights = why.key == "$SBWHISPERRU_LOG_WEIGHTS_MISSING";
+		const bool aboutWeights =
+			why.key == "$SBWHISPERRU_LOG_WEIGHTS_MISSING" ||
+			why.key == "$SBWHISPERRU_LOG_WEIGHTS_NOT_ONE" ||
+			why.key == "$SBWHISPERRU_LOG_WEIGHTS_UNREADABLE";
+		if (arguments.wav.empty()) {
+			Tell(3, why.key, why.args);
+		} else {
+			// Nobody holds the far end of the pipe in --wav mode, and a Log frame
+			// written to a console is a line of binary. The KEY is printed raw
+			// rather than rendered: this process has no table and wants none, and
+			// whoever runs it by hand has localization/ open anyway.
+			std::printf("refused %s", why.key.c_str());
+			for (const auto& one : why.args) {
+				std::printf(" | %s", one.c_str());
+			}
+			std::printf("\n");
+		}
 		return aboutWeights ? kExitNoWeights : kExitNoBackend;
+	}
+
+	// --wav never reaches the protocol. It opened the backend exactly as the
+	// protocol path opens it, and that was the point; what follows is one buffer
+	// and a printout, and then this process leaves.
+	if (!arguments.wav.empty()) {
+		return Child::RunSelfTest(*recogniser, arguments.wav);
 	}
 
 	Wire::Hello hello;

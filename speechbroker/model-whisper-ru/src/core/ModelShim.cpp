@@ -229,7 +229,6 @@ namespace WhisperRu
 			"--weights", m_weights.string(),
 			"--library", (m_settings.source.parent_path() / m_settings.child.library).string(),
 			"--device", m_settings.child.device,
-			"--compute-type", m_settings.child.computeType,
 			"--beam-size", std::to_string(m_settings.child.beamSize),
 			"--threads", std::to_string(m_settings.child.threads),
 			"--language", m_settings.language,

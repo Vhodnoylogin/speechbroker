@@ -33,7 +33,6 @@
     "library": "child/whisper.dll",
     "preload": [],
     "device": "cuda",
-    "computeType": "int8",
     "beamSize": 5,
     "threads": 0,
     "promptPhrases": 40
