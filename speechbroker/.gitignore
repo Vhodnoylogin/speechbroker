@@ -16,3 +16,20 @@ build.local.json
 
 # The scenario made out of live sound is derived: engine-scenario.py builds it
 bridge/tests/scenarios/live.json
+
+# THE TRUNK'S ROOT RULES, NARROWED BACK FOR THIS MODULE. The branch now carries
+# the repository's own .gitignore, which keeps stray recordings out with *.wav and
+# downloaded weights out with models/. Both are right for the trunk and wrong
+# inside here, and a rule deeper in the tree is the one that wins:
+#
+#   *.wav    the takes and the samples ARE the reference material of the tooling -
+#            53 of them are versioned on purpose, and .gitattributes sends every
+#            one through LFS. The weights themselves are excluded by name in
+#            model-whisper-ru/weights/.gitignore, so nothing heavy rides in here.
+#   models/  here this is not a folder of weights but source: the adapter's
+#            src/models/, and the descriptors by which a new model mod is added.
+#
+# Without these two lines `git add .` skips a new take or a new descriptor and
+# says nothing, which is how a recording that exists nowhere else gets lost.
+!*.wav
+!models/
