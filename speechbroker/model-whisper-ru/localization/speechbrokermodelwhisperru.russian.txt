@@ -1,0 +1,63 @@
+# Speech Broker - Voice Model - Whisper RU: every line this mod puts out, Russian.
+#
+# Translated from localization/speechbrokermodelwhisperru.english.txt. The
+# numbered placeholders may be reordered freely, but every one of them has to
+# appear.
+
+# --- loading, settings ------------------------------------------------------
+$SBWHISPERRU_LOG_PLUGIN_LOADED	{0} {1} загружен, его собственная папка - {2}
+$SBWHISPERRU_LOG_NO_MESSAGING	SKSE не выдал интерфейс сообщений - встретиться с адаптером невозможно, и этот мод ничего не сделает
+$SBWHISPERRU_LOG_SETTINGS_WRITTEN	настроек не нашлось, поэтому встроенные записаны в {0} - править их там
+$SBWHISPERRU_LOG_SETTINGS_UNWRITABLE	настройки не удалось записать в {0} - работаем на встроенных значениях, и изменить ничего нельзя, пока папка не станет доступной для записи
+$SBWHISPERRU_LOG_SETTINGS_UNREADABLE	файл настроек {0} не открылся - пропускаем его
+$SBWHISPERRU_LOG_SETTINGS_BROKEN	файл настроек {0} не разобрался: {1} - пропускаем его
+$SBWHISPERRU_LOG_SETTINGS_NO_ID	в файле настроек {0} нет id - пропускаем его: ответ подписывается именно id, и больше его ничто не опознаёт
+$SBWHISPERRU_LOG_SETTINGS_TWICE	модель {0} объявлена дважды, в {1} и в {2} - берём первую; адаптер отказал бы второй как дубликату
+$SBWHISPERRU_LOG_NO_MODELS	в {0} не настроено ни одной модели - этот мод ничего не зарегистрирует
+$SBWHISPERRU_LOG_MODEL	модель {0} ({1}), объявлена как {2}, веса {3}, из {4}
+$SBWHISPERRU_LOG_MODEL_OFF	модель {0} выключена в своих настройках - не регистрируем
+$SBWHISPERRU_LOG_PATH_OUTSIDE	путь «{0}» в {1} выводит за пределы папки мода - отказ: проверенное и отгруженное должны быть одним и тем же
+
+# --- meeting the adapter ----------------------------------------------------
+$SBWHISPERRU_LOG_HOST_PAYLOAD	в рассылке адаптера пришло {0} байт вместо указателя - отказ, разыменовывать это нельзя
+$SBWHISPERRU_LOG_HOST_MALFORMED	таблица адаптера нечитаема: structBytes {0}
+$SBWHISPERRU_LOG_HOST_TOO_OLD	адаптер говорит на версии контракта {0}, а этой прослойке нужна не ниже {1} - не регистрируемся
+$SBWHISPERRU_LOG_HANDSHAKE	зарегистрировано моделей: {0} из {1}, адаптер версии контракта {2}
+$SBWHISPERRU_LOG_REGISTER_REFUSED	адаптер отказал в регистрации {0}: статус {1}
+$SBWHISPERRU_LOG_REGISTERED	{0} зарегистрирована: дескриптор {1}, версия контракта {2}, буферы до {3} отсчётов
+
+# --- bringing the model up --------------------------------------------------
+$SBWHISPERRU_LOG_WEIGHTS_VERIFIED	веса в {0} сверены с SHA256SUMS, файлов: {1}
+$SBWHISPERRU_LOG_WEIGHTS_UNVERIFIED	рядом с весами в {0} нет SHA256SUMS - они НЕ проверены, а несколько перевёрнутых байт внутри модели не дают вообще никакой ошибки и дают тихо неверные ответы
+$SBWHISPERRU_LOG_WEIGHTS_BAD	веса не те, что должны быть: {0} - {1} - эту модель не запускаем
+$SBWHISPERRU_LOG_CHILD_MISSING	программы-потомка нет: {0}
+$SBWHISPERRU_LOG_CHILD_NOT_STARTED	программу-потомка {0} не удалось запустить: ошибка Windows {1}
+$SBWHISPERRU_LOG_CHILD_STARTED	потомок запущен: {0}, устройство {1}
+$SBWHISPERRU_LOG_CHILD_NO_JOB	потомка не удалось поместить в объект задания (ошибка {0}) - его ещё держит сторож по parent-pid, но теперь это единственное, что его держит
+$SBWHISPERRU_LOG_CHILD_HELLO	потомок поднялся: движок {0}, модель {1}, буферы до {2} отсчётов
+$SBWHISPERRU_LOG_STILL_STARTING	{0} всё ещё запускается спустя {1} мс - просим адаптер зайти позже
+$SBWHISPERRU_LOG_READY	{0} готова
+$SBWHISPERRU_LOG_FORMAT_UNKNOWN	адаптер предлагает формат отсчётов {0}, каналов {1}, частота {2} Гц - модель такого не знает; отказ, потому что преобразование - дело того, кому принадлежит микрофон
+$SBWHISPERRU_LOG_CHILD_DIED_AT_START	{0} умерла при запуске, код выхода {1} ({2})
+$SBWHISPERRU_LOG_CHILD_BAD_ARGUMENTS	потомок запущен с аргументами, которые он не может использовать
+
+# --- the backend, said by the child -----------------------------------------
+$SBWHISPERRU_LOG_BACKEND_MISSING	библиотеки распознавания нет: {0} - положить её рядом с потомком, см. child/README.md
+$SBWHISPERRU_LOG_BACKEND_UNLOADABLE	библиотека распознавания {0} не загрузилась: ошибка Windows {1} - обычно не хватает ЕЁ собственной зависимости
+$SBWHISPERRU_LOG_BACKEND_WRONG	{0} загрузилась, но в ней нет {1} - это не whisper.cpp
+$SBWHISPERRU_LOG_PRELOAD_MISSING	зависимости, названной в настройках, нет: {0}
+$SBWHISPERRU_LOG_PRELOAD_FAILED	зависимость {0} не загрузилась: ошибка Windows {1}
+$SBWHISPERRU_LOG_WEIGHTS_MISSING	папки с весами нет: {0}
+
+# --- working ----------------------------------------------------------------
+$SBWHISPERRU_LOG_VOCABULARY	словарь: оставляем {0} фраз из предложенных {1}
+$SBWHISPERRU_LOG_REPLY_UNOWED	пришёл ответ на высказывание {0}, которого уже никто не ждёт - проход закрылся, пока потомок ещё работал
+$SBWHISPERRU_LOG_FRAGMENTS_DROPPED	фрагментов высказывания {1} с перепутанным временем: {0} - отброшены; потомок не должен таких выдавать
+$SBWHISPERRU_LOG_ANSWER_MALFORMED	адаптер отверг ответ на высказывание {0} как неправильный, фрагментов {1} - какое поле, сказано в его собственном журнале
+$SBWHISPERRU_LOG_ANSWER_STALE	ответ на высказывание {0} опоздал по счёту адаптера на {1} мс - больше за него ничего не должны
+$SBWHISPERRU_LOG_CHILD_FRAME_BROKEN	кадр типа {0} в канале не разобрался
+$SBWHISPERRU_LOG_CHILD_FRAME_UNKNOWN	кадр типа {0} в канале этой сборке неизвестен - пропускаем
+
+# --- endings ----------------------------------------------------------------
+$SBWHISPERRU_LOG_STOPPING	{0} останавливается
+$SBWHISPERRU_LOG_CHILD_GONE	потомок модели {0} исчез, код выхода {1} ({2}). Код 127 означает, что загруженная библиотека не смогла дотянуться до собственной зависимости - обычная причина - несовпадение версий CUDA или cuDNN, и процесс при этом завершается без единого исключения и без журнала падения. Эта модель выбывает на сессию; остальные работают дальше

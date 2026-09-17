@@ -1,20 +1,36 @@
 {
+  "_": "Where this module is laid out and what it is built from. Every path and name of the lay-out lives here and nowhere else, so that nothing in the sources or the scripts is true only on one machine. The weights are the exception and are deliberately not copied by anything here: they are gigabytes, they live under weights/ through Git LFS, and the lay-out puts a junction on them.",
+
   "deploy": {
     "modsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods",
     "modName": "Speech Broker - Voice Model - Whisper RU",
     "adapterMod": "Speech Broker - Voice Adapter",
+
+    "sdk": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Speech Broker - Voice Adapter SDK",
+
     "version": "0.1.0",
-    "indexScript": "D:/Skyrim VR Modding/Claude Skyrim VR/claude-projects/skyrim-vr/index/update-index.ps1",
+    "indexScript": "D:/Skyrim VR Modding/Claude Code/Skyrim VR/index/update-index.ps1",
     "indexOwner": "chat-speechbroker-model",
     "downloadsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/downloads",
     "sevenZip": "C:/Program Files/7-Zip/7z.exe",
-    "targetRel": "SKSE/Plugins/speechbroker/adapters/voice/models",
     "bridgeUrl": "http://127.0.0.1:8930",
     "bridgeToken": "D:/Skyrim VR Modding/MO2/plugins/mo2aibridge/mo2aibridge-token.txt",
+
+    "dll": "{root}/build/Release/SpeechBrokerModelWhisperRu.dll",
+    "child": "{root}/child/build/Release/SpeechBrokerWhisperChild.exe",
+
+    "ownRel": "SKSE/Plugins/speechbroker/models/whisper-ru",
+    "childRel": "child",
+    "localizationRel": "localization",
+    "weightsRel": "weights",
+
+    "settings": "{root}/models",
+    "localization": "{root}/localization",
+    "weights": "{root}/weights",
+
     "docs": [
       "{root}/../LICENSE",
       "{root}/../THIRD-PARTY-NOTICES.md"
-    ],
-    "listings": "{root}/models"
+    ]
   }
 }

@@ -1,0 +1,72 @@
+# Speech Broker - Voice Model - Whisper RU: every line this mod puts out, English.
+#
+# The shim has no window and no notices: all of this is the log. Two of them read
+# it - our own file next to the adapter's, and the adapter's own log, where the
+# same line arrives as the key and its arguments rather than as a sentence,
+# because the adapter has no table of ours and substitutes nothing.
+#
+# The child renders nothing at all. It sends a key out of this file and its
+# arguments up a pipe, which is why a message added here needs no edit anywhere
+# else - not in the shim, and certainly not in the adapter.
+#
+# Placeholders are numbered, {0} and {1} rather than a bare {}, because another
+# language puts the words in another order. A wrong number of them does not
+# silence the line: the placeholder is left standing and the rest still reads.
+
+# --- loading, settings ------------------------------------------------------
+$SBWHISPERRU_LOG_PLUGIN_LOADED	{0} {1} loaded, its own folder is {2}
+$SBWHISPERRU_LOG_NO_MESSAGING	SKSE gave out no messaging interface - the adapter cannot be met and this mod will do nothing
+$SBWHISPERRU_LOG_SETTINGS_WRITTEN	no settings were found, so the built-in ones were written into {0} - edit them there
+$SBWHISPERRU_LOG_SETTINGS_UNWRITABLE	the settings could not be written into {0} - running on the built-in values, and nothing can be changed until that folder is writable
+$SBWHISPERRU_LOG_SETTINGS_UNREADABLE	the settings file {0} could not be opened - skipping it
+$SBWHISPERRU_LOG_SETTINGS_BROKEN	the settings file {0} did not parse: {1} - skipping it
+$SBWHISPERRU_LOG_SETTINGS_NO_ID	the settings file {0} has no id - skipping it, because an answer is signed with the id and nothing else identifies it
+$SBWHISPERRU_LOG_SETTINGS_TWICE	model {0} is declared twice, in {1} and in {2} - taking the first; the adapter would refuse the second as a duplicate
+$SBWHISPERRU_LOG_NO_MODELS	not a single model is configured in {0} - this mod will register nothing
+$SBWHISPERRU_LOG_MODEL	model {0} ({1}), declared {2}, weights {3}, out of {4}
+$SBWHISPERRU_LOG_MODEL_OFF	model {0} is switched off in its settings - not registering it
+$SBWHISPERRU_LOG_PATH_OUTSIDE	the path '{0}' in {1} leaves the folder of the mod - refusing it, because what was verified and what was shipped must be the same thing
+
+# --- meeting the adapter ----------------------------------------------------
+$SBWHISPERRU_LOG_HOST_PAYLOAD	the adapter's broadcast carried {0} bytes instead of a pointer - refusing it rather than dereferencing whatever that is
+$SBWHISPERRU_LOG_HOST_MALFORMED	the adapter's host table is unreadable: structBytes {0}
+$SBWHISPERRU_LOG_HOST_TOO_OLD	the adapter speaks contract version {0} and this shim needs at least {1} - not registering
+$SBWHISPERRU_LOG_HANDSHAKE	registered {0} of {1} models with an adapter at contract version {2}
+$SBWHISPERRU_LOG_REGISTER_REFUSED	the adapter refused to register {0}: status {1}
+$SBWHISPERRU_LOG_REGISTERED	{0} registered: handle {1}, contract version {2}, buffers up to {3} samples
+
+# --- bringing the model up --------------------------------------------------
+$SBWHISPERRU_LOG_WEIGHTS_VERIFIED	weights in {0} verified against SHA256SUMS, {1} files
+$SBWHISPERRU_LOG_WEIGHTS_UNVERIFIED	there is no SHA256SUMS beside the weights in {0} - they are NOT verified, and a few flipped bytes inside a model produce no error at all and answers that are quietly wrong
+$SBWHISPERRU_LOG_WEIGHTS_BAD	the weights are not what they should be: {0} is {1} - refusing to start this model
+$SBWHISPERRU_LOG_CHILD_MISSING	the child program is not there: {0}
+$SBWHISPERRU_LOG_CHILD_NOT_STARTED	the child program {0} could not be started: Windows error {1}
+$SBWHISPERRU_LOG_CHILD_STARTED	child started: {0}, device {1}
+$SBWHISPERRU_LOG_CHILD_NO_JOB	the child could not be put into the job object (error {0}) - it is still held by its parent-pid watchdog, but that is now the only thing holding it
+$SBWHISPERRU_LOG_CHILD_HELLO	the child is up: backend {0}, model {1}, buffers up to {2} samples
+$SBWHISPERRU_LOG_STILL_STARTING	{0} is still starting after {1} ms - asking the adapter to come back
+$SBWHISPERRU_LOG_READY	{0} is ready
+$SBWHISPERRU_LOG_FORMAT_UNKNOWN	the adapter offers sample format {0}, {1} channels at {2} Hz, which this model does not know - refusing, because conversion belongs to whoever owns the microphone
+$SBWHISPERRU_LOG_CHILD_DIED_AT_START	{0} died while starting, exit code {1} ({2})
+$SBWHISPERRU_LOG_CHILD_BAD_ARGUMENTS	the child was started with arguments it cannot use
+
+# --- the backend, said by the child -----------------------------------------
+$SBWHISPERRU_LOG_BACKEND_MISSING	the recognition library is not there: {0} - drop it in beside the child, see child/README.md
+$SBWHISPERRU_LOG_BACKEND_UNLOADABLE	the recognition library {0} would not load: Windows error {1} - usually one of ITS own dependencies is missing
+$SBWHISPERRU_LOG_BACKEND_WRONG	{0} loaded but has no {1} - that file is not whisper.cpp
+$SBWHISPERRU_LOG_PRELOAD_MISSING	a dependency named in the settings is not there: {0}
+$SBWHISPERRU_LOG_PRELOAD_FAILED	the dependency {0} would not load: Windows error {1}
+$SBWHISPERRU_LOG_WEIGHTS_MISSING	the weights folder is not there: {0}
+
+# --- working ----------------------------------------------------------------
+$SBWHISPERRU_LOG_VOCABULARY	vocabulary: keeping {0} phrases of the {1} offered
+$SBWHISPERRU_LOG_REPLY_UNOWED	an answer arrived for utterance {0}, which nobody is waiting for any more - the pass closed while the child was still working
+$SBWHISPERRU_LOG_FRAGMENTS_DROPPED	{0} fragments of utterance {1} were tangled in time and were dropped - the child should not produce those
+$SBWHISPERRU_LOG_ANSWER_MALFORMED	the adapter refused the answer to utterance {0} as malformed, {1} fragments - its own log names the field
+$SBWHISPERRU_LOG_ANSWER_STALE	the answer to utterance {0} was late by the adapter's reckoning, {1} ms - nothing more is owed for it
+$SBWHISPERRU_LOG_CHILD_FRAME_BROKEN	a frame of type {0} on the pipe did not parse
+$SBWHISPERRU_LOG_CHILD_FRAME_UNKNOWN	a frame of type {0} on the pipe is one this build does not know - ignoring it
+
+# --- endings ----------------------------------------------------------------
+$SBWHISPERRU_LOG_STOPPING	{0} is being stopped
+$SBWHISPERRU_LOG_CHILD_GONE	the child of {0} has gone, exit code {1} ({2}). Code 127 means a library it loaded could not reach one of its own dependencies - a CUDA or cuDNN version mismatch is the usual cause, and it ends a process with no exception and no crash log at all. This model is out for the session; the others carry on

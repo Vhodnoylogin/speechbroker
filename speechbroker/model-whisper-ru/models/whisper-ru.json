@@ -1,13 +1,58 @@
 {
-  "_": "The listing of a model mod for SpeechBrokerVoiceAdapter. The contract is adapter-voice/contract/speechbroker-voice-model.md. There is neither an address nor a program here and there cannot be: the microphone belongs to the adapter, and this is only a model.",
+  "_": "The settings of ONE model of this mod - the accurate one. This file is PRIVATE to this mod. It used to be the interface: when a model mod was a data file, the adapter itself parsed it, and that is why the old version could carry no address and no program. A model mod is a shim now, the contract is the C ABI in speechbroker-voice-model.h, and nothing outside SpeechBrokerModelWhisperRu.dll reads this file. The shim writes this file out of its built-in values the first time it finds none, so deleting it is safe and deleting one line of it is safe too.",
 
   "id": "whisper-ru-turbo",
   "name": "Whisper large-v3-turbo, Russian",
   "enabled": true,
-  "class": "accurate",
-  "provides": "asr,tts",
+
+  "_language": "What the model LISTENS in, ISO 639-1. The adapter logs it and routes nothing on it at contract version 1.",
   "language": "ru",
 
-  "weights": "whisper-ru-turbo/large-v3-turbo",
-  "device": "cuda"
+  "_provides": "The adapter knows only 'asr' at contract version 1. It used to say 'asr,tts' here, which was false about Whisper: Whisper does not speak. Speech is a model mod of its own, and it did not go missing - it was always a separate thing.",
+  "provides": "asr",
+
+  "_class": "'fast' or 'accurate'. A HINT, and the only thing it decides is whether this model is asked on an INTERIM pass; the final pass of every turn asks everybody. The adapter replaces it with a measured p90 once it has five latency samples, and latencies are not carried between runs, so this declaration is the interim roster at the start of every session.",
+  "class": "accurate",
+
+  "_finalOnly": "BINDING, not a hint, and the one declaration measurement does not override - it is about cost, not speed. False here because this model is on this machine and a pass costs a memcpy. A model across a network should say true.",
+  "finalOnly": false,
+
+  "_budgetMs": "How long this model asks to be given for a final pass. For the first five passes of a session the deadline IS this plus a slack of 1000 ms; under-declare and those passes close underneath you and are counted against your standing. Declare what can actually be met.",
+  "budgetMs": 2500,
+
+  "_startupMs": "How long Start may take, and how long the adapter waits between attempts. It tries five times. Loading large-v3-turbo off a cold disk is the case this number is for.",
+  "startupMs": 60000,
+
+  "_stopMs": "How long Stop may take, and it is deliberately NOT startupMs: one of the two moments Stop is called is the moment the player wants out of the game, and a minute of that is the difference between a build that can be edited afterwards and one that cannot.",
+  "stopMs": 2000,
+
+  "_maxInFlight": "How many utterances this model can hold at once. Read by the adapter against the debt, so a true number means BUSY is never answered at all.",
+  "maxInFlight": 2,
+
+  "_weights": "Relative to the folder this file is in, and it may not leave it. The weights, the SHA256SUMS beside them and the archive a player installs are one unit: a path leading out of the mod means the thing that was verified and the thing that was shipped are not the same thing.",
+  "weights": "weights/whisper-ru-turbo",
+
+  "_requireSums": "Refuse to start when there is no SHA256SUMS beside the weights, rather than only when it does not match. Measured: five hundred flipped bytes inside a converted model produce no error anywhere and a model that answers rubbish, and nothing above this line can tell that from a hard accent. Turn it off while building a model mod of your own, before the sums exist.",
+  "requireSums": true,
+
+  "child": {
+    "_": "How the child process is raised and what it is told. Every path here is relative to the folder of this file and may not leave it.",
+    "exec": "child/SpeechBrokerWhisperChild.exe",
+
+    "_library": "The backend, loaded by the child by FULL PATH at run time. It is not linked: linking would make the child refuse to start with an unreadable loader error instead of one sentence naming the file that is missing.",
+    "library": "child/whisper.dll",
+
+    "_preload": "Dependencies of that library, loaded by full path IN ORDER before it. This list is why nothing here ever touches PATH or SetDefaultDllDirectories - a bare-name load later finds an already-loaded module without any policy change at all.",
+    "preload": [],
+
+    "device": "cuda",
+    "computeType": "int8",
+    "beamSize": 5,
+
+    "_threads": "0 - let the backend choose.",
+    "threads": 0,
+
+    "_promptPhrases": "How many of the adapter's vocabulary phrases to keep as a prompt. The reference kept 40: an initial prompt competes for a window that also has to hold the answer, and a long one makes recognition worse.",
+    "promptPhrases": 40
+  }
 }

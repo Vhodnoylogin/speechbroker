@@ -1,14 +1,41 @@
 {
-  "_": "The second model of the same mod: the draft one. It gives a quick answer which the accurate one refines afterwards. Two classes are two listings, not a setting of the adapter.",
+  "_": "The second model of the same mod: the draft one. It gives a quick answer which the accurate one refines afterwards, and the adapter knows the two are not two different utterances. Two classes are two models, not a setting - and they could equally be two mods; keeping both here is a convenience.",
+
+  "_shimLanguage": "Which language THIS MOD'S OWN LOG is rendered in. 'auto' is the language the game runs in. It is read from whichever settings file states it, and it has nothing to do with what the models listen in.",
+  "shimLanguage": "auto",
+
+  "_logLevel": "debug, info, warn, error - for this mod's own file beside the adapter's log. What goes to the adapter through its Log entry point is not filtered here: that log belongs to the adapter and has its own level.",
+  "logLevel": "info",
 
   "id": "whisper-ru-small",
   "name": "Whisper small, Russian",
   "enabled": true,
-  "class": "fast",
-  "provides": "asr",
   "language": "ru",
+  "provides": "asr",
 
-  "weights": "whisper-ru-small/small",
-  "device": "cuda",
-  "budgetMs": 700
+  "_class": "The draft half of the pair. Declaring 'fast' is what puts this model on the interim roster at the start of a session, before the adapter has measured five latencies of it.",
+  "class": "fast",
+
+  "finalOnly": false,
+
+  "_budgetMs": "The last measurement had both models answering as fast - p50 81 ms for small against 99 ms for turbo, on declared budgets of 700 and 2500 - so the draft-and-refine machinery is currently idle. That is a reason to measure again, not to drop the pair.",
+  "budgetMs": 700,
+
+  "startupMs": 30000,
+  "stopMs": 2000,
+  "maxInFlight": 2,
+
+  "weights": "weights/whisper-ru-small",
+  "requireSums": true,
+
+  "child": {
+    "exec": "child/SpeechBrokerWhisperChild.exe",
+    "library": "child/whisper.dll",
+    "preload": [],
+    "device": "cuda",
+    "computeType": "int8",
+    "beamSize": 5,
+    "threads": 0,
+    "promptPhrases": 40
+  }
 }

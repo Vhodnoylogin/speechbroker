@@ -1,18 +1,25 @@
-﻿# Laying a model mod out into mods\. Every path and name is in config/build.json.
+# Laying the model mod out into mods\. Every path and name is in
+# config\build.json.
 #
 #   tools\deploy.ps1            show what would be done
 #   tools\deploy.ps1 -Apply     do it
 #
-# A model mod is a module of its own and NOT a program: there is no microphone
-# in it, no port and no file to run. It carries a model - a listing and the
-# files of the weights. The contract of the listing is in
-# adapter-voice\contract\speechbroker-voice-model.md.
+# A model mod is a program now: a shim (an SKSE plugin) and a child process
+# beside it. So this lays out FOUR things where it used to lay out one listing -
+# the DLL, the child, the settings and the text - and puts a junction on the
+# weights rather than copying them.
 #
-# The weights of this model live in another module on this machine (the voice
-# branch), and there is no point copying gigabytes into the build: the lay-out
-# puts junctions on them according to config\build.local.json, which is not in
-# git. For somebody who downloaded the mod the weights lie inside the mod and no
-# junction is needed.
+# WHY A JUNCTION AND NOT A COPY. The weights are gigabytes. Copying them into
+# mods\ on every lay-out would spend minutes and a second copy of the disk for
+# nothing, and the copy would then be the thing the game verifies while the
+# original is the thing anybody edits. A junction has one set of bytes with two
+# names.
+#
+# THE JUNCTION IS MADE IN mods\ AND NOT IN dist\, so the archive package.ps1
+# builds out of dist\ does NOT carry the weights. That is deliberate and it is
+# the integrator's call, not a script's: a gigabyte inside a mod archive is a
+# decision about a download channel, and the weights are versioned through Git
+# LFS with their own rules about who fetches what.
 param([switch]$Apply, [switch]$NoIndex)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -25,29 +32,68 @@ if ($game.Count) { throw "The game is running ($($game.Name -join ', ')) - layin
 
 function Expand-Path([string]$p) { $p.Replace('{root}', $root) }
 
-$adapter = Join-Path $d.modsRoot $d.adapterMod
-if (-not (Test-Path -LiteralPath $adapter)) {
-    Write-Warning "the adapter '$($d.adapterMod)' was not found in the build - the listings can be put down, but there will be nobody to read them"
-}
-
-$listings = Join-Path $root 'models'
-if (-not (Test-Path -LiteralPath $listings)) { throw "the folder of listings was not found: $listings" }
-
 $dist = Join-Path $root 'dist'
 Remove-Item -LiteralPath $dist -Recurse -Force -ErrorAction SilentlyContinue
-$mod = Join-Path $dist $d.modName
-$rel = $d.targetRel -replace '/', '\'
-$targetDir = Join-Path $mod $rel
-New-Item -ItemType Directory -Force $targetDir | Out-Null
+$mod  = Join-Path $dist $d.modName
+$own  = Join-Path $mod $d.ownRel
+New-Item -ItemType Directory -Force $own | Out-Null
 
-# The listings are put down as they are - there is nothing to correct in them
-# and no reason to: by the very shape of the contract there are neither paths
-# of another machine nor addresses in them.
-Get-ChildItem -LiteralPath $listings -Filter '*.json' -File | ForEach-Object {
-    Copy-Item -LiteralPath $_.FullName -Destination $targetDir -Force
+# --- the shim -----------------------------------------------------------------
+# A mod without it is a mod that does nothing, so a missing build is a refusal
+# rather than a warning: laying out quietly would leave the previous library in
+# mods\ and the run would be testing last week.
+$dll = Expand-Path $d.dll
+if (-not (Test-Path -LiteralPath $dll)) {
+    throw "the shim is not built: $dll  (cmake --build build --config Release)"
+}
+New-Item -ItemType Directory -Force (Join-Path $mod 'SKSE\Plugins') | Out-Null
+Copy-Item -LiteralPath $dll -Destination (Join-Path $mod 'SKSE\Plugins') -Force
+
+# --- the child ----------------------------------------------------------------
+# Its own build, its own CMakeLists, and it is refused for the same reason: a
+# shim with no child raises nothing and says so five times before giving up.
+$child = Expand-Path $d.child
+if (-not (Test-Path -LiteralPath $child)) {
+    throw "the child is not built: $child  (cd child && cmake --build build --config Release)"
+}
+$childInto = Join-Path $own $d.childRel
+New-Item -ItemType Directory -Force $childInto | Out-Null
+Copy-Item -LiteralPath $child -Destination $childInto -Force
+
+# The backend the child loads at run time is NOT ours to ship: whisper.dll is
+# third-party, it is not vendored by this repository, and the licence of a build
+# somebody else made is their business. If a person has put one beside the child
+# in the source tree, it rides along; if not, the mod lays out cleanly and the
+# child refuses at start-up with one sentence naming the file it wanted.
+$backend = Join-Path $root 'child\runtime'
+if (Test-Path -LiteralPath $backend) {
+    Get-ChildItem -LiteralPath $backend -File | ForEach-Object {
+        Copy-Item -LiteralPath $_.FullName -Destination $childInto -Force
+    }
 }
 
-# The licence and the list of what was borrowed ride inside the mod.
+# --- the settings and the text ------------------------------------------------
+# The settings are PRIVATE to this mod and deliberately do not go where the
+# adapter's own models folder used to be: nobody but this DLL reads them, and a
+# file in the adapter's folder would be parsed by the adapter as a listing of the
+# kind that no longer exists.
+foreach ($listing in Get-ChildItem -LiteralPath (Expand-Path $d.settings) -Filter *.json -File) {
+    Copy-Item -LiteralPath $listing.FullName -Destination $own -Force
+}
+
+# The tables ride as they are, tab separated UTF-8, and are read by the shim
+# itself. They are NOT turned into Interface\Translations: a model mod shows the
+# player nothing, all of this is the log, and building the engine's format would
+# mean depending on the BRIDGE's SDK for a file the engine never reads.
+$locInto = Join-Path $own $d.localizationRel
+New-Item -ItemType Directory -Force $locInto | Out-Null
+$tables = @(Get-ChildItem -LiteralPath (Expand-Path $d.localization) -Filter *.txt -File)
+if (-not $tables) { throw "there are no localisation tables in $(Expand-Path $d.localization) - the log would be bare keys" }
+foreach ($table in $tables) { Copy-Item -LiteralPath $table.FullName -Destination $locInto -Force }
+
+# --- the licence and the notices ----------------------------------------------
+# Whoever unpacked the archive has to find them inside it: they will not open the
+# page they downloaded from again.
 if ($d.docs) {
     foreach ($f in $d.docs) { Copy-Item -LiteralPath (Expand-Path $f) -Destination $mod -Force }
 }
@@ -60,7 +106,7 @@ $meta = @(
     "newestVersion=$($d.version)"
     'category="0,"'
     'installationFile='
-    "notes=Models of Russian speech recognition and synthesis for the SpeechBroker adapter. Needs the mod $($d.adapterMod)."
+    "notes=A model mod for SpeechBrokerVoiceAdapter: Whisper, Russian, as an SKSE shim plus a child process. Needs the mod $($d.adapterMod)."
     ''
     '[installedFiles]'
     'size=0'
@@ -68,15 +114,37 @@ $meta = @(
 [IO.File]::WriteAllLines((Join-Path $mod 'meta.ini'), $meta, $enc)
 
 '--- to be laid out ---'
-'  {0,-46} {1} files' -f $d.modName, @(Get-ChildItem -LiteralPath $mod -Recurse -File).Count
+'  {0,-44} {1} files' -f $d.modName, @(Get-ChildItem -LiteralPath $mod -Recurse -File).Count
+
+# --- the weights --------------------------------------------------------------
+# Reported separately and never copied. A set that is not there is a warning and
+# not a refusal: the shim lays out, the model refuses at Start with a line naming
+# the folder, and the other model may still work.
+$weightsRoot = Expand-Path $d.weights
+$sets = @()
+if (Test-Path -LiteralPath $weightsRoot) { $sets = @(Get-ChildItem -LiteralPath $weightsRoot -Directory) }
+if ($sets) {
+    foreach ($set in $sets) {
+        $sums = Join-Path $set.FullName 'SHA256SUMS'
+        $signed = if (Test-Path -LiteralPath $sums) { 'signed' } else { 'NOT signed - the shim will refuse it' }
+        '  weights {0,-24} {1}' -f $set.Name, $signed
+    }
+} else {
+    Write-Warning "there are no weights in $weightsRoot - the models will refuse at Start. See README.md, 'Where the weights go'."
+}
+
 if (-not $Apply) { ''; 'dry run - add -Apply'; return }
 
 $target = Join-Path $d.modsRoot $d.modName
 New-Item -ItemType Directory -Force $target | Out-Null
+# Copy-Item -Recurse -Force over a tree that already exists silently fails to
+# overwrite files in nested folders, and the lay-out then reports success while
+# leaving the library of the previous build in the build. We copy file by file
+# and say what changed.
 $added = 0; $updated = 0; $same = 0
 Get-ChildItem -LiteralPath $mod -Recurse -File | ForEach-Object {
-    $leaf = $_.FullName.Substring($mod.Length).TrimStart('\')
-    $dst = Join-Path $target $leaf
+    $rel = $_.FullName.Substring($mod.Length).TrimStart('\')
+    $dst = Join-Path $target $rel
     $dir = Split-Path -Parent $dst
     if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force $dir | Out-Null }
     if (-not (Test-Path -LiteralPath $dst)) {
@@ -91,36 +159,29 @@ Get-ChildItem -LiteralPath $mod -Recurse -File | ForEach-Object {
 }
 '  laid out: {0} - new {1}, updated {2}, unchanged {3}' -f $d.modName, $added, $updated, $same
 
-# The weights. On this machine, as a junction to the real place, so as not to
-# copy gigabytes into the build. A junction is taken down through
-# Directory::Delete: Remove-Item over a junction risks walking into the target
-# and wiping the weights themselves.
-$localPath = Join-Path $root 'config\build.local.json'
-if (Test-Path -LiteralPath $localPath) {
-    $local = Get-Content -LiteralPath $localPath -Raw | ConvertFrom-Json
-    if ($local.weights) {
-        foreach ($entry in $local.weights.PSObject.Properties) {
-            $listing = Get-ChildItem -LiteralPath $listings -Filter '*.json' -File |
-                Where-Object { (Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json).id -eq $entry.Name } |
-                Select-Object -First 1
-            if (-not $listing) {
-                Write-Warning "there is no listing for the model '$($entry.Name)' - not putting a junction down"
-                continue
-            }
-            $weights = (Get-Content -LiteralPath $listing.FullName -Raw | ConvertFrom-Json).weights
-            $link = Join-Path (Join-Path $target $rel) ($weights -replace '/', '\')
-            $parent = Split-Path -Parent $link
-            if (-not (Test-Path -LiteralPath $parent)) { New-Item -ItemType Directory -Force $parent | Out-Null }
-            if (Test-Path -LiteralPath $link) { [System.IO.Directory]::Delete($link, $false) }
-            New-Item -ItemType Junction -Path $link -Target $entry.Value | Out-Null
-            '  weights {0}: junction to {1}' -f $entry.Name, $entry.Value
+# The junction on each set of weights, made in the laid-out mod and not in dist\:
+# dist\ is wiped at the head of every run, and a junction is not a thing to make
+# and destroy twice a minute.
+foreach ($set in $sets) {
+    $link = Join-Path (Join-Path $target $d.ownRel) (Join-Path $d.weightsRel $set.Name)
+    $linkParent = Split-Path -Parent $link
+    New-Item -ItemType Directory -Force $linkParent | Out-Null
+    if (Test-Path -LiteralPath $link) {
+        $existing = Get-Item -LiteralPath $link -Force
+        if ($existing.LinkType) {
+            Remove-Item -LiteralPath $link -Force
+        } else {
+            # A real folder of real weights is somebody's 2 GB and is never
+            # removed by a lay-out script. Left alone and said out loud.
+            Write-Warning "  $($set.Name) in the mod is a real folder and not a junction - leaving it as it is"
+            continue
         }
     }
-} else {
-    Write-Warning "there is no build.local.json - there will be no weights in the mod and the service will find no models. Make one for a run on this machine."
+    New-Item -ItemType Junction -Path $link -Target $set.FullName | Out-Null
+    '  junction: {0} -> {1}' -f (Join-Path $d.weightsRel $set.Name), $set.FullName
 }
 
 if (-not $NoIndex) {
-    & $d.indexScript -Owner $d.indexOwner -Mods $d.modName -Note "SpeechBroker voice model deploy $($d.version)"
+    & $d.indexScript -Owner $d.indexOwner -Mods @($d.modName) -Note "SpeechBroker Voice Model Whisper RU deploy $($d.version)"
 }
 ''

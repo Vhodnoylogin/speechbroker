@@ -1,0 +1,42 @@
+# The weights of this module go through Git LFS: git keeps a pointer of a few
+# lines and the file itself lies beside it in the LFS store. Without this the
+# history swells without bound - git holds a whole copy of a two-gigabyte binary
+# on every change and shows no diff for it - and a shallow clone of the branch
+# stops being possible at all.
+#
+# WHAT BELONGS HERE is what a recipe cannot express and what changes rarely. A
+# converted and quantised model is exactly that: it is the OUTPUT of a conversion
+# nobody will run again the same way, so the recipe is not a substitute for the
+# file. The cost, stated because it decides the list: LFS does not compress one
+# version against another, so every re-conversion is stored whole.
+#
+# THE LIST IS BY KIND AND NOT BY SIZE. A sentencepiece model is under a megabyte
+# today; it is still a binary blob whose diff means nothing, and a rule applied
+# only once it hurts is a rule nobody applies.
+#
+# The repository's own .gitattributes already covers *.dll, *.7z and the plugin
+# formats. These are the ones a model mod adds.
+
+# ggml / whisper.cpp and llama.cpp family
+*.bin           filter=lfs diff=lfs merge=lfs -text
+*.gguf          filter=lfs diff=lfs merge=lfs -text
+*.ggml          filter=lfs diff=lfs merge=lfs -text
+
+# the formats a conversion may be taken FROM, so that a checked-in source is not
+# the thing that swells the history either
+*.safetensors   filter=lfs diff=lfs merge=lfs -text
+*.pt            filter=lfs diff=lfs merge=lfs -text
+*.pth           filter=lfs diff=lfs merge=lfs -text
+*.ckpt          filter=lfs diff=lfs merge=lfs -text
+*.npz           filter=lfs diff=lfs merge=lfs -text
+*.onnx          filter=lfs diff=lfs merge=lfs -text
+
+# tokenisers and vocabularies that are binary
+*.model         filter=lfs diff=lfs merge=lfs -text
+*.spm           filter=lfs diff=lfs merge=lfs -text
+
+# SHA256SUMS is TEXT and must never be an LFS pointer. It is the one file that
+# has to be readable in a plain clone - it is what says whether the pointers,
+# once fetched, brought back the right bytes - and a checksum file behind a
+# pointer is a checksum nobody can check.
+SHA256SUMS      text eol=lf -filter -diff -merge
