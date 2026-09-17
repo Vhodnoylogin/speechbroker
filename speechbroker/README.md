@@ -48,18 +48,19 @@ The division follows one mark: **what changes independently**.
 - **The bridge** knows nothing about the microphone, the models or HTTP. It deals utterances out
   to the subscribers and settles the arguments between them. It can be replaced whole without
   touching anything else.
-- **The adapter** owns the microphone. Capturing the sound, the silence and the boundaries of
-  phrases are its business, and it is done by its own service, which rides inside its own mod and
-  comes up by itself. Into the game the adapter speaks by calling a function through the contract
-  of the bridge. It knows not a single model by name.
-- **A model mod** holds no code at all and is not a program. It is the files of a model and a
-  listing next to them: what the model is called, what it can do, where its weights lie. The
-  sound is given to it by the service of the adapter.
+- **The adapter** owns the microphone, and it owns it inside the game: capturing the sound, the
+  silence and the boundaries of phrases are its business, done in its own process and not behind
+  a socket. Into the game it speaks by calling a function through the contract of the bridge. It
+  knows not a single model by name.
+- **A model mod** is a **shim**: an SKSE plugin like the other two. On one side it speaks the
+  adapter's contract; on the other it either IS a model, RAISES one as a process of its own, or
+  ATTACHES to one already running - here or on another machine. It declares which of the four it
+  does, and a player may forbid a kind in the settings of the adapter.
 
-Two properties follow at once. **A player has nothing to start by hand** - they install the
-adapter like any other mod, and the service comes up on its own. And **changing the model needs
-neither a new build nor an edit to the settings**: a person installs a different mod, while the
-microphone stays one for everybody.
+Two properties follow at once. **A player has nothing to start by hand** - they install the mods
+and the game brings everything up. And **changing the model needs neither a new build nor an edit
+to the settings**: a person installs a different mod, while the microphone stays one for
+everybody.
 
 ## Text on screen
 
