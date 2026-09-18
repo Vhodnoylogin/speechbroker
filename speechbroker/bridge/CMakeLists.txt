@@ -103,10 +103,12 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
 # <SKSE/...> in the core will not build. The rule cannot be broken silently.
 file(GLOB_RECURSE SPEECHBROKER_CORE_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/bus/*.cpp")
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/bus/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/produce/*.cpp")
 file(GLOB_RECURSE SPEECHBROKER_CORE_HEADERS CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/bus/*.h")
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/bus/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/produce/*.h")
 
 add_library(speechbroker-core STATIC ${SPEECHBROKER_CORE_SOURCES} ${SPEECHBROKER_CORE_HEADERS})
 
