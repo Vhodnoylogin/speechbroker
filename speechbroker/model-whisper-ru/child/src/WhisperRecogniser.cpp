@@ -86,6 +86,10 @@ namespace WhisperRu::Child
 			// ggml.dll. See the comment over LoadComputeBackends.
 			void (*backendLoadAllFromPath)(const char*){ nullptr };
 			std::size_t (*backendRegCount)(void){ nullptr };
+			// Counted APART from the registrations, because they are not the same
+			// number and it is the devices the model actually needs. A build can
+			// register a backend that offers no device at all.
+			std::size_t (*backendDevCount)(void){ nullptr };
 		};
 
 		template <typename T>
@@ -105,7 +109,34 @@ namespace WhisperRu::Child
 		// dangerous - it is merely noise in a place a person looks when something
 		// has gone wrong. Swallowed rather than forwarded: what this mod has to
 		// say it says through Log frames, in the player's language.
-		void SwallowLog(ggml_log_level, const char*, void*)
+		// A path Windows will actually treat as a path.
+	//
+	// MEASURED ON b5130, and it cost an afternoon: LOAD_WITH_ALTERED_SEARCH_PATH is
+	// quietly ignored when the file name is spelled with forward slashes. The same
+	// call with "D:/a/whisper.dll" loads the library perfectly well and does NOT add
+	// its folder to the search, so the ggml-cpu backends beside it cannot reach
+	// ggml-base.dll, not one compute device gets registered, and the model load then
+	// aborts the process on GGML_ASSERT(device). With "D:\a\whisper.dll" the very
+	// same files work first time. Nothing anywhere says a word about it.
+	//
+	// Absolute for a second reason: a relative library leaves parent_path() empty,
+	// and the search for the backends then happens in nowhere at all.
+	//
+	// The shim builds these paths out of settings a person wrote, and a person
+	// writes a path with whichever slash they like. "The caller will spell it
+	// properly" is not something to rest a process on.
+	std::filesystem::path Native(const std::filesystem::path& a_path)
+	{
+		std::error_code ec;
+		auto full = std::filesystem::absolute(a_path, ec);
+		if (ec) {
+			full = a_path;
+		}
+		full.make_preferred();
+		return full;
+	}
+
+	void SwallowLog(ggml_log_level, const char*, void*)
 		{
 		}
 
@@ -276,7 +307,7 @@ namespace WhisperRu::Child
 						a_why.args = { one.string() };
 						return false;
 					}
-					if (!::LoadLibraryW(one.c_str())) {
+					if (!::LoadLibraryW(Native(one).c_str())) {
 						a_why.key = "$SBWHISPERRU_LOG_PRELOAD_FAILED";
 						a_why.args = { one.string(), std::to_string(::GetLastError()) };
 						return false;
@@ -291,7 +322,10 @@ namespace WhisperRu::Child
 					a_why.args = { a_options.library.string() };
 					return false;
 				}
-				m_library = ::LoadLibraryExW(a_options.library.c_str(), nullptr, LOAD_WITH_ALTERED_SEARCH_PATH);
+				// Native() and not a_options.library: the flag below only does
+				// anything for a path spelled the way Windows spells paths.
+				const auto libraryPath = Native(a_options.library);
+				m_library = ::LoadLibraryExW(libraryPath.c_str(), nullptr, LOAD_WITH_ALTERED_SEARCH_PATH);
 				if (!m_library) {
 					a_why.key = "$SBWHISPERRU_LOG_BACKEND_UNLOADABLE";
 					a_why.args = { a_options.library.string(), std::to_string(::GetLastError()) };
@@ -508,7 +542,16 @@ namespace WhisperRu::Child
 			// rather than an abort.
 			bool LoadComputeBackends(const std::filesystem::path& a_library, Refusal& a_why)
 			{
-				const auto folder = a_library.parent_path();
+				// ABSOLUTE AND WITH THE SEPARATORS OF THIS SYSTEM, both of which were
+				// paid for. ggml is handed this folder as a bare string and goes
+				// looking in it for the ggml-*.dll files; measured on b5130, the same
+				// folder spelled with forward slashes finds nothing to load, and a
+				// relative library leaves parent_path() EMPTY so the search happens
+				// in nowhere at all. Neither says a word: the count comes back short
+				// and the model load then aborts the process on GGML_ASSERT(device).
+				// The shim builds this path out of settings written by a person, so
+				// "the caller will pass it properly" is not a thing to rely on.
+				const auto folder = Native(a_library).parent_path();
 				const auto ggml = folder / "ggml.dll";
 
 				std::error_code ec;
@@ -529,16 +572,28 @@ namespace WhisperRu::Child
 				auto* const module = static_cast<HMODULE>(m_ggml);
 				const char* missing = nullptr;
 				if (!Bind(module, "ggml_backend_load_all_from_path", m_api.backendLoadAllFromPath, missing) ||
-					!Bind(module, "ggml_backend_reg_count", m_api.backendRegCount, missing)) {
+					!Bind(module, "ggml_backend_reg_count", m_api.backendRegCount, missing) ||
+					!Bind(module, "ggml_backend_dev_count", m_api.backendDevCount, missing)) {
 					a_why.key = "$SBWHISPERRU_LOG_BACKEND_WRONG";
 					a_why.args = { ggml.string(), missing };
 					return false;
 				}
 
 				m_api.backendLoadAllFromPath(folder.string().c_str());
-				if (m_api.backendRegCount() == 0) {
+
+				// THE COUNT THAT MATTERS IS THE DEVICES, NOT THE REGISTRATIONS, and
+				// this line is here because the first real run of this code aborted
+				// anyway. ggml asserts on a DEVICE - GGML_ASSERT(device) in
+				// ggml-backend.cpp - and a registration is not one: the base library
+				// registers itself and answers a count above zero while offering
+				// nothing to compute with. Guarding on the wrong number is the same
+				// as not guarding, and it cost the abort this whole function exists
+				// to prevent.
+				const auto regs = m_api.backendRegCount();
+				const auto devices = m_api.backendDevCount();
+				if (devices == 0) {
 					a_why.key = "$SBWHISPERRU_LOG_NO_COMPUTE";
-					a_why.args = { folder.string() };
+					a_why.args = { folder.string(), std::to_string(regs), std::to_string(devices) };
 					return false;
 				}
 				return true;
