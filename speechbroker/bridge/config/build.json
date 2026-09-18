@@ -46,6 +46,7 @@
     "sdkLayout": {
       "cpp": [
         "{root}/contract/speechbroker-adapter.h",
+        "{root}/contract/speechbroker-market.h",
         "{root}/contract/speechbroker-abi.h",
         "{root}/contract/speechbroker-loc.h"
       ],

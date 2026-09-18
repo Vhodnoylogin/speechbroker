@@ -4,6 +4,7 @@
 
 #include "TopicRouter.h"
 #include "UtteranceStore.h"
+#include "market/MarketRegistry.h"
 #include "Hold.h"
 #include "core/Events.h"
 #include "core/MainThread.h"
@@ -353,6 +354,14 @@ namespace SpeechBroker
 		// inside the event would part company with the truth.
 		Events::Send("SpeechBroker_Speech_Any", "", static_cast<float>(a_id));
 		Events::Send(TopicRouter::EventName(item.topic), "", static_cast<float>(a_id));
+
+		// The installed markets are offered the same packet at the same moment. This
+		// is not the auction telling them: the auction is itself on its way to being
+		// one of them, and until that move the two paths run side by side - the
+		// built-in one through the events above, an installed market through its own
+		// callback. Neither can see the other, which is the property the contract
+		// promises, and with no market installed this costs a comparison.
+		MarketRegistry::Get().Offer(item);
 
 		Scheduler::Get().After(std::chrono::milliseconds(Settings::Get().bidWindowMs), [a_id]() {
 			MainThread::Post([a_id]() { Auctioneer::Get().Settle(a_id); });

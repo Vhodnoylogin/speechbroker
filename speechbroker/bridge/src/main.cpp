@@ -23,6 +23,7 @@
 #include "speechbroker-adapter.h"
 
 #include "wire/AdapterHost.h"
+#include "wire/MarketHost.h"
 
 namespace
 {
@@ -92,6 +93,16 @@ namespace
 			auto* api = static_cast<SpeechBrokerAPI::ISpeechBroker*>(&SpeechBroker::AdapterHost::Get());
 			SKSE::GetMessagingInterface()->Dispatch(SpeechBrokerAPI::kMessageInterface, &api,
 				static_cast<std::uint32_t>(sizeof(api)), nullptr);
+
+			// The markets get a broadcast of their own, under a message of their own.
+			// One message carrying both would tie the two contracts together: a market
+			// would have to be rebuilt whenever the adapter interface moved, and the
+			// two move for entirely different reasons.
+			auto* markets = static_cast<SpeechBrokerMarketAPI::ISpeechBrokerMarkets*>(
+				&SpeechBroker::MarketHost::Get());
+			SKSE::GetMessagingInterface()->Dispatch(SpeechBrokerMarketAPI::kMessageInterface,
+				&markets, static_cast<std::uint32_t>(sizeof(markets)), nullptr);
+
 			SpeechBroker::Log::Info("$SPEECHBROKER_LOG_INTERFACE_BROADCAST");
 		}
 
