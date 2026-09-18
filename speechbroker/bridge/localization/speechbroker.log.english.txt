@@ -111,4 +111,7 @@ $SPEECHBROKER_LOG_REQUEST_SENT	request {0} to {1} -> adapter {2}
 $SPEECHBROKER_LOG_ANSWER	answer {0} from adapter {1}: {2}
 $SPEECHBROKER_LOG_SPEECH_DONE	speech {0} at adapter {1}: {2}
 $SPEECHBROKER_LOG_COLLECTOR_THREW	the state collector {0} threw and its reading is missing from the packet
+$SPEECHBROKER_LOG_MARKET_REGISTERED	market {0} registered, {1} in all
+$SPEECHBROKER_LOG_MARKET_REFUSED	market {0} refused: {1}
+$SPEECHBROKER_LOG_MARKET_THREW	market {0} threw on utterance {1} and lost it
 $SPEECHBROKER_QUEST_CONTRACT	contract version

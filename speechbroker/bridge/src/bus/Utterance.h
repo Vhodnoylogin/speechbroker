@@ -86,6 +86,12 @@ namespace SpeechBroker
 		// code that changes no meaning would shuffle the refusal lines in the log and
 		// in the report of the host - the safety net would fire falsely.
 		std::map<std::string, std::string> denied;
+		// Which markets handed this packet to somebody. It is the ONE fact the
+		// markets are allowed to learn about each other, so it lives on the packet
+		// rather than in a ledger of its own: it is then pruned with the packet, and
+		// a question that comes after the pruning is answered "I no longer know"
+		// instead of "nobody took it".
+		std::vector<std::string>           handedOutBy;
 		std::string                        outcome;  // the outcome in words, for an observer
 		bool                               awarded{ false };
 
