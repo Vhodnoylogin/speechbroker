@@ -74,6 +74,21 @@ namespace SpeechBroker
 		});
 	}
 
+	bool UtteranceStore::MarkHandedOut(std::int32_t a_id, const std::string& a_marketId)
+	{
+		std::scoped_lock lock(_mutex);
+		return Mutate(a_id, [&](Utterance& a_item) {
+			const auto& who = a_item.handedOutBy;
+			if (std::find(who.begin(), who.end(), a_marketId) != who.end()) {
+				// Saying it twice is not an error - a market may hand one packet to
+				// several of its own subscribers - but it must not grow the list.
+				return true;
+			}
+			a_item.handedOutBy.push_back(a_marketId);
+			return true;
+		});
+	}
+
 	bool UtteranceStore::AddBid(std::int32_t a_id, BidRecord a_bid)
 	{
 		std::scoped_lock lock(_mutex);

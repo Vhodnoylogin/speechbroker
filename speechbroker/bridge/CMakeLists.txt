@@ -105,12 +105,14 @@ file(GLOB_RECURSE SPEECHBROKER_CORE_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/bus/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/produce/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/state/*.cpp")
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/state/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/market/*.cpp")
 file(GLOB_RECURSE SPEECHBROKER_CORE_HEADERS CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/bus/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/produce/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/state/*.h")
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/state/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/market/*.h")
 
 add_library(speechbroker-core STATIC ${SPEECHBROKER_CORE_SOURCES} ${SPEECHBROKER_CORE_HEADERS})
 

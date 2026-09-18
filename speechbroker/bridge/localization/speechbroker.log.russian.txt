@@ -102,4 +102,7 @@ $SPEECHBROKER_LOG_REQUEST_SENT	запрос {0} к {1} -> адаптер {2}
 $SPEECHBROKER_LOG_ANSWER	ответ {0} от адаптера {1}: {2}
 $SPEECHBROKER_LOG_SPEECH_DONE	озвучка {0} у адаптера {1}: {2}
 $SPEECHBROKER_LOG_COLLECTOR_THREW	сборщик состояния {0} бросил исключение, его показания в пакет не попали
+$SPEECHBROKER_LOG_MARKET_REGISTERED	рынок {0} подключён, всего {1}
+$SPEECHBROKER_LOG_MARKET_REFUSED	рынок {0} не принят: {1}
+$SPEECHBROKER_LOG_MARKET_THREW	рынок {0} бросил исключение на реплике {1} и потерял её
 $SPEECHBROKER_QUEST_CONTRACT	контракт версии

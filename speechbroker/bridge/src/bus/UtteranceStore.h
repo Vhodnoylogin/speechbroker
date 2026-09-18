@@ -32,6 +32,9 @@ namespace SpeechBroker
 		std::shared_ptr<const Utterance> Find(std::int32_t a_id) const;
 
 		bool AddBid(std::int32_t a_id, BidRecord a_bid);
+		// A market reports that it gave this packet to somebody. Nothing refuses:
+		// by the time it calls, the market has already acted.
+		bool MarkHandedOut(std::int32_t a_id, const std::string& a_marketId);
 		bool SetOutcome(std::int32_t a_id, std::vector<std::string> a_winners,
 			std::map<std::string, std::string> a_denied, std::string a_outcome);
 
