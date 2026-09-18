@@ -76,7 +76,9 @@ The division follows one mark: **what changes independently**.
   not behind a socket. It knows not a single model by name, and not a single consumer.
 - **A market** decides who gets the utterance, and decides nothing else. Changing that rule means
   installing a different market rather than editing this one, which is why every implementation is
-  a mod of its own with events of its own.
+  a mod of its own with events of its own. It owns the **lifetime** of the packet as well - a late
+  subscriber gets nothing - and it knows exactly one thing about its neighbours: whether one of
+  them has already handed this packet out.
 - **A model mod** is a **shim**: an SKSE plugin like the others. On one side it speaks the
   microphone engine's contract; on the other it either IS a model, RAISES one as a process of its
   own, or ATTACHES to one already running - here or on another machine. It declares which of the
