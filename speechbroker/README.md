@@ -25,37 +25,64 @@ one that is built:
 The first cut implements only `Listen` and `State`, to the extent of the core. The rest is added
 without touching what is written.
 
-## Three parts, and each is installed on its own
+## Two divisions, and they do not coincide
 
-Speech Broker is **one mod and one git branch**, but inside it there are three parts that stand alone.
-Each has its own build, its own lay-out scripts, its own mod in the MO2 build and its own
-description. A person installs as many of them as they need.
+Speech Broker is **one mod and one git branch**, but what a person installs and what the broker is
+made of are two different cuts through it. [docs/architecture.md](docs/architecture.md) is the
+record of both, written from the author's own statement; this is the short form.
 
-| Part | Folder | Mod in the build | Description |
-|---|---|---|---|
-| **Speech Broker** - the bridge | `bridge\` | `Speech Broker` | [bridge/README.md](bridge/README.md) |
-| **SpeechBrokerVoiceAdapter** - the microphone and the models | `adapter-voice\` | `Speech Broker - Voice Adapter` | [adapter-voice/README.md](adapter-voice/README.md) |
-| **a model mod** - one particular model | `model-whisper-ru\` | `Speech Broker - Voice Model - Whisper RU` | [model-whisper-ru/README.md](model-whisper-ru/README.md) |
+**What is installed on its own** - four kinds of mod:
 
-Next to them lies `subscribers\demo\` - three test subscribers. That is not part of the delivery
-but a check: on them it shows how the bridge settles an argument between mods. They are not
-wanted in the working profiles.
+| Kind | Who writes it | Ours today |
+|---|---|---|
+| **consumer mods** | other modders, and they are the reason for all of it | `subscribers\demo\` - three test ones |
+| **model mods** | third parties; one of ours, for the tests | `model-whisper-ru\` |
+| **Speech Broker itself** | us | `bridge\`, `adapter-voice\` |
+| **markets** | us and third parties | not a part of its own yet |
+
+**What the broker is made of** - five parts:
+
+| Part | What it owns | Where it is |
+|---|---|---|
+| **microphone engine** | the microphone, the raw sound, the model mods, and the single packet of text made of their answers | `adapter-voice\`, renamed with the move of the auction |
+| **sound text market** | the interface that hands that packet to the subscribers; many implementations, each a mod of its own with events of its own | `bridge\` |
+| **sound producer** | text in, a sound file back | a stub |
+| **free text producer** | text the broker does not read - only who asked, whom, and who gets the answer | a stub |
+| **world state** | readings taken at the moment of the utterance and carried in the packet | a stub |
+
+The four channels above are these same things seen from the boundary: `Listen` is the microphone
+engine and the market, `Speak` is the sound producer, `Ask` is the free text producer, `State` is
+the world state.
+
+Each of those parts has its own build, its own lay-out scripts, its own mod in the MO2 build and its
+own description. A person installs as many of them as they need.
+
+| Mod in the build | Folder | Description |
+|---|---|---|
+| `Speech Broker` | `bridge\` | [bridge/README.md](bridge/README.md) |
+| `Speech Broker - Voice Adapter` | `adapter-voice\` | [adapter-voice/README.md](adapter-voice/README.md) |
+| `Speech Broker - Voice Model - Whisper RU` | `model-whisper-ru\` | [model-whisper-ru/README.md](model-whisper-ru/README.md) |
+
+Next to them lies `subscribers\demo\` - three test subscribers. That is not part of the delivery but
+a check: on them it shows how a market settles an argument between mods. They are not wanted in the
+working profiles.
 
 ### Why it is divided exactly like this
 
 The division follows one mark: **what changes independently**.
 
-- **The bridge** knows nothing about the microphone, the models or HTTP. It deals utterances out
-  to the subscribers and settles the arguments between them. It can be replaced whole without
-  touching anything else.
-- **The adapter** owns the microphone, and it owns it inside the game: capturing the sound, the
-  silence and the boundaries of phrases are its business, done in its own process and not behind
-  a socket. Into the game it speaks by calling a function through the contract of the bridge. It
-  knows not a single model by name.
-- **A model mod** is a **shim**: an SKSE plugin like the other two. On one side it speaks the
-  adapter's contract; on the other it either IS a model, RAISES one as a process of its own, or
-  ATTACHES to one already running - here or on another machine. It declares which of the four it
-  does, and a player may forbid a kind in the settings of the adapter.
+- **The microphone engine** owns the microphone, and it owns it inside the game: capturing the
+  sound, the silence and the boundaries of phrases are its business, done in its own process and
+  not behind a socket. It knows not a single model by name, and not a single consumer.
+- **A market** decides who gets the utterance, and decides nothing else. Changing that rule means
+  installing a different market rather than editing this one, which is why every implementation is
+  a mod of its own with events of its own.
+- **A model mod** is a **shim**: an SKSE plugin like the others. On one side it speaks the
+  microphone engine's contract; on the other it either IS a model, RAISES one as a process of its
+  own, or ATTACHES to one already running - here or on another machine. It declares which of the
+  four it does, and a player may forbid a kind in the settings.
+- **A state collector** contributes and never competes. It adds its own reading to the packet, and
+  whoever reads the packet decides whether that reading interests them at all.
 
 Two properties follow at once. **A player has nothing to start by hand** - they install the mods
 and the game brings everything up. And **changing the model needs neither a new build nor an edit
