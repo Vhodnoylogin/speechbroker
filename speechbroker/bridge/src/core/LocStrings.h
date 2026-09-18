@@ -57,6 +57,8 @@ inline constexpr SpeechBrokerLoc::Entry kSpeechBrokerDefaultStrings[] = {
 	{ "$SPEECHBROKER_REASON_CEILING", "the ceiling of the length class ran out" },
 	{ "$SPEECHBROKER_REASON_ROOM_EMPTY", "the room is empty - nobody to hold it for" },
 	{ "$SPEECHBROKER_REASON_HOLD_WEIGHED", "completeness {0:.2f}, {1} in the room, cost of a mistake {2:.2f}, risk {3:.2f} against a tolerance of {4:.2f}" },
+	{ "$SPEECHBROKER_REASON_SOUND_NOT_IMPLEMENTED", "the sound producer is not written yet - the channel is declared, not built" },
+	{ "$SPEECHBROKER_REASON_FREETEXT_NOT_IMPLEMENTED", "the free text channel is not written yet - it is declared, not built" },
 	{ "$SPEECHBROKER_LOG_HANDED_AT_ONCE", "utterance {0} handed over at once: {1}" },
 	{ "$SPEECHBROKER_LOG_HELD", "utterance {0} IS HELD: {1}" },
 	{ "$SPEECHBROKER_LOG_LET_GO", "utterance {0} let go: {1}" },
