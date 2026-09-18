@@ -294,6 +294,21 @@ namespace
 				}
 				report << "    topic     : " << told.topic << "\n";
 
+				// What the collectors of world state read when this was spoken. It is
+				// printed for every utterance, because the point of the channel is that
+				// the reading belongs to the MOMENT: a line that showed up only when it
+				// looked interesting would prove nothing about the ones where it did not.
+				if (done && !done->state.empty()) {
+					std::string readings;
+					for (const auto& entry : done->state) {
+						if (!readings.empty()) {
+							readings += ", ";
+						}
+						readings += entry.first + "=" + entry.second;
+					}
+					report << "    world     : " << readings << "\n";
+				}
+
 				if (done && !done->holdReason.empty()) {
 					++heldCount;
 					report << "    held      : " << done->holdReason << "\n";

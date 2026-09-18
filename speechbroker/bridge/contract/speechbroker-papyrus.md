@@ -122,6 +122,26 @@ that utterance.
 somebody else acting at the same time really does spoil everything. A greedy mod loses every tie
 that has at least one non-greedy participant in it.
 
+## The world as it was when the line was spoken
+
+Every utterance carries readings of the world taken **at the moment it was taken in**, and a
+subscriber reads them off the packet rather than asking the world itself:
+
+    string mode = SpeechBroker.GetWorldState(aiUtteranceId, "core.mode")
+
+`core.mode` answers `game`, `dialogue` or `paused`. Ask the world directly instead and you get an
+answer about a different moment - the menu has closed, the fight has ended - and it looks exactly
+as confident as a right one.
+
+A key is `<collector>.<reading>`. `core.mode` is the one the bridge itself ships; other collectors
+add their own, nobody arbitrates between them, and so what is in a packet depends on what is
+installed. `GetWorldStateKeys` says what is actually in THIS packet - use it instead of assuming,
+and read an empty answer as "nobody read that key", never as "the world was empty".
+
+**The reading is not the routing.** The topic says where the utterance was offered and follows the
+`topicOrder` of the player; the reading says what the world was like. With the dialogue menu open
+in a paused game the two disagree, and they are meant to.
+
 ## Text for the player
 
 Everything a player reads goes through `SpeechBroker.Translate(key)`, and the lines behind the keys live

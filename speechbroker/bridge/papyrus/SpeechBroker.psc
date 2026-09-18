@@ -39,6 +39,13 @@ string Function GetEngineId(int aiUtteranceId) global native
 string Function GetLanguage(int aiUtteranceId) global native
 string Function GetChannel(int aiUtteranceId) global native
 int Function GetLatencyMs(int aiUtteranceId) global native
+
+; What the collectors of world state read AT THE MOMENT the line was spoken. The
+; key is "<collector>.<reading>", for instance "core.mode", whose values are
+; "game", "dialogue" and "paused". An empty answer means nobody read that key.
+; Ask the world afterwards and you get a different moment, confidently.
+string Function GetWorldState(int aiUtteranceId, string asKey) global native
+string[] Function GetWorldStateKeys(int aiUtteranceId) global native
 string[] Function GetAlternatives(int aiUtteranceId) global native
 float[] Function GetAlternativeScores(int aiUtteranceId) global native
 

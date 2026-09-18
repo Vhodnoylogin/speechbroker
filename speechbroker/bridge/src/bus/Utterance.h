@@ -48,6 +48,14 @@ namespace SpeechBroker
 		std::int32_t             durationMs{ 0 };
 		bool                     wakeWord{ false };
 
+		// What the collectors of world state read AT THE MOMENT this was spoken,
+		// filed as "<collector>.<key>". It is not the register of the world and not
+		// a snapshot of it: each collector writes what it chose to read, and a mod
+		// decides for itself whether any of it matters. An ordered map for the same
+		// reason as denied below - a log whose lines shuffle between runs is a safety
+		// net that fires falsely.
+		std::map<std::string, std::string> state;
+
 		// The chance that the sentence ENDED on this piece. It comes from the
 		// recognition engine: that is the one thing that hears the pause, the
 		// intonation and the tone this is judged by.

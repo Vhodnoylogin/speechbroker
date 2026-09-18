@@ -1,5 +1,7 @@
 #include "UtteranceStore.h"
 
+#include "state/StateCollectors.h"
+
 #include <algorithm>
 #include <vector>
 
@@ -13,6 +15,12 @@ namespace SpeechBroker
 
 	std::int32_t UtteranceStore::Add(Utterance a_utterance)
 	{
+		// The world is read HERE: this is the one funnel every utterance passes
+		// through, and it is the moment the line was spoken, which is the only
+		// moment the readings are about. Before the lock on purpose - a collector
+		// reads the game, and the store must not hold its mutex across that.
+		StateCollectors::Get().CollectInto(a_utterance.state);
+
 		std::scoped_lock lock(_mutex);
 
 		// The number has to fit into a Papyrus integer without losing precision, so
