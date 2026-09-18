@@ -110,4 +110,5 @@ $SPEECHBROKER_LOG_NO_SERVICE	nobody to ask: there is no {0} source
 $SPEECHBROKER_LOG_REQUEST_SENT	request {0} to {1} -> adapter {2}
 $SPEECHBROKER_LOG_ANSWER	answer {0} from adapter {1}: {2}
 $SPEECHBROKER_LOG_SPEECH_DONE	speech {0} at adapter {1}: {2}
+$SPEECHBROKER_LOG_COLLECTOR_THREW	the state collector {0} threw and its reading is missing from the packet
 $SPEECHBROKER_QUEST_CONTRACT	contract version

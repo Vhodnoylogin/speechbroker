@@ -147,7 +147,38 @@ namespace SpeechBroker
 		return item ? item->latencyMs : 0;
 	}
 
-	std::vector<RE::BSFixedString> PapyrusApi::GetAlternatives(Tag, std::int32_t a_id)
+		RE::BSFixedString PapyrusApi::GetWorldState(Tag, std::int32_t a_id, Str a_key)
+	{
+		const auto* key = a_key.c_str();
+		if (!key || !*key) {
+			return RE::BSFixedString{};
+		}
+		auto item = UtteranceStore::Get().Find(a_id);
+		if (!item) {
+			return RE::BSFixedString{};
+		}
+		const auto found = item->state.find(std::string{ key });
+		return found == item->state.end() ? RE::BSFixedString{} : RE::BSFixedString{ found->second };
+	}
+
+	std::vector<RE::BSFixedString> PapyrusApi::GetWorldStateKeys(Tag, std::int32_t a_id)
+	{
+		std::vector<RE::BSFixedString> keys;
+		auto item = UtteranceStore::Get().Find(a_id);
+		if (!item) {
+			return keys;
+		}
+		// The order is the order of the map, which is sorted: a subscriber that walks
+		// the keys gets the same walk every time, and a log made of it can be compared
+		// between two runs.
+		keys.reserve(item->state.size());
+		for (const auto& entry : item->state) {
+			keys.push_back(RE::BSFixedString{ entry.first });
+		}
+		return keys;
+	}
+
+std::vector<RE::BSFixedString> PapyrusApi::GetAlternatives(Tag, std::int32_t a_id)
 	{
 		std::vector<RE::BSFixedString> out;
 		auto item = UtteranceStore::Get().Find(a_id);
@@ -348,6 +379,8 @@ namespace SpeechBroker
 		a_vm->RegisterFunction("GetLanguage", kScriptName, GetLanguage);
 		a_vm->RegisterFunction("GetChannel", kScriptName, GetChannel);
 		a_vm->RegisterFunction("GetLatencyMs", kScriptName, GetLatencyMs);
+		a_vm->RegisterFunction("GetWorldState", kScriptName, GetWorldState);
+		a_vm->RegisterFunction("GetWorldStateKeys", kScriptName, GetWorldStateKeys);
 		a_vm->RegisterFunction("GetAlternatives", kScriptName, GetAlternatives);
 		a_vm->RegisterFunction("GetAlternativeScores", kScriptName, GetAlternativeScores);
 

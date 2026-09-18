@@ -48,6 +48,13 @@ namespace SpeechBroker
 		static Str          GetChannel(Tag, std::int32_t a_id);
 		static std::int32_t GetLatencyMs(Tag, std::int32_t a_id);
 
+		// What the collectors of world state read when this was spoken. An empty
+		// answer means nobody read that key - not that the world was empty - and a
+		// subscriber that cannot tell those apart should ask for the keys instead of
+		// guessing which ones exist.
+		static Str              GetWorldState(Tag, std::int32_t a_id, Str a_key);
+		static std::vector<Str> GetWorldStateKeys(Tag, std::int32_t a_id);
+
 		static std::vector<Str>   GetAlternatives(Tag, std::int32_t a_id);
 		static std::vector<float> GetAlternativeScores(Tag, std::int32_t a_id);
 

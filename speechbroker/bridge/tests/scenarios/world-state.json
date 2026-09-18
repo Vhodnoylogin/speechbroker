@@ -1,0 +1,26 @@
+{
+  "name": "Состояние мира едет в пакете",
+  "_": "The world state channel end to end, without the game. Every step says the SAME phrase and changes only the world: what has to differ between the steps is the reading in the packet and nothing else. The reading is taken when the utterance is taken in, so a step that changes the world after the fact would change nothing - which is the property this scenario is here to hold on to.",
+  "steps": [
+    {
+      "_": "Nothing is open and nothing is paused: the plain case.",
+      "text": "закрой дверь",
+      "score": 0.94,
+      "margin": 0.31
+    },
+    {
+      "_": "The dialogue window is open. The name is the one the settings list, not one written in here.",
+      "text": "закрой дверь",
+      "score": 0.94,
+      "margin": 0.31,
+      "state": { "menu": "Dialogue Menu" }
+    },
+    {
+      "_": "Paused beats everything: with the world stopped there is no dialogue to be in, even with the menu still open.",
+      "text": "закрой дверь",
+      "score": 0.94,
+      "margin": 0.31,
+      "state": { "menu": "Dialogue Menu", "paused": true }
+    }
+  ]
+}
