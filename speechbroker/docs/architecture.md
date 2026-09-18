@@ -56,6 +56,30 @@ not to a common channel.
 | the auction | subscribers bid for the utterance and one of them takes it | ours, already written, to be moved out of the bridge |
 | anything else | whatever its author decided | third parties, and we will never write them |
 
+#### What a market owns
+
+**The lifetime of the packet belongs to the market.** A packet may be dropped after a while no
+matter who is asking for it, and a subscriber that comes late gets nothing. The broker keeps no
+everlasting store: how long an utterance stays on offer is a property of the market rather than of
+the utterance.
+
+**Markets see one fact about each other, and can do nothing to each other.** A market learns whether
+some other market has already handed this packet to somebody, and may weigh that in its own rule.
+It cannot order a neighbour to do anything, and it cannot hold a packet open on a neighbour's
+behalf. That single fact is also the only way a market can avoid giving out an utterance another
+market has already awarded - a choice each market makes, never a guarantee the broker enforces.
+
+Everything else - the subscribers, the events, the rule, the expiry - lives inside one market and is
+invisible from the next.
+
+#### Why markets exist at all
+
+They are, in the author's words, **a small safety device**: insurance against the complicated
+machinery of the auction turning out to work wrongly and opaquely. A mod that cannot afford to
+depend on an argument it cannot watch installs the open market instead and takes the text plainly.
+So the simple implementations are not lesser versions of the auction - they are the way out of it,
+and that is why the interface is the fixed part while every implementation is replaceable.
+
 The last row is the reason the interface exists at all. A third-party market plugs in as an ordinary
 mod, publishes its own events and decides for itself who deserves the text.
 
