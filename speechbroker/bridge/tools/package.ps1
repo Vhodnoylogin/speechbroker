@@ -69,14 +69,28 @@ foreach ($p in $plan) {
     # mod through createMod and unpacks the archive itself - without a single
     # dialogue. Unpacking on our own, past MO2, gave a mod it had never created:
     # with no source archive and no record in its own database.
-    $body = @{ archive = $p.Archive; name = $p.Name; paths = @(''); mode = 'replace' } |
+    # MERGE AND NOT REPLACE. Replacing sends the previous contents of the mod to
+    # the Recycle Bin, which the bridge rightly calls an irreversible operation
+    # and refuses without a risk field spelled out in its own documentation. It
+    # refuses with a 200 and an "applied: false" body - so the old code here
+    # printed "installed through MO2" while nothing whatever had happened.
+    # Merging adds and overwrites and takes nothing away; a file that a build
+    # stopped producing therefore lingers, and clearing that out is a deliberate
+    # act by a person rather than a side effect of packing.
+    $body = @{ archive = $p.Archive; name = $p.Name; paths = @(''); mode = 'merge' } |
             ConvertTo-Json -Compress
     $token = (Get-Content -LiteralPath $bridgeToken -Raw).Trim()
     $res = Invoke-RestMethod "$($d.bridgeUrl)/install" -Method Post `
                -Body ([Text.Encoding]::UTF8.GetBytes($body)) `
                -ContentType 'application/json; charset=utf-8' `
                -Headers @{ 'X-Token' = $token } -TimeoutSec 600
-    '  installed through MO2: {0}' -f $p.Name
+    # The answer is READ. The bridge says no by answering, not by failing, and a
+    # script that does not look is a script that reports work it did not do.
+    if (-not $res.applied) {
+        throw "MO2 did not install $($p.Name): $($res.blocked) $($res.why)"
+    }
+    '  installed through MO2: {0} - {1} files, {2} added, {3} overwritten' -f `
+        $p.Name, $res.files, $res.addedCount, $res.overwrittenCount
 }
 
 # ask the bridge to reread the list of mods - an open MO2 will not see them otherwise

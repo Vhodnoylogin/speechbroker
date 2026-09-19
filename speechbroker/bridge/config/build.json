@@ -18,9 +18,9 @@
   "optimize": true,
   "deploy": {
     "modsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods",
-    "modName": "Speech Broker",
+    "modName": "test_Speech Broker",
     "version": "0.1.0",
-    "indexScript": "D:/Skyrim VR Modding/Claude Skyrim VR/claude-projects/skyrim-vr/index/update-index.ps1",
+    "indexScript": "D:/Skyrim VR Modding/Claude Skyrim VR/wt-claude-projects/claude-skyrim-vr/index/update-index.ps1",
     "indexOwner": "chat-speechbroker-bridge",
     "downloadsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/downloads",
     "sevenZip": "C:/Program Files/7-Zip/7z.exe",
@@ -42,7 +42,7 @@
       "base": "english",
       "source": "{root}/localization"
     },
-    "sdkName": "Speech Broker - SDK",
+    "sdkName": "test_Speech Broker - SDK",
     "sdkLayout": {
       "cpp": [
         "{root}/contract/speechbroker-adapter.h",
