@@ -105,4 +105,5 @@ $SPEECHBROKER_LOG_COLLECTOR_THREW	сборщик состояния {0} брос
 $SPEECHBROKER_LOG_MARKET_REGISTERED	рынок {0} подключён, всего {1}
 $SPEECHBROKER_LOG_MARKET_REFUSED	рынок {0} не принят: {1}
 $SPEECHBROKER_LOG_MARKET_THREW	рынок {0} бросил исключение на реплике {1} и потерял её
+$SPEECHBROKER_LOG_WORLD_READ	реплика {0} произнесена при мире {1}
 $SPEECHBROKER_QUEST_CONTRACT	контракт версии
