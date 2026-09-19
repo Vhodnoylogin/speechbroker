@@ -3,13 +3,13 @@
 
   "deploy": {
     "modsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods",
-    "modName": "Speech Broker - Voice Model - Whisper RU",
-    "adapterMod": "Speech Broker - Voice Adapter",
+    "modName": "test_Speech Broker - Voice Model - Whisper RU",
+    "adapterMod": "test_Speech Broker - Voice Adapter",
 
-    "sdk": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Speech Broker - Voice Adapter SDK",
+    "sdk": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/test_Speech Broker - Voice Adapter SDK",
 
     "version": "0.1.0",
-    "indexScript": "D:/Skyrim VR Modding/Claude Code/Skyrim VR/index/update-index.ps1",
+    "indexScript": "D:/Skyrim VR Modding/Claude Skyrim VR/wt-claude-projects/claude-skyrim-vr/index/update-index.ps1",
     "indexOwner": "chat-speechbroker-model",
     "downloadsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/downloads",
     "sevenZip": "C:/Program Files/7-Zip/7z.exe",

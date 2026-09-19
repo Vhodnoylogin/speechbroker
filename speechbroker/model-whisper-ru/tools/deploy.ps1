@@ -67,9 +67,13 @@ Copy-Item -LiteralPath $child -Destination $childInto -Force
 # child refuses at start-up with one sentence naming the file it wanted.
 $backend = Join-Path $root 'child\runtime'
 if (Test-Path -LiteralPath $backend) {
-    Get-ChildItem -LiteralPath $backend -File | ForEach-Object {
-        Copy-Item -LiteralPath $_.FullName -Destination $childInto -Force
-    }
+    # Dotfiles stay behind: the folder carries a .gitignore that explains why
+    # the runtime is not versioned, and that explanation has no business
+    # travelling inside a mod a player installs.
+    Get-ChildItem -LiteralPath $backend -File |
+        Where-Object { -not $_.Name.StartsWith('.') } | ForEach-Object {
+            Copy-Item -LiteralPath $_.FullName -Destination $childInto -Force
+        }
 }
 
 # --- the settings and the text ------------------------------------------------
