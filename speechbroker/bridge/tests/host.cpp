@@ -28,6 +28,7 @@
 #include "core/MainThread.h"
 #include "core/Scheduler.h"
 #include "core/Settings.h"
+#include "market/MarketRegistry.h"
 
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
@@ -94,6 +95,58 @@ namespace
 	// main thread drains it between its own steps: the order becomes strictly
 	// defined, and nothing is left in the core that would be done from two threads
 	// at once.
+	// --- two markets, and what they were handed ------------------------------
+	//
+	// A market is a MOD, and until now the bridge had a contract with no caller at
+	// all: the register compiled and nothing had ever registered with it. These
+	// two do nothing but write down what arrived. They are named so that sorting
+	// puts them in a known order, because the contract promises that the order of
+	// offering does not depend on who loaded first - and a promise nobody
+	// measured is a wish.
+	struct MarketWitness
+	{
+		std::string              id;
+		std::vector<std::string> seen;
+	};
+
+	MarketWitness            marketOpen{ "aaa-open", {} };
+	MarketWitness            marketAuction{ "zzz-auction", {} };
+	std::vector<std::string> marketOrder;
+
+	void OnMarketOffer(const SpeechBrokerMarketAPI::Packet& a_packet, void* a_user)
+	{
+		auto* witness = static_cast<MarketWitness*>(a_user);
+		marketOrder.push_back(witness->id);
+
+		std::string world;
+		for (std::int32_t i = 0; i < a_packet.stateCount; ++i) {
+			if (!world.empty()) {
+				world += ", ";
+			}
+			world += std::string(a_packet.stateKeys[i]) + "=" + a_packet.stateValues[i];
+		}
+
+		witness->seen.push_back(
+			"utterance " + std::to_string(a_packet.id) +
+			"  topic " + (a_packet.topic ? a_packet.topic : "") +
+			"  handedOut " + std::to_string(a_packet.handedOut) +
+			"  world [" + world + "]" +
+			"  text '" + (a_packet.text ? a_packet.text : "") + "'");
+
+		// The first market takes it. The second is offered the SAME packet in the
+		// same round and must still read handedOut 0, because that field is a
+		// snapshot taken before anybody was asked - while asking the register
+		// there and then must say 1. Both halves of that rule are printed.
+		if (witness->id == "aaa-open") {
+			SpeechBroker::UtteranceStore::Get().MarkHandedOut(a_packet.id, witness->id);
+			witness->seen.back() += "  -> took it";
+		} else {
+			witness->seen.back() += "  -> asked the register: " +
+				std::to_string(SpeechBroker::MarketRegistry::Get().HandOutState(a_packet.id));
+		}
+	}
+
+
 	class MainQueue final : public SpeechBroker::MainThread::Dispatcher
 	{
 	public:
@@ -615,6 +668,7 @@ int main(int argc, char** argv)
 	fs::path subscribersDir = SPEECHBROKER_TEST_DIR "/subscribers";
 	fs::path scenarioFile = SPEECHBROKER_TEST_DIR "/scenarios/default.json";
 	fs::path configFile = fs::absolute(argv[0]).parent_path() / "speechbroker-host.json";
+	bool     withMarkets = false;
 	fs::path reportFile;
 
 	for (int i = 1; i + 1 < argc; ++i) {
@@ -625,6 +679,8 @@ int main(int argc, char** argv)
 			scenarioFile = argv[++i];
 		} else if (key == "--config") {
 			configFile = argv[++i];
+		} else if (key == "--markets") {
+			withMarkets = true;
 		} else if (key == "--report") {
 			reportFile = argv[++i];
 		}
@@ -665,6 +721,34 @@ int main(int argc, char** argv)
 	const auto scenarioName = scenario.value("name", scenarioFile.stem().string());
 	spdlog::info("scenario '{}', {} steps", scenarioName, steps.size());
 
+	if (withMarkets) {
+		// Registered in the WRONG order on purpose: zzz first, aaa second. If the
+		// offering comes out sorted anyway, the promise holds.
+		SpeechBrokerMarketAPI::MarketInfo info;
+		info.name = "a market that only remembers";
+		info.id = marketAuction.id.c_str();
+		SpeechBroker::MarketRegistry::Get().Register(info, &OnMarketOffer, &marketAuction);
+		info.id = marketOpen.id.c_str();
+		SpeechBroker::MarketRegistry::Get().Register(info, &OnMarketOffer, &marketOpen);
+
+		SpeechBrokerMarketAPI::MarketInfo again;
+		again.id = marketOpen.id.c_str();
+		again.name = "a second claim to a name already taken";
+		const bool refusedTwice =
+			!SpeechBroker::MarketRegistry::Get().Register(again, &OnMarketOffer, &marketOpen);
+
+		SpeechBrokerMarketAPI::MarketInfo ancient;
+		ancient.id = "built-against-yesterday";
+		ancient.name = "a market built against another version of the contract";
+		ancient.contract = 0;
+		const bool refusedOld =
+			!SpeechBroker::MarketRegistry::Get().Register(ancient, &OnMarketOffer, &marketOpen);
+
+		spdlog::info("markets: {} registered, duplicate name refused: {}, wrong contract refused: {}",
+			SpeechBroker::MarketRegistry::Get().Count(), refusedTwice, refusedOld);
+	}
+
+
 	Run run(state, main, roster);
 	run.Play(steps);
 	SpeechBroker::Scheduler::Get().Stop();
@@ -677,5 +761,24 @@ int main(int argc, char** argv)
 	} else {
 		std::fputs(text.c_str(), stdout);
 	}
+
+	if (withMarkets) {
+		std::string order;
+		for (const auto& one : marketOrder) {
+			if (!order.empty()) {
+				order += ", ";
+			}
+			order += one;
+		}
+		std::fputs("\n=== markets ===\n", stdout);
+		std::printf("offering order: %s\n", order.c_str());
+		for (const auto* witness : { &marketOpen, &marketAuction }) {
+			std::printf("%s, %zu packet(s)\n", witness->id.c_str(), witness->seen.size());
+			for (const auto& line : witness->seen) {
+				std::printf("    %s\n", line.c_str());
+			}
+		}
+	}
+
 	return 0;
 }
