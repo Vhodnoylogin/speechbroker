@@ -362,6 +362,21 @@ namespace SpeechBroker
 		// callback. Neither can see the other, which is the property the contract
 		// promises, and with no market installed this costs a comparison.
 		MarketRegistry::Get().Offer(item);
+		// The readings of the world, once per announced utterance. Nothing else in
+		// the game can show them: a subscriber has to ask for them by key, and a
+		// build whose subscribers were written before the channel existed asks for
+		// nothing. Without this line a game run could not tell "the collectors read
+		// nothing" from "the packet never carried it".
+		if (!item.state.empty()) {
+			std::string readings;
+			for (const auto& entry : item.state) {
+				if (!readings.empty()) {
+					readings += ", ";
+				}
+				readings += entry.first + "=" + entry.second;
+			}
+			Log::Info("$SPEECHBROKER_LOG_WORLD_READ", a_id, readings);
+		}
 
 		Scheduler::Get().After(std::chrono::milliseconds(Settings::Get().bidWindowMs), [a_id]() {
 			MainThread::Post([a_id]() { Auctioneer::Get().Settle(a_id); });

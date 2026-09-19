@@ -119,5 +119,6 @@ inline constexpr SpeechBrokerLoc::Entry kSpeechBrokerDefaultStrings[] = {
 	{ "$SPEECHBROKER_LOG_MARKET_REGISTERED", "market {0} registered, {1} in all" },
 	{ "$SPEECHBROKER_LOG_MARKET_REFUSED", "market {0} refused: {1}" },
 	{ "$SPEECHBROKER_LOG_MARKET_THREW", "market {0} threw on utterance {1} and lost it" },
+	{ "$SPEECHBROKER_LOG_WORLD_READ", "utterance {0} was spoken with the world at {1}" },
 	{ "$SPEECHBROKER_QUEST_CONTRACT", "contract version" },
 };
