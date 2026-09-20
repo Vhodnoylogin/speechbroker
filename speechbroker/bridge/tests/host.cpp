@@ -707,6 +707,26 @@ namespace
 		return ok;
 	}
 
+	// The same question against two REAL ini files, named on the command line:
+	//     speechbroker-host --loc "<game>\Skyrim.ini" "<documents>\Skyrim.ini"
+	// It answers with the language those two files settle on, which is the one the
+	// plugin will use. Nothing is hard-coded here on purpose - the paths differ on
+	// every machine, and a check that only works on one machine is not a check.
+	int RunLanguageOfFiles(const fs::path& a_besideTheExe, const fs::path& a_inDocuments)
+	{
+		const auto beside = SpeechBroker::GameLanguage::FromIniFile(a_besideTheExe);
+		const auto mine = SpeechBroker::GameLanguage::FromIniFile(a_inDocuments);
+		const auto answer = SpeechBroker::GameLanguage::Of(a_besideTheExe, a_inDocuments);
+
+		std::printf("beside the exe : %-10s %s\n", beside.empty() ? "(nothing)" : beside.c_str(),
+			a_besideTheExe.string().c_str());
+		std::printf("in documents   : %-10s %s\n", mine.empty() ? "(nothing)" : mine.c_str(),
+			a_inDocuments.string().c_str());
+		std::printf("the plugin will read SpeechBroker*_%s.txt\n",
+			answer.empty() ? "english (nothing named one)" : answer.c_str());
+		return answer.empty() ? 1 : 0;
+	}
+
 	int RunLocCheck()
 	{
 		const auto dir = fs::temp_directory_path() / "speechbroker-loc-check";
@@ -773,9 +793,15 @@ int main(int argc, char** argv)
 #endif
 
 	for (int i = 1; i < argc; ++i) {
-		if (std::string(argv[i]) == "--loc") {
-			return RunLocCheck();
+		if (std::string(argv[i]) != "--loc") {
+			continue;
 		}
+		// Two paths after it mean "tell me what these two real files settle on";
+		// nothing after it means the self-contained check.
+		if (i + 2 < argc) {
+			return RunLanguageOfFiles(argv[i + 1], argv[i + 2]);
+		}
+		return RunLocCheck();
 	}
 
 	// The host makes itself a settings file: the built-in reference unfolds next to
