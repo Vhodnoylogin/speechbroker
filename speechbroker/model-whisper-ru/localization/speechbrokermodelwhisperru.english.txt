@@ -16,6 +16,8 @@
 # --- loading, settings ------------------------------------------------------
 $SBWHISPERRU_LOG_PLUGIN_LOADED	{0} {1} loaded, its own folder is {2}
 $SBWHISPERRU_LOG_NO_MESSAGING	SKSE gave out no messaging interface - the adapter cannot be met and this mod will do nothing
+$SBWHISPERRU_LOG_LISTENER_UP	listening to {0} - its broadcast of the model table will be heard
+$SBWHISPERRU_LOG_LISTENER_REFUSED	SKSE refused a listener for {0} - no plugin of that name is loaded, so this mod will never be offered any sound
 $SBWHISPERRU_LOG_SETTINGS_WRITTEN	no settings were found, so the built-in ones were written into {0} - edit them there
 $SBWHISPERRU_LOG_SETTINGS_UNWRITABLE	the settings could not be written into {0} - running on the built-in values, and nothing can be changed until that folder is writable
 $SBWHISPERRU_LOG_SETTINGS_UNREADABLE	the settings file {0} could not be opened - skipping it

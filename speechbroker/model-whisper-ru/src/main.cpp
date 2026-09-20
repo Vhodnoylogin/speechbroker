@@ -13,9 +13,20 @@
 // sizeof(void*) and the table is reached by dereferencing once - which is the
 // house convention and not a slip. And THERE IS NO SECOND BROADCAST: a model
 // that was not listening is simply never registered, never asked for anything,
-// and recognition carries on with whatever else is installed. Which is why the
-// listener goes up in SKSEPlugin_Load, the only place guaranteed to be early
-// enough.
+// and recognition carries on with whatever else is installed.
+//
+// WHERE THE LISTENER GOES UP, AND WHY NOT IN SKSEPlugin_Load. SKSE resolves the
+// sender's NAME into a handle at the moment RegisterListener is called, and it
+// refuses the call outright when that plugin is not loaded yet - PluginManager.cpp
+// does LookupHandleFromName, gets kPluginHandle_Invalid and returns false, having
+// already written "registering plugin listener" to its log. Plugins are loaded in
+// the alphabetical order of their file names, so SpeechBrokerModelWhisperRu.dll
+// goes up a step BEFORE SpeechBrokerVoiceAdapter.dll: from inside SKSEPlugin_Load
+// the adapter does not exist. kPostLoad is the first moment at which every plugin
+// is certainly loaded, and it is still far ahead of the broadcast at kDataLoaded.
+// Measured on 20.09.2026: SKSE logged the registration, the adapter logged the
+// broadcast, the handshake line never appeared - the refusal had been dropped
+// together with the return value, so the whole mod sat there registering nothing.
 
 #include <RE/Skyrim.h>
 #include <SKSE/SKSE.h>
@@ -99,6 +110,27 @@ namespace
 		Log::Info("$SBWHISPERRU_LOG_HANDSHAKE", static_cast<std::int32_t>(registered),
 			static_cast<std::int32_t>(Models().size()), host->abiVersion);
 	}
+
+	// The name of the adapter's plugin, which is the address the broadcast comes
+	// from. A shim for another adapter changes this line and nothing else.
+	constexpr const char* kAdapterPluginName = "SpeechBrokerVoiceAdapter";
+
+	// SKSE's own messages, and only one of them matters: at kPostLoad every
+	// plugin is loaded, so the adapter's name can finally be resolved. Whether it
+	// resolved is written down either way - a silent refusal here means a mod that
+	// loads, reads its settings, reports its models and then does nothing at all.
+	void OnSkseMessage(SKSE::MessagingInterface::Message* a_message)
+	{
+		if (!a_message || a_message->type != SKSE::MessagingInterface::kPostLoad) {
+			return;
+		}
+		auto* messaging = SKSE::GetMessagingInterface();
+		if (messaging && messaging->RegisterListener(kAdapterPluginName, OnMessage)) {
+			Log::Info("$SBWHISPERRU_LOG_LISTENER_UP", kAdapterPluginName);
+		} else {
+			Log::Error("$SBWHISPERRU_LOG_LISTENER_REFUSED", kAdapterPluginName);
+		}
+	}
 }
 
 extern "C" __declspec(dllexport) bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a_skse,
@@ -158,11 +190,11 @@ extern "C" __declspec(dllexport) bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadIn
 		Log::Warn("$SBWHISPERRU_LOG_NO_MODELS", own);
 	}
 
-	// The adapter broadcasts under its own plugin name; that is what we listen
-	// for. There is no second broadcast and no entry point to ask for the table,
-	// so a listener registered any later than here is a model that never exists.
+	// Only SKSE's own channel can be taken here: the adapter is not loaded yet
+	// (see the top of this file). The listener for the adapter goes up at
+	// kPostLoad, which is still two messages ahead of the broadcast.
 	if (auto* messaging = SKSE::GetMessagingInterface()) {
-		messaging->RegisterListener("SpeechBrokerVoiceAdapter", OnMessage);
+		messaging->RegisterListener(OnSkseMessage);
 	} else {
 		Log::Error("$SBWHISPERRU_LOG_NO_MESSAGING");
 	}
