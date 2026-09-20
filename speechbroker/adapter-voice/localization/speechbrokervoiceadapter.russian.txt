@@ -67,6 +67,7 @@ $SPEECHBROKERVOICE_LOG_EARS_RING_SHORT	уши: источник даёт {0} Г�
 $SPEECHBROKERVOICE_LOG_EARS_RING_TINY	уши: ringMs {0} короче двух блоков устройства - беру {1} мс
 $SPEECHBROKERVOICE_LOG_EARS_FLOOR	уши: комната измерена - фон {0:.0f}, порог срабатывания {1:.0f}
 $SPEECHBROKERVOICE_LOG_EARS_TURN_BEGAN	уши: речевой ход {0} начался
+$SPEECHBROKERVOICE_LOG_EARS_TURN_OPENED	уши: ход {0} открыт, звука до него вошло {1} мс из запрошенных {2}
 $SPEECHBROKERVOICE_LOG_EARS_TURN_ENDED	уши: речевой ход {0} закончен - {1} мс, проходов {2}
 $SPEECHBROKERVOICE_LOG_EARS_CEILING	уши: речевой ход {0} упёрся в потолок {1} мс - он кончается здесь, следующий отсчёт начинает новый
 $SPEECHBROKERVOICE_LOG_EARS_CEILING_LOW	уши: потолок хода {0} мс, а нижняя граница прохода {1} мс - отправить нельзя будет ничего; проверьте maxUttSec, minUttSec и minPassMs
