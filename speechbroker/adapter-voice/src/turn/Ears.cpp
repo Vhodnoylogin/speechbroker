@@ -322,6 +322,16 @@ namespace Voice
 				}
 
 				e._raw.resize(readChunk);  // back to being the read buffer; no allocation
+
+				// HOW MUCH SOUND FROM BEFORE THE TURN ACTUALLY WENT INTO IT. The
+				// settings ask for 800 ms; whether the ring had that much is another
+				// question, and on 20.09.2026 a phrase came out as "роверка связи"
+				// with its first sound missing and nobody could say whether the head
+				// had been lost in the air, in the ring or inside the model. The
+				// number is cheap and it decides that question in one line.
+				Loc::Info("$SPEECHBROKERVOICE_LOG_EARS_TURN_OPENED", e._turn.Id(),
+					static_cast<std::int32_t>(SamplesToMs(added)),
+					e._settings.vad.preRollMs);
 				return added;
 			}
 

@@ -85,6 +85,7 @@ inline constexpr SpeechBrokerLoc::Entry kSpeechBrokerDefaultStrings[] = {
 	{ "$SPEECHBROKERVOICE_LOG_EARS_RING_TINY", "ears: ringMs {0} is shorter than two blocks of the device - taking {1} ms instead" },
 	{ "$SPEECHBROKERVOICE_LOG_EARS_FLOOR", "ears: the room is measured - floor {0:.0f}, trigger {1:.0f}" },
 	{ "$SPEECHBROKERVOICE_LOG_EARS_TURN_BEGAN", "ears: turn {0} began" },
+	{ "$SPEECHBROKERVOICE_LOG_EARS_TURN_OPENED", "ears: turn {0} opened, {1} ms of sound heard before it went in out of the {2} ms asked for" },
 	{ "$SPEECHBROKERVOICE_LOG_EARS_TURN_ENDED", "ears: turn {0} ended - {1} ms, {2} passes" },
 	{ "$SPEECHBROKERVOICE_LOG_EARS_CEILING", "ears: turn {0} reached the ceiling of {1} ms - it ends here and the next sample starts a new one" },
 	{ "$SPEECHBROKERVOICE_LOG_EARS_CEILING_LOW", "ears: the ceiling of a turn is {0} ms and the floor of a pass is {1} ms - nothing can ever be sent; check maxUttSec, minUttSec and minPassMs" },
