@@ -1466,8 +1466,12 @@ namespace Voice::Models
 		// (5) OUT. Each publish is on its own: a bridge that threw on one piece
 		// must not swallow the rest of the turn.
 		for (const auto& slice : slices) {
+			// The score goes out with the piece, and it is the score that LEAVES -
+			// the one the bridge weighs against its own threshold. Without it the
+			// log says what was heard and never how sure of it anybody was.
 			Loc::Info("$SPEECHBROKERVOICE_LOG_SLICE", a_collector->TurnId(), slice.id,
-				slice.startMs, slice.endMs, slice.Text(), slice.complete);
+				slice.startMs, slice.endMs, slice.Text(), slice.complete,
+				slice.hypotheses.empty() ? 0.0f : slice.hypotheses.front().score);
 
 			if (!_publish) {
 				continue;
