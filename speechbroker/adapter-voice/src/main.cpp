@@ -423,6 +423,15 @@ extern "C" __declspec(dllexport) bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadIn
 
 	// The bridge broadcasts its interface under its own name - that is what we
 	// listen for. Our own broadcast, to the model mods, waits for kDataLoaded.
+	//
+	// Registering a NAMED listener this early is legal here and nowhere else in
+	// this mod's world. SKSE resolves the name into a handle on the spot and
+	// refuses the call when that plugin is not loaded yet, and plugins load in
+	// the alphabetical order of their file names - but "SpeechBroker.dll" is a
+	// prefix of "SpeechBrokerVoiceAdapter.dll", and a prefix always sorts first,
+	// so the bridge is loaded before us by construction rather than by luck. A
+	// model mod has no such guarantee about us, which is why the contract tells
+	// shim authors to register at kPostLoad instead (contract/, the handshake).
 	if (auto* messaging = SKSE::GetMessagingInterface()) {
 		messaging->RegisterListener("SpeechBroker", OnBridgeMessage);
 		messaging->RegisterListener(OnSkseMessage);
