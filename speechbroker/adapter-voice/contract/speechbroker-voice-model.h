@@ -103,9 +103,23 @@
         line is right. Refuse the message if dataLen is not sizeof(void*).
      3. THE MOMENT IS SKSE's kDataLoaded. That is later than the bridge's own
         kPostPostLoad broadcast on purpose: by kDataLoaded every model plugin has
-        certainly been loaded and has had its chance to subscribe. REGISTER YOUR
-        SKSE MESSAGING LISTENER IN SKSEPlugin_Load - it is the only place
-        guaranteed to be early enough.
+        certainly been loaded and has had its chance to subscribe.
+        REGISTER YOUR LISTENER FOR THIS ADAPTER AT kPostLoad, AND NOT INSIDE
+        SKSEPlugin_Load. SKSE turns the sender's NAME into a handle at the moment
+        RegisterListener is called, and refuses the call when no plugin of that
+        name is loaded yet - PluginManager.cpp looks the name up, gets
+        kPluginHandle_Invalid and returns false, having already written
+        "registering plugin listener" into its own log, so the log is no proof.
+        Plugins are loaded in the alphabetical order of their file names, so a
+        shim whose file sorts before SpeechBrokerVoiceAdapter.dll - which is most
+        of the alphabet - is refused there and hears nothing ever after. In
+        SKSEPlugin_Load take SKSE's own channel only:
+            messaging->RegisterListener(OnSkseMessage);          // sender "SKSE"
+        and from inside it, when the message is kPostLoad:
+            messaging->RegisterListener("SpeechBrokerVoiceAdapter", OnHostMessage);
+        CHECK WHAT THAT SECOND CALL RETURNS AND WRITE IT DOWN. A dropped false is
+        a mod that loads, reads its settings, reports its models and then does
+        nothing at all, with not one line in its log to say why.
      4. THERE IS NO SECOND BROADCAST and no entry point to ask for the table. A
         model that was not listening is simply not registered, is never asked for
         anything, and costs nobody anything. Recognition carries on with whatever
