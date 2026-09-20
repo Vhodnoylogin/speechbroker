@@ -13,6 +13,7 @@
 #include <string>
 
 #include "core/Config.h"
+#include "core/GameLanguage.h"
 #include "core/Loc.h"
 #include "core/Log.h"
 #include "core/Settings.h"
@@ -34,13 +35,15 @@ namespace
 	constexpr auto kConfigPath = LR"(Data\SKSE\Plugins\speechbroker\speechbroker.json)";
 	constexpr auto kTranslations = LR"(Data\Interface\Translations)";
 
-	// Which language the text on screen is in. "auto" means the one the game
-	// itself runs in, which is what a player expects and never has to set.
+	// Which language the text is in. "auto" means the one the game itself runs in,
+	// which is what a player expects and never has to set.
 	//
-	// Asking the engine rather than reading Skyrim.ini ourselves matters: the file
-	// that wins is decided by the launcher, by MO2 and by which of the several
-	// ini files the player last edited, and the engine has already settled all of
-	// that by the time we ask.
+	// The engine is asked first and was once the only source here, on the argument
+	// that it has already settled which ini wins. In Skyrim VR it settles nothing
+	// we can read: the setting collection has no sLanguage, the bridge fell back
+	// to English in a Russian game, and every subscriber was handed English words
+	// to listen for. So the ini files are read after it, in the engine's own
+	// order, and the fallback to English is the last resort it was meant to be.
 	std::string ResolveLanguage(const std::string& a_asked)
 	{
 		if (!a_asked.empty() && a_asked != "auto") {
@@ -54,6 +57,26 @@ namespace
 					}
 				}
 			}
+		}
+
+		// THE INI FILES, because the collection above says nothing in Skyrim VR
+		// and a wrong answer here is not cosmetic: it decides which file the
+		// vocabulary of every subscriber is read out of. The engine reads the ini
+		// beside the executable first and the player's own in Documents after it,
+		// and so do we. Both are ordinary file reads and both go through Mod
+		// Organizer's virtual file system exactly as the settings read does.
+		// Relative, and that is deliberate: the working directory of the process is
+		// the folder of the game, which is the same assumption kConfigPath above
+		// has been living on since the first line of this plugin was written.
+		const std::filesystem::path besideTheExe{ L"Skyrim.ini" };
+
+		std::filesystem::path inDocuments;
+		if (const auto logs = SKSE::log::log_directory(); logs) {
+			inDocuments = logs->parent_path() / L"Skyrim.ini";
+		}
+
+		if (auto language = SpeechBroker::GameLanguage::Of(besideTheExe, inDocuments); !language.empty()) {
+			return language;
 		}
 		return "english";
 	}

@@ -29,54 +29,23 @@ namespace SpeechBroker
 			return out;
 		}
 
-		// The engine's own translation table: $-key to line, in the language the
-		// game is running. Reached through the Scaleform loader because that is
-		// where the engine keeps it; everything here is null-checked, since a
-		// script may call before the menus exist and none of this is worth a crash.
+		// WHY THE ENGINE IS NOT ASKED HERE, written down so that nobody tries it a
+		// second time. Between 20:39 and 22:46 on 20.09.2026 this function reached
+		// into the engine's own translation table through the Scaleform loader -
+		// BSScaleformManager -> GFxLoader -> GetState<BSScaleformTranslator> ->
+		// translationMap.find(BSFixedStringW) - and every start of the game after
+		// that ended in an access violation inside this very call: a native
+		// Papyrus function taking and returning a BSFixedString, on the virtual
+		// machine's own thread, at the first Translate a subscriber made in
+		// OnInit. The faulting instruction was the refcount test of a fixed
+		// string, "test dword ptr [rcx-0x08]", with a nonsense pointer in rcx.
 		//
-		// The answer comes back as UTF-16, and is turned into UTF-8 by the very
-		// decoder that reads the files - the bytes are handed over with a byte
-		// order mark in front so that the one tested routine does the work.
-		bool FromTheEngine(const char* a_key, std::string& a_out)
-		{
-			if (a_key == nullptr || *a_key != '$') {
-				return false;  // not a key at all - the engine has nothing to say
-			}
-
-			auto* const manager = RE::BSScaleformManager::GetSingleton();
-			auto* const loader = manager ? manager->loader : nullptr;
-			if (loader == nullptr) {
-				return false;
-			}
-			const auto translator =
-				loader->GetState<RE::BSScaleformTranslator>(RE::GFxState::StateType::kTranslator);
-			if (!translator) {
-				return false;
-			}
-
-			// The keys are ASCII by construction, so widening one character at a
-			// time is exact here and needs no conversion table.
-			const std::wstring wide(a_key, a_key + std::strlen(a_key));
-
-			const auto& map = translator->translator.translationMap;
-			const auto  at = map.find(RE::BSFixedStringW(wide.c_str()));
-			if (at == map.end() || at->second.empty()) {
-				return false;
-			}
-
-			const wchar_t* const line = at->second.c_str();
-			const auto           units = std::wcslen(line);
-
-			std::vector<char> bytes;
-			bytes.reserve(units * 2 + 2);
-			bytes.push_back(static_cast<char>(0xFF));
-			bytes.push_back(static_cast<char>(0xFE));
-			const auto* const raw = reinterpret_cast<const char*>(line);
-			bytes.insert(bytes.end(), raw, raw + units * 2);
-
-			a_out = SpeechBrokerLoc::detail::ToUtf8(bytes);
-			return !a_out.empty();
-		}
+		// The idea was right and the road was wrong: in Skyrim VR the wide string
+		// pool and that state are not the same shape CommonLib describes, and a
+		// plugin has no business paying with the whole process for a convenience.
+		// The language question is answered by reading the ini files instead -
+		// see core/GameLanguage.h - and the lines come out of our own table, which
+		// now really does read the files of every mod that ships them.
 	}
 
 	std::int32_t PapyrusApi::GetInterfaceVersion(Tag)
@@ -406,19 +375,13 @@ std::vector<RE::BSFixedString> PapyrusApi::GetAlternatives(Tag, std::int32_t a_i
 	// a line glued together out of a translated part and a number, and text that is
 	// never shown at all - a subscriber's vocabulary - have to come through here.
 	//
-	// THE ENGINE IS ASKED FIRST, and that is the whole fix of 20.09.2026. A
-	// subscriber's keys live in the SUBSCRIBER's file, which this plugin has never
-	// heard of and has no business scanning for; and the language is the game's to
-	// decide, not ours to guess out of an ini. The engine has already read every
-	// Interface\Translations\*_<language>.txt on the load order by the time any
-	// script runs, so it holds exactly the right line in exactly the right
-	// language. Our own table answers only when the engine has nothing - which is
-	// the case for keys of ours that no translator has covered.
+	// Our own table answers, and since 20.09.2026 it really does hold the files:
+	// the folder scan used to compare five characters of a name against the word
+	// "speechbroker" and matched nothing, so every key came back as itself. A
+	// subscriber's keys are in the subscriber's own file, and the scan takes every
+	// SpeechBroker*_<language>.txt in the folder - the subscriber's included.
 	RE::BSFixedString PapyrusApi::Translate(Tag, Str a_key)
 	{
-		if (std::string line; FromTheEngine(a_key.c_str(), line)) {
-			return RE::BSFixedString{ line.c_str() };
-		}
 		return RE::BSFixedString{ Loc::Get(a_key.c_str()) };
 	}
 
