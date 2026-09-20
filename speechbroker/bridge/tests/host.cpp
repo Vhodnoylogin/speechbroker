@@ -22,6 +22,7 @@
 #include "bus/Utterance.h"
 #include "bus/UtteranceStore.h"
 #include "core/Config.h"
+#include "core/GameLanguage.h"
 #include "core/GameState.h"
 #include "core/Loc.h"
 #include "core/Log.h"
@@ -741,6 +742,23 @@ namespace
 				SpeechBroker::Loc::Files());
 			ok = false;
 		}
+
+		// And the language the files are chosen BY. A wrong answer here loads the
+		// neighbouring file and hands a Russian player English words, which is
+		// what happened for a whole evening on 20.09.2026.
+		const auto language = [&ok](const char* a_what, const std::string& a_got, const std::string& a_want) {
+			const bool good = a_got == a_want;
+			std::printf("  %-4s %-38s %s\n", good ? "ok" : "FAIL", a_what, a_got.empty() ? "(nothing)" : a_got.c_str());
+			ok = good && ok;
+		};
+		language("sLanguage under [General]",
+			SpeechBroker::GameLanguage::FromIniText("[General]\r\nsLanguage=RUSSIAN\r\nuGridsToLoad=5\r\n"), "russian");
+		language("a commented-out one is not taken",
+			SpeechBroker::GameLanguage::FromIniText("[General]\r\n;sLanguage=GERMAN\r\nsLanguage=russian ; mine\r\n"), "russian");
+		language("a foreign section is left alone",
+			SpeechBroker::GameLanguage::FromIniText("[Archive]\r\nsLanguage=GERMAN\r\n"), "");
+		language("nothing said is nothing answered",
+			SpeechBroker::GameLanguage::FromIniText("[General]\r\nuGridsToLoad=5\r\n"), "");
 
 		fs::remove_all(dir, ec);
 		std::printf("%s\n", ok ? "the table reads what is put in front of it" : "THE TABLE IS BROKEN");
