@@ -54,7 +54,7 @@ namespace SpeechBroker
 		// lands exactly there: 0.4 * (1 - 0.33). For an expensive room the same
 		// formula gives a stricter boundary by itself, 0.73.
 		float        holdTolerance{ 0.27f };
-		float        minUtteranceScore{ 0.4f };
+		float        minUtteranceScore{ 0.25f };
 		bool         sharedWinsTie{ true };
 		double       utteranceTtlSec{ 30.0 };
 		std::size_t  utteranceMaxStored{ 64 };

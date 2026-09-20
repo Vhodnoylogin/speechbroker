@@ -64,7 +64,7 @@ inline constexpr SpeechBrokerLoc::Entry kSpeechBrokerDefaultStrings[] = {
 	{ "$SPEECHBROKER_LOG_LET_GO", "utterance {0} let go: {1}" },
 	{ "$SPEECHBROKER_LOG_DROPPED", "utterance {0} thrown away unannounced: it was absorbed by {1}" },
 	{ "$SPEECHBROKER_LOG_REVOKED", "utterance {0} had been handed over ({1}) and was absorbed by utterance {2} - revoking" },
-	{ "$SPEECHBROKER_LOG_SETTLED", "utterance {0} topic {1} bids {2} -> {3} ({4})" },
+	{ "$SPEECHBROKER_LOG_SETTLED", "utterance {0} topic {1} bids {2} -> {3} ({4}), score {5:.2f} against a threshold of {6:.2f}" },
 	{ "$SPEECHBROKER_LOG_EVENT_UTTERANCE", "event {0} raised, utterance {1}" },
 	{ "$SPEECHBROKER_LOG_EVENT_FULL", "event {0} raised, string '{1}', number {2}" },
 	{ "$SPEECHBROKER_LOG_EVENTS_READY", "Papyrus event delivery is ready" },
