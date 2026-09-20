@@ -230,8 +230,22 @@ namespace SpeechBrokerLoc
 		// names the file on disk is not something we can insist on.
 		static bool Matches(const std::string& a_name, const std::string& a_suffix)
 		{
-			const auto lower = detail::Lower(a_name);
-			return lower.size() > a_suffix.size() + 5 && lower.compare(0, 5, "speechbroker") == 0 &&
+			// THE PREFIX IS COMPARED BY ITS OWN LENGTH, and the mistake this line
+			// used to make is worth keeping in view: it compared five characters -
+			// lower.compare(0, 5, "speechbroker") - which asks whether "speec"
+			// equals "speechbroker" and can therefore never be true. Every table
+			// in every run up to 20.09.2026 loaded "0 files", fell back to the
+			// built-in English, and handed every $-key back as itself. A
+			// subscriber then registered THE KEY as its vocabulary, no spoken
+			// phrase ever matched it, and the one auction that did happen was the
+			// model echoing the key out of its own prompt.
+			//
+			// The length test is >=, not >: the bridge's own file is exactly the
+			// prefix and the suffix with nothing between them.
+			static constexpr std::string_view kPrefix{ "speechbroker" };
+			const auto                        lower = detail::Lower(a_name);
+			return lower.size() >= a_suffix.size() + kPrefix.size() &&
+			       lower.compare(0, kPrefix.size(), kPrefix) == 0 &&
 			       lower.compare(lower.size() - a_suffix.size(), a_suffix.size(), a_suffix) == 0;
 		}
 

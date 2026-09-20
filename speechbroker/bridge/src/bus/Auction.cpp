@@ -403,8 +403,15 @@ namespace SpeechBroker
 		UtteranceStore::Get().SetOutcome(a_id, result.winners, result.denied,
 			outcome + " - " + result.reason);
 
+		// THE NUMBER THAT DECIDED IS PRINTED NEXT TO THE DECISION. The run of
+		// 20.09.2026 reported eight utterances refused as "heard below the
+		// threshold" and nobody, here or in the game, could say by how much: the
+		// reason was a sentence and the score was nowhere. A threshold whose
+		// measurements are invisible cannot be set by anyone, so both numbers go
+		// out on every outcome, not only on a refusal.
 		Log::Info("$SPEECHBROKER_LOG_SETTLED", a_id, stored->topic,
-			stored->bids.size(), outcome, result.reason);
+			stored->bids.size(), outcome, result.reason, stored->score,
+			Settings::Get().minUtteranceScore);
 
 		// One broadcast per outcome rather than per recipient: there is no name in the
 		// event any more, and each participant asks IsWinner or GetDenyReason for

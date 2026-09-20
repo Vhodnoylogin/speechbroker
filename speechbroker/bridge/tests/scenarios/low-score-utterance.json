@@ -1,8 +1,8 @@
 {
-  "note": "heard badly - the auction does not even begin",
+  "note": "heard badly - the auction does not even begin. The score sits well under minUtteranceScore on purpose: the case is the RULE, not the number, and the number moved on 20.09.2026 from 0.40 to 0.25 when a correctly recognised phrase turned out to be refused by it",
   "state": {"core.context.menuOpen": false, "core.player.inCombat": false},
   "providers": ["core"],
-  "utterance": {"id": 6, "text": "фае бол", "score": 0.30, "margin": 0.02, "final": true, "channel": ""},
+  "utterance": {"id": 6, "text": "фае бол", "score": 0.12, "margin": 0.02, "final": true, "channel": ""},
   "subscribers": [
     {"ns": "MySpells", "topics": ["world"], "active": true, "bid": {"confidence": 0.99, "costClass": 1}}
   ]

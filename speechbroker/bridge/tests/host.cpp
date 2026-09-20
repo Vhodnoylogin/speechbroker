@@ -654,11 +654,111 @@ namespace
 	};
 }
 
+// --------------------------------------------------------------- the strings
+//
+// THE TABLE OF TRANSLATIONS, CHECKED OUTSIDE THE GAME. It is here because of
+// what it cost: the folder scan compared five characters of the prefix against
+// the word "speechbroker", which can never be equal, so every table in every run
+// loaded nothing, every $-key came back as itself, and a subscriber registered
+// THE KEY as the phrase it was listening for. Nobody could say a word the mod
+// would recognise. One assertion below would have caught it on the day it was
+// written.
+namespace
+{
+	void WriteUtf16(const fs::path& a_path, const std::string& a_utf8)
+	{
+		std::ofstream out(a_path, std::ios::binary);
+		out.put(static_cast<char>(0xFF));
+		out.put(static_cast<char>(0xFE));
+		// The tables are ASCII and Cyrillic, both inside the basic plane, so one
+		// unit per code point is exact here.
+		std::u32string wide;
+		for (std::size_t i = 0; i < a_utf8.size();) {
+			const auto byte = static_cast<unsigned char>(a_utf8[i]);
+			char32_t   unit = byte;
+			std::size_t take = 1;
+			if (byte >= 0xF0) { unit = byte & 0x07u; take = 4; }
+			else if (byte >= 0xE0) { unit = byte & 0x0Fu; take = 3; }
+			else if (byte >= 0xC0) { unit = byte & 0x1Fu; take = 2; }
+			for (std::size_t k = 1; k < take && i + k < a_utf8.size(); ++k) {
+				unit = (unit << 6) | (static_cast<unsigned char>(a_utf8[i + k]) & 0x3Fu);
+			}
+			i += take;
+			wide.push_back(unit);
+		}
+		for (const auto unit : wide) {
+			out.put(static_cast<char>(unit & 0xFF));
+			out.put(static_cast<char>((unit >> 8) & 0xFF));
+		}
+	}
+
+	void WriteUtf8(const fs::path& a_path, const std::string& a_utf8)
+	{
+		std::ofstream out(a_path, std::ios::binary);
+		out.write(a_utf8.data(), static_cast<std::streamsize>(a_utf8.size()));
+	}
+
+	bool Says(const char* a_key, const std::string& a_expected)
+	{
+		const std::string got = SpeechBroker::Loc::Get(a_key);
+		const bool        ok = got == a_expected;
+		std::printf("  %-4s %-38s %s\n", ok ? "ok" : "FAIL", a_key, got.c_str());
+		return ok;
+	}
+
+	int RunLocCheck()
+	{
+		const auto dir = fs::temp_directory_path() / "speechbroker-loc-check";
+		std::error_code ec;
+		fs::remove_all(dir, ec);
+		fs::create_directories(dir, ec);
+
+		// Ours, and a subscriber's - the case that matters, because a subscriber's
+		// keys live in a file this plugin has never heard of.
+		WriteUtf16(dir / "SpeechBroker_english.txt", "$SPEECHBROKER_CHECK_OURS\tours\n");
+		WriteUtf16(dir / "SpeechBrokerDemo_english.txt", "$SPEECHBROKERDEMO_WORD_DOOR\tclose the door\n");
+		// A translator who saved out of an ordinary editor.
+		WriteUtf8(dir / "SpeechBrokerPlain_english.txt", "$SPEECHBROKER_CHECK_UTF8\tplain\n");
+		// Another language, and another mod entirely: neither may be absorbed.
+		WriteUtf16(dir / "SpeechBrokerDemo_russian.txt", "$SPEECHBROKERDEMO_WORD_DOOR\tзакрой дверь\n");
+		WriteUtf16(dir / "Unrelated_english.txt", "$SPEECHBROKER_CHECK_ALIEN\talien\n");
+
+		SpeechBroker::Loc::Load(dir, "english");
+
+		std::printf("translations: %zu strings from %zu files, language %s\n",
+			SpeechBroker::Loc::Count(), SpeechBroker::Loc::Files(),
+			SpeechBroker::Loc::Language().c_str());
+
+		bool ok = true;
+		ok = Says("$SPEECHBROKER_CHECK_OURS", "ours") && ok;
+		ok = Says("$SPEECHBROKERDEMO_WORD_DOOR", "close the door") && ok;
+		ok = Says("$SPEECHBROKER_CHECK_UTF8", "plain") && ok;
+		ok = Says("$SPEECHBROKER_CHECK_ALIEN", "$SPEECHBROKER_CHECK_ALIEN") && ok;
+		ok = Says("$SPEECHBROKER_CHECK_NOBODY", "$SPEECHBROKER_CHECK_NOBODY") && ok;
+
+		if (SpeechBroker::Loc::Files() != 3) {
+			std::printf("  FAIL three files were laid out for this language, %zu were read\n",
+				SpeechBroker::Loc::Files());
+			ok = false;
+		}
+
+		fs::remove_all(dir, ec);
+		std::printf("%s\n", ok ? "the table reads what is put in front of it" : "THE TABLE IS BROKEN");
+		return ok ? 0 : 1;
+	}
+}
+
 int main(int argc, char** argv)
 {
 #ifdef _WIN32
 	::SetConsoleOutputCP(CP_UTF8);
 #endif
+
+	for (int i = 1; i < argc; ++i) {
+		if (std::string(argv[i]) == "--loc") {
+			return RunLocCheck();
+		}
+	}
 
 	// The host makes itself a settings file: the built-in reference unfolds next to
 	// the executable, and the rules of the auction come out exactly the same as

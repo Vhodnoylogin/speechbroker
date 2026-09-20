@@ -53,7 +53,7 @@
       "reversible": 0.05,
       "costly": 0.15
     },
-    "minUtteranceScore": 0.4,
+    "minUtteranceScore": 0.25,
     "debounceSec": 1.0,
     "sharedWinsTie": true,
     "priority": [],

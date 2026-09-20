@@ -1,6 +1,7 @@
 #include "PapyrusApi.h"
 
 #include "speechbroker-adapter.h"
+#include "speechbroker-loc.h"
 
 #include "bus/SubscriptionRegistry.h"
 #include "bus/UtteranceStore.h"
@@ -9,6 +10,10 @@
 #include "wire/AdapterHost.h"
 
 #include <algorithm>
+#include <cstring>
+#include <cwchar>
+#include <string>
+#include <vector>
 
 namespace SpeechBroker
 {
@@ -22,6 +27,55 @@ namespace SpeechBroker
 				out.emplace_back(item.c_str());
 			}
 			return out;
+		}
+
+		// The engine's own translation table: $-key to line, in the language the
+		// game is running. Reached through the Scaleform loader because that is
+		// where the engine keeps it; everything here is null-checked, since a
+		// script may call before the menus exist and none of this is worth a crash.
+		//
+		// The answer comes back as UTF-16, and is turned into UTF-8 by the very
+		// decoder that reads the files - the bytes are handed over with a byte
+		// order mark in front so that the one tested routine does the work.
+		bool FromTheEngine(const char* a_key, std::string& a_out)
+		{
+			if (a_key == nullptr || *a_key != '$') {
+				return false;  // not a key at all - the engine has nothing to say
+			}
+
+			auto* const manager = RE::BSScaleformManager::GetSingleton();
+			auto* const loader = manager ? manager->loader : nullptr;
+			if (loader == nullptr) {
+				return false;
+			}
+			const auto translator =
+				loader->GetState<RE::BSScaleformTranslator>(RE::GFxState::StateType::kTranslator);
+			if (!translator) {
+				return false;
+			}
+
+			// The keys are ASCII by construction, so widening one character at a
+			// time is exact here and needs no conversion table.
+			const std::wstring wide(a_key, a_key + std::strlen(a_key));
+
+			const auto& map = translator->translator.translationMap;
+			const auto  at = map.find(RE::BSFixedStringW(wide.c_str()));
+			if (at == map.end() || at->second.empty()) {
+				return false;
+			}
+
+			const wchar_t* const line = at->second.c_str();
+			const auto           units = std::wcslen(line);
+
+			std::vector<char> bytes;
+			bytes.reserve(units * 2 + 2);
+			bytes.push_back(static_cast<char>(0xFF));
+			bytes.push_back(static_cast<char>(0xFE));
+			const auto* const raw = reinterpret_cast<const char*>(line);
+			bytes.insert(bytes.end(), raw, raw + units * 2);
+
+			a_out = SpeechBrokerLoc::detail::ToUtf8(bytes);
+			return !a_out.empty();
 		}
 	}
 
@@ -351,8 +405,20 @@ std::vector<RE::BSFixedString> PapyrusApi::GetAlternatives(Tag, std::int32_t a_i
 	// resolves a $-string on its own only when the whole string is shown as it is;
 	// a line glued together out of a translated part and a number, and text that is
 	// never shown at all - a subscriber's vocabulary - have to come through here.
+	//
+	// THE ENGINE IS ASKED FIRST, and that is the whole fix of 20.09.2026. A
+	// subscriber's keys live in the SUBSCRIBER's file, which this plugin has never
+	// heard of and has no business scanning for; and the language is the game's to
+	// decide, not ours to guess out of an ini. The engine has already read every
+	// Interface\Translations\*_<language>.txt on the load order by the time any
+	// script runs, so it holds exactly the right line in exactly the right
+	// language. Our own table answers only when the engine has nothing - which is
+	// the case for keys of ours that no translator has covered.
 	RE::BSFixedString PapyrusApi::Translate(Tag, Str a_key)
 	{
+		if (std::string line; FromTheEngine(a_key.c_str(), line)) {
+			return RE::BSFixedString{ line.c_str() };
+		}
 		return RE::BSFixedString{ Loc::Get(a_key.c_str()) };
 	}
 
