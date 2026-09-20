@@ -9,6 +9,9 @@
 #include <RE/Skyrim.h>
 #include <SKSE/SKSE.h>
 
+#include <algorithm>
+#include <cctype>
+#include <spdlog/spdlog.h>
 #include <filesystem>
 #include <string>
 
@@ -38,46 +41,59 @@ namespace
 	// Which language the text is in. "auto" means the one the game itself runs in,
 	// which is what a player expects and never has to set.
 	//
-	// The engine is asked first and was once the only source here, on the argument
-	// that it has already settled which ini wins. In Skyrim VR it settles nothing
-	// we can read: the setting collection has no sLanguage, the bridge fell back
-	// to English in a Russian game, and every subscriber was handed English words
-	// to listen for. So the ini files are read after it, in the engine's own
-	// order, and the fallback to English is the last resort it was meant to be.
+	// The setting collection was the first source here twice, on the argument that
+	// the engine has already settled which ini wins. It settles nothing we can
+	// read in Skyrim VR: it answers "english" out of its own defaults, and both
+	// times that answer cost a whole run. The files decide now, the collection is
+	// the second opinion, English is the last resort - and whoever answered is
+	// written into the log, because an invisible answer is how this went wrong.
 	std::string ResolveLanguage(const std::string& a_asked)
 	{
 		if (!a_asked.empty() && a_asked != "auto") {
 			return a_asked;
 		}
-		if (auto* ini = RE::INISettingCollection::GetSingleton()) {
-			if (auto* setting = ini->GetSetting("sLanguage:General")) {
-				if (setting->GetType() == RE::Setting::Type::kString) {
-					if (const auto* value = setting->GetString(); value && *value) {
-						return value;
-					}
-				}
-			}
-		}
-
-		// THE INI FILES, because the collection above says nothing in Skyrim VR
-		// and a wrong answer here is not cosmetic: it decides which file the
-		// vocabulary of every subscriber is read out of. The engine reads the ini
-		// beside the executable first and the player's own in Documents after it,
-		// and so do we. Both are ordinary file reads and both go through Mod
-		// Organizer's virtual file system exactly as the settings read does.
-		// Relative, and that is deliberate: the working directory of the process is
-		// the folder of the game, which is the same assumption kConfigPath above
-		// has been living on since the first line of this plugin was written.
-		const std::filesystem::path besideTheExe{ L"Skyrim.ini" };
-
+		// THE INI FILES COME FIRST, and the order is the whole point of this
+		// function. The setting collection below is asked only when the files say
+		// nothing, because in Skyrim VR it answers "english" out of its own
+		// defaults while sLanguage=RUSSIAN sits in the ini beside the executable:
+		// on 20.09.2026 that answer was taken as the truth, the table loaded the
+		// English files, every subscriber registered "close the door" as the
+		// phrase it was listening for, and a hundred and fifteen Russian
+		// utterances went past it without a single bid.
+		//
+		// The ini beside the executable is read first and the player's own in
+		// Documents after it - the engine's own order, second wins. The path is
+		// relative on purpose: the working directory of the process is the folder
+		// of the game, which is the same assumption kConfigPath has been living on
+		// since the first line of this plugin.
 		std::filesystem::path inDocuments;
 		if (const auto logs = SKSE::log::log_directory(); logs) {
 			inDocuments = logs->parent_path() / L"Skyrim.ini";
 		}
 
-		if (auto language = SpeechBroker::GameLanguage::Of(besideTheExe, inDocuments); !language.empty()) {
+		if (auto language = SpeechBroker::GameLanguage::Of(L"Skyrim.ini", inDocuments); !language.empty()) {
+			spdlog::info("language: {} out of the ini files", language);
 			return language;
 		}
+
+		if (auto* ini = RE::INISettingCollection::GetSingleton()) {
+			if (auto* setting = ini->GetSetting("sLanguage:General")) {
+				if (setting->GetType() == RE::Setting::Type::kString) {
+					if (const auto* value = setting->GetString(); value && *value) {
+						// Lower case, because the file names are matched by this
+						// string and Bethesda writes it as RUSSIAN.
+						std::string said{ value };
+						std::transform(said.begin(), said.end(), said.begin(), [](unsigned char c) {
+							return static_cast<char>(std::tolower(c));
+						});
+						spdlog::info("language: {} out of the setting collection - no ini named one", said);
+						return said;
+					}
+				}
+			}
+		}
+
+		spdlog::warn("language: nothing named one, falling back to english");
 		return "english";
 	}
 
