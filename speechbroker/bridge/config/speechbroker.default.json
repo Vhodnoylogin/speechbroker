@@ -4,7 +4,7 @@
     "level": "info",
     "file": "speechbroker.log",
     "maxSizeKb": 4096,
-    "speechText": false
+    "speechText": true
   },
   "adapters": {
     "primary": {}
