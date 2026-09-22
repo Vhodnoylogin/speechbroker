@@ -185,9 +185,18 @@ namespace
 		if (refines == 0) {
 			g_numbering.Remember(a_slice.id, given);
 		}
-		if (!swallowed.empty()) {
-			Loc::Info("$SPEECHBROKERVOICE_LOG_ABSORBS", given, swallowed.size(), a_slice.complete);
-		}
+
+		// THE ONE LINE THAT JOINS OUR NUMBERING TO THE BRIDGE'S, and it goes out for
+		// every piece rather than only for one that swallowed something.
+		//
+		// Without it the two halves of the log cannot be put back together: ours says
+		// "piece 3 of turn 12, 1200..2400 ms" and the bridge says "utterance 7", and
+		// nothing anywhere said which became which. On 21.09.2026 that made a phrase
+		// arriving in three pieces indistinguishable from three separate phrases -
+		// the same blindness that cost a whole run twice before, once over a score
+		// that was never printed and once over a language nobody named.
+		Loc::Info("$SPEECHBROKERVOICE_LOG_PIECE_NUMBERED", a_slice.id, given, refines,
+			static_cast<std::int32_t>(swallowed.size()), a_slice.complete);
 	}
 
 	// ------------------------------------------------------------ what comes in

@@ -29,7 +29,7 @@ inline constexpr SpeechBrokerLoc::Entry kSpeechBrokerDefaultStrings[] = {
 	{ "$SPEECHBROKERVOICE_LOG_SETTINGS_BROKEN", "the settings did not parse: {0}" },
 	{ "$SPEECHBROKERVOICE_LOG_PIECE_UNKNOWN", "model {0}: piece {1} was not found in the translation - its absorption will not reach the bridge" },
 	{ "$SPEECHBROKERVOICE_LOG_BRIDGE_REFUSED_UTTERANCE", "the bridge did not take the utterance from model {0}" },
-	{ "$SPEECHBROKERVOICE_LOG_ABSORBS", "utterance {0} absorbs {1} earlier ones, completeness {2:.2f}" },
+	{ "$SPEECHBROKERVOICE_LOG_PIECE_NUMBERED", "piece {0} went to the bridge as utterance {1} - refines utterance {2} (0 means new speech), absorbs {3} earlier ones, completeness {4:.2f}" },
 	{ "$SPEECHBROKERVOICE_LOG_BRIDGE_ROLE", "bridge: {0} ({1})" },
 	{ "$SPEECHBROKERVOICE_LOG_VOCABULARY", "vocabulary of the subscribers: {0} phrases" },
 	{ "$SPEECHBROKERVOICE_LOG_NOT_FOR_ME", "a request to {0} is not addressed to me" },

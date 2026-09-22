@@ -357,14 +357,14 @@ namespace Voice
 						e._tooShort.fetch_add(1, std::memory_order_relaxed);
 						const auto held = e._turn.Samples();
 						const auto kept = held > e._silenceRun ? held - e._silenceRun : 0ULL;
-						Loc::Debug("$SPEECHBROKERVOICE_LOG_EARS_PASS_SHORT", e._turn.Id(), serial,
+						Loc::Info("$SPEECHBROKERVOICE_LOG_EARS_PASS_SHORT", e._turn.Id(), serial,
 							SamplesToMs(kept), SamplesToMs(e._rules.minSamples));
 					}
 					break;
 
 				case CutVerdict::TooQuiet:
 					e._tooQuiet.fetch_add(1, std::memory_order_relaxed);
-					Loc::Debug("$SPEECHBROKERVOICE_LOG_EARS_PASS_QUIET", e._turn.Id(), serial,
+					Loc::Info("$SPEECHBROKERVOICE_LOG_EARS_PASS_QUIET", e._turn.Id(), serial,
 						e._rules.minPeak);
 					break;
 
@@ -384,7 +384,7 @@ namespace Voice
 				e._passes.fetch_add(1, std::memory_order_relaxed);
 				++passesHere;
 
-				Loc::Debug("$SPEECHBROKERVOICE_LOG_EARS_PASS", a_pass.turnId, a_pass.serial,
+				Loc::Info("$SPEECHBROKERVOICE_LOG_EARS_PASS", a_pass.turnId, a_pass.serial,
 					Loc::Get(a_pass.final ? "$SPEECHBROKERVOICE_WORD_PASS_FINAL"
 					                      : "$SPEECHBROKERVOICE_WORD_PASS_INTERIM"),
 					a_pass.DurationMs(), a_pass.tailSilenceMs, a_pass.lostSamples);
@@ -413,7 +413,7 @@ namespace Voice
 				e._silenceRun = 0;
 				e._sincePass = 0;
 				e._serial = 0;
-				Loc::Debug("$SPEECHBROKERVOICE_LOG_EARS_TURN_ENDED", id, ms, passesHere);
+				Loc::Info("$SPEECHBROKERVOICE_LOG_EARS_TURN_ENDED", id, ms, passesHere);
 				passesHere = 0;
 			}
 
