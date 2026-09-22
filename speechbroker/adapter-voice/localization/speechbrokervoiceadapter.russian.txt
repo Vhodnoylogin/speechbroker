@@ -11,7 +11,7 @@ $SPEECHBROKERVOICE_LOG_NO_SETTINGS	нет файла настроек: {0}
 $SPEECHBROKERVOICE_LOG_SETTINGS_BROKEN	настройки не разобраны: {0}
 $SPEECHBROKERVOICE_LOG_PIECE_UNKNOWN	модель {0}: кусок {1} в переводе не найден - его поглощение до моста не дойдёт
 $SPEECHBROKERVOICE_LOG_BRIDGE_REFUSED_UTTERANCE	мост не принял реплику от модели {0}
-$SPEECHBROKERVOICE_LOG_ABSORBS	реплика {0} поглощает {1} прежних, завершённость {2:.2f}
+$SPEECHBROKERVOICE_LOG_PIECE_NUMBERED	кусок {0} ушёл в мост репликой {1} - уточняет реплику {2} (0 - это новая речь), поглощает прежних: {3}, завершённость {4:.2f}
 $SPEECHBROKERVOICE_LOG_BRIDGE_ROLE	мост: {0} ({1})
 $SPEECHBROKERVOICE_LOG_VOCABULARY	словарь подписчиков: {0} фраз
 $SPEECHBROKERVOICE_LOG_NOT_FOR_ME	запрос к {0} мне не адресован
