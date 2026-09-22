@@ -99,13 +99,32 @@ namespace Voice
 		// works with the difference.
 		std::uint64_t Lost() const noexcept { return _lost.load(std::memory_order_acquire); }
 
-		// PRODUCER THREAD. Sound the ring never saw: a WASAPI packet flagged
-		// AUDCLNT_BUFFERFLAGS_DATA_DISCONTINUITY, or the remainder thrown away when
-		// a device is reopened at another rate. It belongs in the same counter as
-		// an overrun - from the far side of the contract a hole is a hole, and
-		// Request::lostSamples asks how many samples are missing, not whose fault
-		// they were.
-		void NoteLost(std::size_t a_samples) noexcept;
+		// WHY THE SOUND IS MISSING. The total above is what the contract asks for -
+		// Request::lostSamples wants a size, not a culprit - but the three causes
+		// ask for entirely different work from us, and a hole that cannot be
+		// attributed cannot be acted on. In the run of 22.09.2026 thirty seconds
+		// went missing across a hundred and five turns, up to a second out of a
+		// single one, and nothing anywhere could say whether our own reader had
+		// fallen behind or the endpoint had dropped the sound before we ever saw it.
+		enum class Loss
+		{
+			Overrun,    // the ring was full: OUR reader did not keep up
+			NoBuffer,   // a packet came with a count and no memory behind it
+			DeviceGap,  // the endpoint's own frame counter jumped: it dropped the sound
+
+			kCount
+		};
+
+		// ANY THREAD. The running total for one cause. Same protocol as Lost().
+		std::uint64_t LostBy(Loss a_cause) const noexcept
+		{
+			return _lostBy[static_cast<std::size_t>(a_cause)].load(std::memory_order_acquire);
+		}
+
+		// PRODUCER THREAD. Sound the ring never saw. It all belongs in the one
+		// counter Lost() reports - from the far side of the contract a hole is a
+		// hole - and the cause is kept beside it rather than instead of it.
+		void NoteLost(std::size_t a_samples, Loss a_cause) noexcept;
 
 		// BOTH SIDES STOPPED. Throws away what is in the ring and puts the cursors
 		// back to zero; the lost counter is NOT cleared, because it is the session's
@@ -123,5 +142,8 @@ namespace Voice
 		alignas(kCacheLine) std::atomic<std::uint64_t> _write{ 0 };
 		alignas(kCacheLine) std::atomic<std::uint64_t> _read{ 0 };
 		alignas(kCacheLine) std::atomic<std::uint64_t> _lost{ 0 };
+
+		// Written by the producer alongside _lost, read by anybody who asks why.
+		std::atomic<std::uint64_t> _lostBy[static_cast<std::size_t>(Loss::kCount)]{};
 	};
 }

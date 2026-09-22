@@ -95,7 +95,7 @@ inline constexpr SpeechBrokerLoc::Entry kSpeechBrokerDefaultStrings[] = {
 	{ "$SPEECHBROKERVOICE_LOG_EARS_SINK_THREW", "ears: whoever takes the passes threw on turn {0} pass {1}: {2} - swallowed, and the listening goes on" },
 	{ "$SPEECHBROKERVOICE_LOG_EARS_END_SILENCE_SPLIT", "ears: vad.endSilenceMs is {0} and pacer.endSilenceMs is {1} - a turn is ended by the second, and the first is not read at all" },
 	{ "$SPEECHBROKERVOICE_LOG_EARS_SOURCE_SPENT", "ears: the recording is spent - closing the open turn" },
-	{ "$SPEECHBROKERVOICE_LOG_EARS_HOLE", "ears: {0} samples of sound are missing - the ring overran or the device went away; they go on as silence, so that the clock does not shift" },
+	{ "$SPEECHBROKERVOICE_LOG_EARS_HOLE", "ears: {0} samples of sound are missing - they go on as silence so that the clock does not shift. For the session: our reader fell behind by {1}, the endpoint dropped {2}, {3} came with no buffer" },
 	{ "$SPEECHBROKERVOICE_LOG_CAPTURE_REFUSED", "capture: {0} did not open - {1} says {2}" },
 	{ "$SPEECHBROKERVOICE_LOG_CAPTURE_FORMAT_UNSUPPORTED", "capture: {0} offers {1} bits of format {2} over {3} channels, which this build cannot convert - taking the next candidate" },
 	{ "$SPEECHBROKERVOICE_LOG_CAPTURE_OPENED", "capture: listening to {0} - {1} Hz, {2} channels, period asked for {3} ms, open number {4}" },
@@ -198,6 +198,7 @@ inline constexpr SpeechBrokerLoc::Entry kSpeechBrokerDefaultStrings[] = {
 	{ "$SPEECHBROKERVOICE_LOG_TIMEOUT", "utterance {0}: model {1} was asked and stayed silent past the deadline" },
 	{ "$SPEECHBROKERVOICE_LOG_VOCABULARY_CLIPPED", "the vocabulary came to {0} phrases and was clipped to {1}" },
 	{ "$SPEECHBROKERVOICE_LOG_SLICE", "turn {0}: piece {1} [{2}..{3}] '{4}', finished {5:.2f}, score {6:.2f}" },
+	{ "$SPEECHBROKERVOICE_LOG_HYPOTHESIS", "piece {0}: {1} read it as '{2}' - score {3:.2f} in its own distribution, {4:.2f} as the model itself returned it, {5} model(s) agreed" },
 	{ "$SPEECHBROKERVOICE_LOG_TURN_SILENT", "turn {0} ended without one piece of speech coming out of it" },
 	{ "$SPEECHBROKERVOICE_LOG_PUBLISH_THREW", "the handing on of piece {0} threw: {1}" },
 };

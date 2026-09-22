@@ -423,6 +423,7 @@ namespace Voice::Models
 				// number of two models that is comparable at all
 				// (engine/arbiter.py:72-86).
 				guess.score = _standings->Of(reading.modelId).Normalize(match->score);
+				guess.raw = match->score;
 				guess.model = reading.modelId;
 				guess.agreed = 1;
 				guess.voters.push_back(reading.modelId);

@@ -79,7 +79,7 @@ namespace Voice
 		// only clock this half has - keeps time either way, and the counter says
 		// it happened instead of hiding it.
 		if (a_from == nullptr || _capacity == 0) {
-			NoteLost(a_count);
+			NoteLost(a_count, Loss::NoBuffer);
 			return 0;
 		}
 
@@ -116,7 +116,7 @@ namespace Voice
 			// touched. That is what lets the consumer say where the hole is - right
 			// after the newest sample it will read - instead of discovering that the
 			// middle of a turn was quietly replaced.
-			NoteLost(a_count - take);
+			NoteLost(a_count - take, Loss::Overrun);
 		}
 
 		return take;
@@ -165,11 +165,12 @@ namespace Voice
 		return static_cast<std::size_t>(write - read);
 	}
 
-	void Ring::NoteLost(std::size_t a_samples) noexcept
+	void Ring::NoteLost(std::size_t a_samples, Loss a_cause) noexcept
 	{
 		if (a_samples == 0) {
 			return;
 		}
+		_lostBy[static_cast<std::size_t>(a_cause)].fetch_add(a_samples, std::memory_order_release);
 		// Release, to pair with the acquire load in Lost(). It carries no data of
 		// its own, but the consumer reads this counter as part of a protocol with
 		// the producer, and half a pair is how a counter starts arriving out of

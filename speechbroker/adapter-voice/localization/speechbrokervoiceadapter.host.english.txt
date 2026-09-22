@@ -100,5 +100,6 @@ $SPEECHBROKERVOICE_LOG_REMOVED	utterance {0}: handle {1} is out of the pass - {2
 $SPEECHBROKERVOICE_LOG_TIMEOUT	utterance {0}: model {1} was asked and stayed silent past the deadline
 $SPEECHBROKERVOICE_LOG_VOCABULARY_CLIPPED	the vocabulary came to {0} phrases and was clipped to {1}
 $SPEECHBROKERVOICE_LOG_SLICE	turn {0}: piece {1} [{2}..{3}] '{4}', finished {5:.2f}, score {6:.2f}
+$SPEECHBROKERVOICE_LOG_HYPOTHESIS	piece {0}: {1} read it as '{2}' - score {3:.2f} in its own distribution, {4:.2f} as the model itself returned it, {5} model(s) agreed
 $SPEECHBROKERVOICE_LOG_TURN_SILENT	turn {0} ended without one piece of speech coming out of it
 $SPEECHBROKERVOICE_LOG_PUBLISH_THREW	the handing on of piece {0} threw: {1}

@@ -39,6 +39,16 @@ namespace Voice::Models
 	{
 		std::string  text;
 		float        score{ 0.0f };   // normalised into the model's own distribution
+
+		// WHAT THE MODEL ITSELF RETURNED, before the normalisation above touched
+		// it. Kept for one reason: when a score comes out low, nobody could say
+		// whether the model was unsure or the normalisation had moved it. On
+		// 22.09.2026 commands heard word for word left with scores of 0.04 to 0.20
+		// while ordinary chatter left with 0.97, and this pair of numbers is the
+		// only place that question can be settled. It takes no part in any
+		// decision - it is evidence, not an input.
+		float        raw{ 0.0f };
+
 		std::string  model;           // whose guess won this slot after the fold
 		std::int32_t agreed{ 1 };     // how many models said the same thing
 
