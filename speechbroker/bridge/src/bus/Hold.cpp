@@ -27,7 +27,7 @@ namespace SpeechBroker
 		for (const auto& who : heard) {
 			// Whether it would reach the threshold of its class - by the same estimate
 			// the test host bids with on its behalf.
-			const float likely = who.match.Confidence(a_utterance.score);
+			const float likely = who.match.Confidence();
 			if (likely < settings.MinConfidence(who.costClass)) {
 				continue;
 			}

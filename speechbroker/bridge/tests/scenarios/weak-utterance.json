@@ -1,0 +1,21 @@
+{
+  "name": "Слабо расслышанная реплика: отменимое делается, неотменимое придерживается",
+  "_": "Both halves of the rule the run of 22.09.2026 forced. The score is the model's opinion of its own transcription and it is NOT a gate on the auction: a subscriber that recognised its phrase is believed when the action can be taken back, and is still held back when it cannot. minUtteranceScore in speechbroker-host.json is 0.40, so 0.10 is well under it.",
+  "steps": [
+    {
+      "_": "reversible: test.doors recognises it and acts, low score and all",
+      "text": "закрой дверь",
+      "score": 0.1,
+      "margin": 0.3
+    },
+    {
+      "_": "expensive: the spell must NOT go off on an utterance heard this badly",
+      "text": "огненный шар",
+      "score": 0.1,
+      "margin": 0.3,
+      "state": {
+        "combat": true
+      }
+    }
+  ]
+}

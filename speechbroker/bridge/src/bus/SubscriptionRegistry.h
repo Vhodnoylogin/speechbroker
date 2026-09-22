@@ -26,7 +26,19 @@ namespace SpeechBroker
 		// the threshold of its class, and two parties use it: holding, when deciding
 		// who is in the room, and the test host, when bidding on behalf of the
 		// subscribers. Each of them used to have a formula of its own.
-		float Confidence(float a_utteranceScore) const { return score * a_utteranceScore; }
+		//
+		// THE UTTERANCE SCORE IS NOT PART OF IT, and it used to be - this returned
+		// the vocabulary match multiplied by how comfortable the model was with its
+		// own transcription. The two answer different questions, and multiplying
+		// them made the bridge answer a third that nobody asked. A real subscriber
+		// bids on the phrase alone: in the run of 22.09.2026 both of them bid at a
+		// confidence of 1.00 on an utterance whose score was 0.04, because "проверка
+		// связи" was exactly their phrase and it is not their business how sure the
+		// recogniser was of itself. With the score folded in, this estimate said 0.04
+		// and holding concluded the room was empty for every command heard the least
+		// bit poorly - the same mistake the auction was making one file over
+		// (bus/Auction.cpp, where the reasoning is written out in full).
+		float Confidence() const { return score; }
 	};
 
 	// A subscriber that recognised the phrase, together with what it declared
