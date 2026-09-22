@@ -86,7 +86,14 @@ namespace SpeechBroker
 		// means the source is chosen by order of registration.
 		std::string PrimaryAdapter(const std::string& a_capability) const;
 
-		// Cost class: 0 - a reversible action, 1 - an expensive one.
+		// Cost class: 0 - a reversible action, 1 - an expensive one. The question
+		// "is this the expensive one" is asked in several places and is answered
+		// here rather than by a literal 1 spelled out at each of them.
+		static constexpr bool IsCostly(std::int32_t a_costClass) noexcept
+		{
+			return a_costClass == 1;
+		}
+
 		float MinConfidence(std::int32_t a_costClass) const;
 		float MinMargin(std::int32_t a_costClass) const;
 

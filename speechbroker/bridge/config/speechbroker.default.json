@@ -53,6 +53,7 @@
       "reversible": 0.05,
       "costly": 0.15
     },
+    "_minUtteranceScore": "How poorly the model may have heard itself before an IRREVERSIBLE action is held back. It is not a gate on the auction and it refuses nothing a subscriber recognised: the score says how comfortable a model is with its own transcription, which is a different question from whether the words are somebody's phrase, and on 22.09.2026 it was throwing away commands heard verbatim while a sentence nobody wanted scored 0.97. A reversible action is believed on the subscriber's own confidence, because repeating oneself is cheap; an expensive one still has to clear this.",
     "minUtteranceScore": 0.25,
     "debounceSec": 1.0,
     "sharedWinsTie": true,

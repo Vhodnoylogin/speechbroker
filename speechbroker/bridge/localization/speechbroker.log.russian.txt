@@ -34,7 +34,7 @@ $SPEECHBROKER_REASON_PRIORITY	ставки неразличимы, спор ре
 $SPEECHBROKER_REASON_AMBIGUOUS	фразу поняли по-разному и одинаково уверенно - реплика двусмысленна
 $SPEECHBROKER_REASON_SHARED_TAKES_TIE	одну команду просят несколько, порядок не задан - её делают те, кто делится
 $SPEECHBROKER_REASON_ALL_GREEDY	одну команду просят несколько, и все требуют её себе - не делает никто
-$SPEECHBROKER_REASON_UTTERANCE_TOO_WEAK	реплика расслышана хуже порога
+$SPEECHBROKER_REASON_UTTERANCE_TOO_WEAK	реплика расслышана хуже порога, а действие не отменить
 $SPEECHBROKER_REASON_NO_BIDS	никто не заявился
 $SPEECHBROKER_REASON_NO_BID_PASSED	ни одна ставка не прошла порог уверенности
 $SPEECHBROKER_REASON_GREEDY_WON	победитель жадный - результат только ему
@@ -51,6 +51,7 @@ $SPEECHBROKER_LOG_LET_GO	реплика {0} отпущена: {1}
 $SPEECHBROKER_LOG_DROPPED	реплика {0} выброшена не оглашённой: её поглотила {1}
 $SPEECHBROKER_LOG_REVOKED	реплика {0} была отдана ({1}) и поглощена репликой {2} - отзыв
 $SPEECHBROKER_LOG_SETTLED	реплика {0} тема {1} ставок {2} -> {3} ({4}), оценка {5:.2f} против порога {6:.2f}
+$SPEECHBROKER_LOG_WEAK_UTTERANCE_HELD_BACK	реплика {0} расслышана на {1:.2f} против порога {2:.2f} - придержано заявившихся с неотменимым действием: {3}, спорить остались: {4}
 $SPEECHBROKER_LOG_EVENT_UTTERANCE	событие {0} инициировано, реплика {1}
 $SPEECHBROKER_LOG_EVENT_FULL	событие {0} инициировано, строка «{1}», число {2}
 $SPEECHBROKER_LOG_EVENTS_READY	рассылка событий Papyrus готова

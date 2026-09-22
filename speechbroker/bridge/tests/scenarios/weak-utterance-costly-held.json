@@ -1,0 +1,9 @@
+{
+  "note": "the same badly heard utterance, but the only bidder would do something that cannot be taken back - and there the model's doubt still counts, because asking again is cheaper than a mistake. The pair of this file is weak-utterance-reversible-acted.json",
+  "state": {"core.context.menuOpen": false, "core.player.inCombat": false},
+  "providers": ["core"],
+  "utterance": {"id": 64, "text": "проверка связи", "score": 0.04, "margin": 0.0, "final": true, "channel": ""},
+  "subscribers": [
+    {"ns": "DemoCostly", "topics": ["world"], "active": true, "bid": {"confidence": 1.00, "costClass": 1, "greedy": false}}
+  ]
+}

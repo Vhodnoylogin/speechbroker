@@ -580,12 +580,13 @@ namespace
 			const auto heard = SpeechBroker::SubscriptionRegistry::Get().Audience(a_topic, a_text);
 			for (const auto& who : heard) {
 				const bool  greedy = _roster.Greedy(who.ns);
-				const float confidence = who.match.Confidence(a_score);
+				const float confidence = who.match.Confidence();
 				SpeechBroker::UtteranceStore::Get().AddBid(a_id,
 					SpeechBroker::BidRecord{ who.ns, confidence, who.costClass, greedy, who.match.phrase });
-				spdlog::info("bid {}: confidence {:.2f} (audibility {:.2f} x vocabulary {:.2f}), "
+				spdlog::info("bid {}: confidence {:.2f} on the vocabulary alone (the utterance "
+				             "was heard at {:.2f}, which is not this subscriber's business), "
 				             "phrase '{}', {}{}",
-					who.ns, confidence, a_score, who.match.score, who.match.phrase,
+					who.ns, confidence, a_score, who.match.phrase,
 					CostName(who.costClass), greedy ? ", greedy" : "");
 			}
 			if (heard.empty()) {

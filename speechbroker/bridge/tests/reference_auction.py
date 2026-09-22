@@ -80,11 +80,6 @@ def run_auction(utterance: dict, bids: list, cfg: dict) -> dict:
     a = cfg["auction"]
     trace = []
 
-    if utterance.get("score", 0.0) < a["minUtteranceScore"]:
-        return {"winner": None, "winners": [], "denied": [b["ns"] for b in bids],
-                "reason": "the utterance is below minUtteranceScore",
-                "trace": trace}
-
     survivors = []
     for b in bids:
         cls = COST_NAMES[b["costClass"]]
@@ -94,6 +89,26 @@ def run_auction(utterance: dict, bids: list, cfg: dict) -> dict:
                       "needConfidence": need, "passed": ok})
         if ok:
             survivors.append(b)
+
+    # THE SCORE GUARDS ONLY WHAT CANNOT BE TAKEN BACK - it is not a gate on the
+    # auction. Mirrors src/bus/Auction.cpp, where the reasoning is written out:
+    # the model's comfort with its own transcription is a different question from
+    # whether a subscriber recognised its phrase, and using it as a veto threw away
+    # commands heard verbatim. A reversible action is believed on the subscriber's
+    # confidence; an expensive one still has to clear this.
+    weak = utterance.get("score", 0.0) < a["minUtteranceScore"]
+    if weak:
+        believed = [b for b in survivors if b["costClass"] != 1]
+        for b in survivors:
+            if b["costClass"] == 1:
+                trace.append({"ns": b["ns"], "heldBack": "the utterance is below "
+                              "minUtteranceScore and the action cannot be taken back"})
+        survivors = believed
+        if not survivors:
+            return {"winner": None, "winners": [], "denied": [b["ns"] for b in bids],
+                    "reason": "the utterance is below minUtteranceScore and every bid "
+                              "was for an action that cannot be taken back",
+                    "trace": trace}
 
     if not survivors:
         return {"winner": None, "winners": [], "denied": [b["ns"] for b in bids],

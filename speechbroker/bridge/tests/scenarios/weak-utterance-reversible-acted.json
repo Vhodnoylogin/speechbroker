@@ -1,0 +1,9 @@
+{
+  "note": "the model heard itself badly, a subscriber recognised the phrase anyway, and the action can be taken back - so it happens. Taken from the run of 22.09.2026 verbatim: 'проверка связи' came out of the model at a score of 0.04 and both subscribers bid at a confidence of 1.00. Under the old rule the score vetoed the whole auction and four such commands were thrown away, while a sentence nobody wanted scored 0.97. The pair of this file is weak-utterance-costly-held.json, where the same score holds back an action that cannot be undone",
+  "state": {"core.context.menuOpen": false, "core.player.inCombat": false},
+  "providers": ["core"],
+  "utterance": {"id": 63, "text": "проверка связи", "score": 0.04, "margin": 0.0, "final": true, "channel": ""},
+  "subscribers": [
+    {"ns": "DemoShared", "topics": ["world"], "active": true, "bid": {"confidence": 1.00, "costClass": 0, "greedy": false}}
+  ]
+}

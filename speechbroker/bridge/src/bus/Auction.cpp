@@ -15,6 +15,8 @@
 
 #include <algorithm>
 #include <chrono>
+#include <utility>
+#include <vector>
 
 namespace SpeechBroker
 {
@@ -159,14 +161,6 @@ namespace SpeechBroker
 	{
 		Result result;
 
-		if (_utterance.score < Settings::Get().minUtteranceScore) {
-			result.reason = Loc::Get("$SPEECHBROKER_REASON_UTTERANCE_TOO_WEAK");
-			for (const auto& bid : _utterance.bids) {
-				result.denied[bid.ns] = result.reason;
-			}
-			return result;
-		}
-
 		// No bids at all and bids that failed are different things, and boiling them
 		// down to one line in the log means lying in the diagnosis: in the run of
 		// 04.09 that line was given to 34 utterances out of 36, and not one of them
@@ -177,10 +171,58 @@ namespace SpeechBroker
 		}
 
 		auto survivors = Survivors(result);
+
 		if (survivors.empty()) {
 			result.reason = Loc::Get("$SPEECHBROKER_REASON_NO_BID_PASSED");
 			return result;
 		}
+
+		// THE MODEL'S SCORE IS ITS OPINION OF ITS OWN TRANSCRIPTION, AND IT ANSWERS A
+		// DIFFERENT QUESTION FROM A BID. The score says how comfortable the model is
+		// that these are the words that were spoken; the bid says how sure a
+		// subscriber is that those words are its phrase. Multiplying one into the
+		// other is not what this used to do - it used the score as a veto over the
+		// whole auction, ahead of everything, and on 22.09.2026 that veto threw away
+		// four commands heard verbatim, each one recognised by both subscribers at a
+		// confidence of 1.00: "проверка связи" at 0.04, "что вокруг" at 0.11 and 0.20.
+		// In the same run a sentence nobody wanted and nobody bid on scored 0.97. The
+		// number was refusing precisely the utterances this whole thing exists to act
+		// upon.
+		//
+		// So it stops being a veto over recognition and keeps the one job it can
+		// honestly do: holding back what is EXPENSIVE TO GET WRONG. A reversible
+		// action costs a second to undo and the player can simply repeat themselves,
+		// so a subscriber that cleared its own confidence bar is believed. A costly
+		// one cannot be taken back, and there the model's doubt still counts - asking
+		// again is cheaper than a mistake. The axis is the cost class, which is where
+		// the player's tolerance for risk is already expressed (Settings::MinConfidence,
+		// MinMargin), rather than a new number invented to fit six measurements.
+		//
+		// What guards against a model inventing words over silence is not this either:
+		// it is the ears refusing to send a buffer that never reached the peak, which
+		// is a measurement of the sound rather than an opinion about it.
+		if (_utterance.score < Settings::Get().minUtteranceScore) {
+			const auto weak = Loc::Get("$SPEECHBROKER_REASON_UTTERANCE_TOO_WEAK");
+			std::vector<BidRecord> believed;
+			for (const auto& bid : survivors) {
+				if (Settings::IsCostly(bid.costClass)) {
+					result.denied[bid.ns] = weak;
+				} else {
+					believed.push_back(bid);
+				}
+			}
+			if (believed.size() != survivors.size()) {
+				Log::Info("$SPEECHBROKER_LOG_WEAK_UTTERANCE_HELD_BACK", _utterance.id,
+					_utterance.score, Settings::Get().minUtteranceScore,
+					survivors.size() - believed.size(), believed.size());
+			}
+			survivors = std::move(believed);
+			if (survivors.empty()) {
+				result.reason = weak;
+				return result;
+			}
+		}
+
 
 		std::sort(survivors.begin(), survivors.end(), [](const BidRecord& a, const BidRecord& b) {
 			if (a.confidence != b.confidence) {
