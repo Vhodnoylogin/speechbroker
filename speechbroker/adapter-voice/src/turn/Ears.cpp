@@ -478,7 +478,19 @@ namespace Voice
 					if (lost > 0) {
 						e._seenLost += lost;
 						owed += lost;
-						Loc::Debug("$SPEECHBROKERVOICE_LOG_EARS_HOLE", lost);
+						// INFO, AND IT NAMES WHO LOST IT. This line sat at debug
+						// while the plugin's logger stands at info, so the one
+						// measurement that could explain a damaged buffer was never
+						// written down: the run of 22.09.2026 punched thirty seconds
+						// of digital silence into a hundred and five turns - up to a
+						// second into one of them - and the pass line could only say
+						// that samples were missing, never whose fault they were.
+						// The totals are the session's, so the first hole already
+						// answers the question.
+						Loc::Info("$SPEECHBROKERVOICE_LOG_EARS_HOLE", lost,
+							e._ring.LostBy(Ring::Loss::Overrun),
+							e._ring.LostBy(Ring::Loss::DeviceGap),
+							e._ring.LostBy(Ring::Loss::NoBuffer));
 					}
 				}
 

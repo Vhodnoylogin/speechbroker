@@ -600,7 +600,7 @@ namespace Voice
 				return;
 			}
 			const auto fit = std::min<std::uint64_t>(a_frames, ring.Capacity());
-			ring.NoteLost(static_cast<std::size_t>(fit));
+			ring.NoteLost(static_cast<std::size_t>(fit), Ring::Loss::DeviceGap);
 			missing += fit;
 			++holes;
 			if (fit < a_frames) {

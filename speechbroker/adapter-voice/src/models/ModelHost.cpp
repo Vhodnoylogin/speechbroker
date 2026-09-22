@@ -1473,6 +1473,19 @@ namespace Voice::Models
 				slice.startMs, slice.endMs, slice.Text(), slice.complete,
 				slice.hypotheses.empty() ? 0.0f : slice.hypotheses.front().score);
 
+			// EVERY READING, NOT ONLY THE ONE THAT WON. The line above says what
+			// left and how sure of it the winner was; it never said WHOSE reading
+			// that was, what the other model had answered, or what either of them
+			// returned before the normalisation. Without those three the question
+			// the run of 22.09.2026 ended on - why "проверка связи" heard word for
+			// word scores 0.04 while a sentence nobody wanted scores 0.97 - cannot
+			// be answered from the log at all, and the next run would end on it
+			// again.
+			for (const auto& guess : slice.hypotheses) {
+				Loc::Info("$SPEECHBROKERVOICE_LOG_HYPOTHESIS", slice.id, guess.model,
+					guess.text, guess.score, guess.raw, guess.agreed);
+			}
+
 			if (!_publish) {
 				continue;
 			}

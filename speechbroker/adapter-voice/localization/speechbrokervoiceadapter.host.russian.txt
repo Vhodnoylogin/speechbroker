@@ -99,5 +99,6 @@ $SPEECHBROKERVOICE_LOG_REMOVED	запрос {0}: номер {1} выведен �
 $SPEECHBROKERVOICE_LOG_TIMEOUT	запрос {0}: модель {1} спросили, и она промолчала дольше срока
 $SPEECHBROKERVOICE_LOG_VOCABULARY_CLIPPED	словарь набрался в {0} фраз и урезан до {1}
 $SPEECHBROKERVOICE_LOG_SLICE	ход {0}: кусок {1} [{2}..{3}] «{4}», законченность {5:.2f}, оценка {6:.2f}
+$SPEECHBROKERVOICE_LOG_HYPOTHESIS	кусок {0}: {1} прочитал это как «{2}» - оценка {3:.2f} в собственном распределении модели, {4:.2f} как вернула сама модель, согласных моделей: {5}
 $SPEECHBROKERVOICE_LOG_TURN_SILENT	ход {0} закончился, и из него не вышло ни одного куска речи
 $SPEECHBROKERVOICE_LOG_PUBLISH_THREW	передача куска {0} дальше бросила исключение: {1}

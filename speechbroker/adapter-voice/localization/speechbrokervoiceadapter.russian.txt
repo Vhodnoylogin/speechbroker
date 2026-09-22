@@ -77,7 +77,7 @@ $SPEECHBROKERVOICE_LOG_EARS_PASS_QUIET	уши: ход {0}, проход {1} не
 $SPEECHBROKERVOICE_LOG_EARS_SINK_THREW	уши: тот, кто принимает проходы, бросил исключение на ходе {0}, проходе {1}: {2} - проглочено, слушаю дальше
 $SPEECHBROKERVOICE_LOG_EARS_END_SILENCE_SPLIT	уши: vad.endSilenceMs равен {0}, а pacer.endSilenceMs равен {1} - ход закрывается по второму, первый не читается вовсе
 $SPEECHBROKERVOICE_LOG_EARS_SOURCE_SPENT	уши: запись кончилась - закрываю открытый ход
-$SPEECHBROKERVOICE_LOG_EARS_HOLE	уши: пропало {0} отсчётов звука - переполнилось кольцо или пропало устройство; вместо них идёт тишина, чтобы часы не сдвинулись
+$SPEECHBROKERVOICE_LOG_EARS_HOLE	слух: пропало {0} сэмплов звука - дальше они идут тишиной, чтобы не сдвинуть часы. За сеанс: наш читатель не успел на {1}, устройство потеряло {2}, без буфера пришло {3}
 
 $SPEECHBROKERVOICE_LOG_CAPTURE_REFUSED	захват: {0} не открылся - {1} отвечает {2}
 $SPEECHBROKERVOICE_LOG_CAPTURE_FORMAT_UNSUPPORTED	захват: {0} отдаёт {1} бит формата {2} по {3} каналам, и эта сборка такое не преобразует - беру следующего кандидата

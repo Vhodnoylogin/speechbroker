@@ -82,7 +82,7 @@ $SPEECHBROKERVOICE_LOG_EARS_PASS_QUIET	ears: turn {0} pass {1} never reached a p
 $SPEECHBROKERVOICE_LOG_EARS_SINK_THREW	ears: whoever takes the passes threw on turn {0} pass {1}: {2} - swallowed, and the listening goes on
 $SPEECHBROKERVOICE_LOG_EARS_END_SILENCE_SPLIT	ears: vad.endSilenceMs is {0} and pacer.endSilenceMs is {1} - a turn is ended by the second, and the first is not read at all
 $SPEECHBROKERVOICE_LOG_EARS_SOURCE_SPENT	ears: the recording is spent - closing the open turn
-$SPEECHBROKERVOICE_LOG_EARS_HOLE	ears: {0} samples of sound are missing - the ring overran or the device went away; they go on as silence, so that the clock does not shift
+$SPEECHBROKERVOICE_LOG_EARS_HOLE	ears: {0} samples of sound are missing - they go on as silence so that the clock does not shift. For the session: our reader fell behind by {1}, the endpoint dropped {2}, {3} came with no buffer
 
 $SPEECHBROKERVOICE_LOG_CAPTURE_REFUSED	capture: {0} did not open - {1} says {2}
 $SPEECHBROKERVOICE_LOG_CAPTURE_FORMAT_UNSUPPORTED	capture: {0} offers {1} bits of format {2} over {3} channels, which this build cannot convert - taking the next candidate
