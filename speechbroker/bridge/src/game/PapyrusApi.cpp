@@ -269,8 +269,31 @@ std::vector<RE::BSFixedString> PapyrusApi::GetAlternatives(Tag, std::int32_t a_i
 			phrase = SubscriptionRegistry::Get().Match(a_ns.c_str(), stored->text).phrase;
 		}
 
+		// THE STANDING DECLARATION IS NOT UNDERCUT BY A BID. Declare says what this
+		// subscriber does in general; the bid says what it would do with this one
+		// utterance, and until now the two were taken at face value separately.
+		//
+		// That was harmless while the utterance score vetoed the whole auction. It is
+		// not harmless now: since 22.09.2026 the cost class is the ONE thing standing
+		// between a badly heard utterance and an action that cannot be taken back
+		// (bus/Auction.cpp), so a subscriber that declared itself expensive could walk
+		// straight past that guard by bidding as reversible - by a typo in a script as
+		// easily as on purpose. The stricter of the two is taken.
+		//
+		// A bid that is STRICTER than the declaration is obeyed without a word: a mod
+		// may well know that this particular command is the expensive one. Only the
+		// other direction is refused, and it is written down rather than corrected in
+		// silence - a mod quietly fixed is a mod whose author never finds out.
+		auto costClass = a_costClass;
+		if (const auto declared = SubscriptionRegistry::Get().DeclaredCostClass(a_ns.c_str());
+			declared > costClass) {
+			Log::Warn("$SPEECHBROKER_LOG_BID_UNDERCUTS_DECLARATION", a_ns.c_str(), a_id,
+				costClass, declared);
+			costClass = declared;
+		}
+
 		const bool accepted = UtteranceStore::Get().AddBid(a_id,
-			BidRecord{ a_ns.c_str(), a_confidence, a_costClass, a_greedy, phrase });
+			BidRecord{ a_ns.c_str(), a_confidence, costClass, a_greedy, phrase });
 
 		// There is no other way to tell "the subscriber kept quiet" from "the subscriber
 		// was late" out of the log, and the difference decides everything: in the first

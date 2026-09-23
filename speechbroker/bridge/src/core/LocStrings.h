@@ -92,6 +92,7 @@ inline constexpr SpeechBrokerLoc::Entry kSpeechBrokerDefaultStrings[] = {
 	{ "$SPEECHBROKER_LOG_MATCH_NO_UTTERANCE", "participant {0} asked about the match on utterance {1} - no such utterance" },
 	{ "$SPEECHBROKER_LOG_MATCH", "participant {0} asked about the match on utterance {1}: {2:.2f} on the phrase '{3}'" },
 	{ "$SPEECHBROKER_LOG_BID", "bid by {0} on utterance {1}: confidence {2:.2f}, {3}, on the phrase '{4}', after {5} ms{6}" },
+	{ "$SPEECHBROKER_LOG_BID_UNDERCUTS_DECLARATION", "{0} bid on utterance {1} as cost class {2} while it declared itself {3} - the declaration stands, and the bid is taken as {3}" },
 	{ "$SPEECHBROKER_LOG_DONE", "utterance {0}: {1} reported back, success={2}" },
 	{ "$SPEECHBROKER_LOG_PAPYRUS_REGISTERED", "Papyrus: script {0} registered" },
 	{ "$SPEECHBROKER_LOG_KEY_REFUSED", "key {0} refused: empty name or a namespace of somebody else" },
