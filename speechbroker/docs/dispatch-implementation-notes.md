@@ -55,6 +55,8 @@ needed (define `NOMINMAX` and `WIN32_LEAN_AND_MEAN` before including it, after e
   `_open[id] = collector`; `_scheduler.Arm(deadline, collector)`; for each model:
   `Offer(DispatchEntry{ audio = pass.audio, collector, utteranceId, turnId, serial, final, lostSamples, probe = false })`
   and log the `Queued` outcome. Never blocks, never calls into a model. Whole body in `try/catch(...)`.
+  DEFERRED DEFECT (24.09.2026): the max-over-roster deadline is wrong for play - read the comment at
+  the deadline in `adapter-voice\src\models\ModelHost.cpp` before building anything on top of it.
 - MODEL DISPATCH THREAD (one per model; `Model::Begin` -> private `Run`): `PrepareDispatchThread`;
   Start loop up to `startAttempts` with the model's own `startupMs` between attempts (RETRY and
   NOT_READY are both recoverable; a fault -> `Eject(Faulted)`; any other status -> `Eject(StartRefused)`;
