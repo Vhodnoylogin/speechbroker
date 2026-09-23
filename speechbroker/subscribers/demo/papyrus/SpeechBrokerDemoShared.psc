@@ -41,6 +41,10 @@ Function Register()
     topics[1] = "dialogue"
     SpeechBroker.Subscribe(NS, topics)
 
+    ; See the note in SpeechBrokerDemoGreedy: a reversible action that cannot be
+    ; withdrawn once shown. Said out loud rather than left to the bridge's default.
+    SpeechBroker.Declare(NS, 0, false)
+
     string[] words = new string[2]
     words[0] = SpeechBroker.Translate("$SPEECHBROKERDEMO_WORD_AROUND")
     words[1] = SpeechBroker.Translate("$SPEECHBROKERDEMO_WORD_RADIOCHECK")
