@@ -19,6 +19,13 @@ namespace SpeechBroker
 		_entries[a_ns].topics = std::move(a_topics);
 	}
 
+	std::int32_t SubscriptionRegistry::DeclaredCostClass(const std::string& a_ns) const
+	{
+		const std::lock_guard lock(_mutex);
+		const auto            at = _entries.find(a_ns);
+		return at == _entries.end() ? 0 : at->second.costClass;
+	}
+
 	void SubscriptionRegistry::Declare(const std::string& a_ns, std::int32_t a_costClass,
 		bool a_revocable)
 	{

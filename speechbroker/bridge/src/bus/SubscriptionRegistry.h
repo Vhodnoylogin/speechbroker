@@ -94,6 +94,12 @@ namespace SpeechBroker
 		// show it to the player.
 		std::vector<std::string> Namespaces() const;
 		std::vector<std::string> TopicsOf(const std::string& a_ns) const;
+
+		// What this subscriber declared about the price of being wrong, for
+		// somebody who has a bid in hand and needs to know whether it agrees.
+		// A subscriber that never declared anything answers 0, the same reversible
+		// class a fresh entry carries.
+		std::int32_t DeclaredCostClass(const std::string& a_ns) const;
 		std::size_t              Count() const;
 
 	private:

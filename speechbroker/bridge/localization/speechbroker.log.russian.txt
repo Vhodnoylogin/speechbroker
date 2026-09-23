@@ -78,6 +78,7 @@ $SPEECHBROKER_LOG_VOCABULARY	участник {0} объявил словарь:
 $SPEECHBROKER_LOG_MATCH_NO_UTTERANCE	участник {0} спросил совпадение по реплике {1} - реплики нет
 $SPEECHBROKER_LOG_MATCH	участник {0} спросил совпадение по реплике {1}: {2:.2f} на фразе «{3}»
 $SPEECHBROKER_LOG_BID	ставка {0} за реплику {1}: уверенность {2:.2f}, {3}, на фразе «{4}», через {5} мс{6}
+$SPEECHBROKER_LOG_BID_UNDERCUTS_DECLARATION	{0} поставил на реплику {1} с классом стоимости {2}, объявив себя как {3} - заявление в силе, ставка принята как {3}
 $SPEECHBROKER_LOG_DONE	реплика {0}: {1} отчитался, успех={2}
 $SPEECHBROKER_LOG_PAPYRUS_REGISTERED	Papyrus: скрипт {0} зарегистрирован
 $SPEECHBROKER_LOG_KEY_REFUSED	ключ {0} не принят: пустое имя или чужое пространство
