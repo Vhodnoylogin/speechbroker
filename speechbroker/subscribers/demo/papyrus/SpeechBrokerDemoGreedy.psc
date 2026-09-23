@@ -44,6 +44,16 @@ Function Register()
     topics[0] = "world"
     SpeechBroker.Subscribe(NS, topics)
 
+    ; What being wrong costs, said out loud rather than left to the default.
+    ; 0 - a reversible class: this one shows a notification and a message box, and
+    ; nothing in the world changes. False - NOT revocable: a notification that has
+    ; appeared cannot be taken back, so the bridge must not hand it an unfinished
+    ; phrase early. The bridge assumes exactly these two when a subscriber says
+    ; nothing, and that is the point of saying it: a demo is read as the example of
+    ; how it is done, and it was skipping a call of the contract that its own
+    ; observer makes.
+    SpeechBroker.Declare(NS, 0, false)
+
     string[] words = new string[2]
     words[0] = SpeechBroker.Translate("$SPEECHBROKERDEMO_WORD_DOOR")
     words[1] = SpeechBroker.Translate("$SPEECHBROKERDEMO_WORD_RADIOCHECK")
