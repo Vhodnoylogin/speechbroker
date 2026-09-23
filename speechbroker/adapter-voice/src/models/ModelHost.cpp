@@ -1161,6 +1161,16 @@ namespace Voice::Models
 			// ONE ABSOLUTE DEADLINE, STAMPED HERE, AT PASS CREATION, and it is the
 			// LONGEST of the roster's: a pass sealed on the quickest model's budget
 			// would close under the accurate one every single time.
+			//
+			// KNOWN DEFECT, DEFERRED BY THE OWNER ON 24.09.2026: this is wrong for
+			// play. Every phrase waits for the slowest model's budget. In run 8 of
+			// REPORT-87 every utterance reached the bridge 3.50 s after the player
+			// stopped speaking (median and p90 alike, 144 turns) - whisper-ru-turbo's
+			// 2500 ms plus the pass itself - and turbo did not answer once in that
+			// run. A command in a fight cannot wait that long. The owner's
+			// requirement: no phrase is held back for the slowest model. What then
+			// becomes of the accurate model's later reading is decided when the topic
+			// is taken up; do not change this in passing.
 			std::int32_t budgetMs = 0;
 			std::vector<SpeechBrokerVoiceHandle> expected;
 			expected.reserve(roster.size());
