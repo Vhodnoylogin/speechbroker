@@ -9,7 +9,7 @@ of our source. Where this page and `src/core/Wire.h` disagree, this page is the 
 and the code is what gets corrected.
 
 The contract one level up — between the adapter and the shim — is
-[`speechbroker-voice-model.h`](../../adapter-voice/contract/speechbroker-voice-model.h). Nothing
+[`speechbroker-voice-model.h`](https://github.com/Vhodnoylogin/speechbroker-voice-adapter/blob/main/speechbroker/adapter-voice/contract/speechbroker-voice-model.h). Nothing
 here is visible to it. A model mod that runs its model in-process, or reaches a server, speaks its
 own protocol or none and owes this page nothing.
 

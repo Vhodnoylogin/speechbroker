@@ -7,7 +7,7 @@ draft `small` — behind one **SKSE plugin**.
 
 **This mod is a program.** It used to be two json listings and not a line of code, because a model
 mod used to be a data file the adapter parsed. It is not that any more: a model mod is a **shim**. On
-one side it speaks the contract — [`speechbroker-voice-model.h`](../adapter-voice/contract/speechbroker-voice-model.h),
+one side it speaks the contract — [`speechbroker-voice-model.h`](https://github.com/Vhodnoylogin/speechbroker-voice-adapter/blob/main/speechbroker/adapter-voice/contract/speechbroker-voice-model.h),
 a plain C ABI — and on the other side it **is** a model, **raises** one, or **attaches** to one. Ours
 raises one.
 
