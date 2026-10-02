@@ -27,7 +27,7 @@ without touching what is written.
 
 ## Two divisions, and they do not coincide
 
-Speech Broker is **one mod and one git branch**, but what a person installs and what the broker is
+Speech Broker is **a family of independent repositories**, but what a person installs and what the broker is
 made of are two different cuts through it. [docs/architecture.md](docs/architecture.md) is the
 record of both, written from the author's own statement; this is the short form.
 
@@ -60,8 +60,8 @@ own description. A person installs as many of them as they need.
 | Mod in the build | Folder | Description |
 |---|---|---|
 | `Speech Broker` | `bridge\` | [bridge/README.md](bridge/README.md) |
-| `Speech Broker - Voice Adapter` | `adapter-voice\` | [adapter-voice/README.md](adapter-voice/README.md) |
-| `Speech Broker - Voice Model - Whisper RU` | `model-whisper-ru\` | [model-whisper-ru/README.md](model-whisper-ru/README.md) |
+| `Speech Broker - Voice Adapter` | `adapter-voice\` | [adapter-voice/README.md](https://github.com/Vhodnoylogin/speechbroker-voice-adapter/blob/main/speechbroker/adapter-voice/README.md) |
+| `Speech Broker - Voice Model - Whisper RU` | `model-whisper-ru\` | [model-whisper-ru/README.md](https://github.com/Vhodnoylogin/speechbroker-whisper-ru/blob/main/speechbroker/model-whisper-ru/README.md) |
 
 Next to them lies `subscribers\demo\` - three test subscribers. That is not part of the delivery but
 a check: on them it shows how a market settles an argument between mods. They are not wanted in the
@@ -121,7 +121,7 @@ other mod will. That is why their build refuses to run until the bridge is laid 
 check, not an inconvenience.
 
 The contract of a model mod is its own, and it is published by the adapter:
-[adapter-voice/contract/speechbroker-voice-model.md](adapter-voice/contract/speechbroker-voice-model.md).
+[adapter-voice/contract/speechbroker-voice-model.md](https://github.com/Vhodnoylogin/speechbroker-voice-adapter/blob/main/speechbroker/adapter-voice/contract/speechbroker-voice-model.md).
 
 ## Principles
 
@@ -155,6 +155,6 @@ Lay out and pack only with the game closed.
 | how to check the bridge without the game | [bridge/README.md](bridge/README.md), the `speechbroker-host` target |
 | how to write an adapter of your own | `cpp\speechbroker-adapter.h` in the SDK package |
 | how to subscribe from a mod in Papyrus | `papyrus\SpeechBroker.psc`, `docs\speechbroker-papyrus.md` in the SDK package |
-| how to add a model of your own | [adapter-voice/contract/speechbroker-voice-model.md](adapter-voice/contract/speechbroker-voice-model.md) |
-| how a model mod is built inside | [model-whisper-ru/README.md](model-whisper-ru/README.md) |
+| how to add a model of your own | [adapter-voice/contract/speechbroker-voice-model.md](https://github.com/Vhodnoylogin/speechbroker-voice-adapter/blob/main/speechbroker/adapter-voice/contract/speechbroker-voice-model.md) |
+| how a model mod is built inside | [model-whisper-ru/README.md](https://github.com/Vhodnoylogin/speechbroker-whisper-ru/blob/main/speechbroker/model-whisper-ru/README.md) |
 | how to translate the text into another language | `localization\` of the module, and the section above |
