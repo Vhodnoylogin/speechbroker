@@ -138,7 +138,7 @@ measurement, because speech with an even tempo and no terminal fall of the tone 
 thresholds to an artefact.
 
 `takes/` holds the forty-five recordings the checks of the bridge are built from - they are the
-same phrases the scenarios in [bridge/tests](https://github.com/Vhodnoylogin/speechbroker/blob/main/speechbroker/bridge/tests) quote, and the only cover the
+same phrases the scenarios in [bridge/tests](../../bridge/tests) quote, and the only cover the
 Cyrillic case folding in the core of the bridge has. The WAV files go through Git LFS; the texts
 beside them are text and are versioned as text.
 

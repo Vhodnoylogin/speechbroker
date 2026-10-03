@@ -26,7 +26,7 @@
 
 ## Два деления, и они не совпадают
 
-Speech Broker — это **один мод и одна ветка** git, но то, что человек ставит, и то, из чего брокер
+Speech Broker — это **одна система в одном репозитории** git, но то, что человек ставит, и то, из чего брокер
 состоит, — два разных разреза. Запись обоих — [docs/architecture.md](docs/architecture.md),
 со слов автора; здесь короткая форма.
 
@@ -58,8 +58,8 @@ Speech Broker — это **один мод и одна ветка** git, но т
 | Мод в сборке | Папка | Описание |
 |---|---|---|
 | `Speech Broker` | `bridge\` | [bridge/README.ru.md](bridge/README.ru.md) |
-| `Speech Broker - Voice Adapter` | `adapter-voice\` | [adapter-voice/README.ru.md](https://github.com/Vhodnoylogin/speechbroker-voice-adapter/blob/main/speechbroker/adapter-voice/README.ru.md) |
-| `Speech Broker - Voice Model - Whisper RU` | `model-whisper-ru\` | [model-whisper-ru/README.ru.md](https://github.com/Vhodnoylogin/speechbroker-whisper-ru/blob/main/speechbroker/model-whisper-ru/README.ru.md) |
+| `Speech Broker - Voice Adapter` | `adapter-voice\` | [adapter-voice/README.ru.md](adapter-voice/README.ru.md) |
+| `Speech Broker - Voice Model - Whisper RU` | `model-whisper-ru\` | [model-whisper-ru/README.ru.md](model-whisper-ru/README.ru.md) |
 
 Рядом лежит `subscribers\demo\` — трое тестовых подписчиков. Это не часть поставки, а проверка:
 на них видно, как рынок решает спор между модами. В рабочие профили они не нужны.
@@ -115,7 +115,7 @@ Speech Broker — это **один мод и одна ветка** git, но т
 неудобство.
 
 Контракт мод-модели — свой, и публикует его адаптер:
-[adapter-voice/contract/speechbroker-voice-model.md](https://github.com/Vhodnoylogin/speechbroker-voice-adapter/blob/main/speechbroker/adapter-voice/contract/speechbroker-voice-model.md).
+[adapter-voice/contract/speechbroker-voice-model.md](adapter-voice/contract/speechbroker-voice-model.md).
 
 ## Принципы
 
@@ -148,6 +148,6 @@ cd model-whisper-ru                                       && tools\deploy.ps1 -A
 | как проверить мост без игры | [bridge/README.md](bridge/README.md), цель `speechbroker-host` |
 | как написать свой адаптер | `cpp\speechbroker-adapter.h` в поставке SDK |
 | как подписаться из мода на Papyrus | `papyrus\SpeechBroker.psc`, `docs\speechbroker-papyrus.md` в поставке SDK |
-| как добавить свою модель | [adapter-voice/contract/speechbroker-voice-model.md](https://github.com/Vhodnoylogin/speechbroker-voice-adapter/blob/main/speechbroker/adapter-voice/contract/speechbroker-voice-model.md) |
-| как устроена мод-модель изнутри | [model-whisper-ru/README.ru.md](https://github.com/Vhodnoylogin/speechbroker-whisper-ru/blob/main/speechbroker/model-whisper-ru/README.ru.md) |
+| как добавить свою модель | [adapter-voice/contract/speechbroker-voice-model.md](adapter-voice/contract/speechbroker-voice-model.md) |
+| как устроена мод-модель изнутри | [model-whisper-ru/README.ru.md](model-whisper-ru/README.ru.md) |
 | как перевести текст на другой язык | папка `localization\` нужной части и раздел выше |

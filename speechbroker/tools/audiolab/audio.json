@@ -109,7 +109,7 @@
   },
   "scenario": {
     "_": "The joint of the two halves: the engine writes the lines the bridge is checked against, instead of a person writing them by hand. `out` is a key and not a hard-coded path on purpose - the bridge may be checked out anywhere; the file itself is derived and is not versioned.",
-    "out": "../../../../speechbroker/speechbroker/bridge/tests/scenarios/live.json",
-    "stage": "../../../../speechbroker/speechbroker/bridge/tests/scenarios/stage.json"
+    "out": "../../bridge/tests/scenarios/live.json",
+    "stage": "../../bridge/tests/scenarios/stage.json"
   }
 }

@@ -7,7 +7,7 @@ speech and how the bridge settles an argument between participants.
 
 This is a **module of its own**. The sources of the bridge and of the adapter are not here: the
 declarations of the bridge are taken at compile time out of the `Speech Broker - SDK` package.
-This module has its own repository and its own build. This module is not wanted in the working profiles of the build -
+This module has its own directory and build within the Speech Broker repository. This module is not wanted in the working profiles of the build -
 it exists for checking.
 
 ## Three participants

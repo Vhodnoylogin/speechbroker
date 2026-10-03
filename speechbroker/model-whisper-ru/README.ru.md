@@ -7,7 +7,7 @@
 
 **Этот мод — программа.** Раньше он был двумя файлами json и ни одной строкой кода, потому что
 мод-модель был файлом данных, который разбирал адаптер. Больше это не так: мод-модель — это
-**прослойка**. С одной стороны она говорит на контракте — [`speechbroker-voice-model.h`](https://github.com/Vhodnoylogin/speechbroker-voice-adapter/blob/main/speechbroker/adapter-voice/contract/speechbroker-voice-model.h),
+**прослойка**. С одной стороны она говорит на контракте — [`speechbroker-voice-model.h`](../adapter-voice/contract/speechbroker-voice-model.h),
 это чистый C ABI, — а с другой она либо **является** моделью, либо **поднимает** её, либо
 **подключается** к уже работающей. Наша поднимает.
 
