@@ -18,3 +18,27 @@ session.jsonl
 
 # Служебные копии агентов Claude Code - это отдельные репозитории.
 .claude/
+
+build/
+dist/
+# Downloaded sources of the dependencies, kept when the build was moved
+_deps-keep/
+out/
+.vs/
+.cache/
+vcpkg_installed/
+*.user
+__pycache__/
+
+# Paths local to this machine, and housekeeping - out of the master trunk
+build.local.json
+*.log
+*-token.txt
+
+# The scenario made out of live sound is derived: engine-scenario.py builds it
+bridge/tests/scenarios/live.json
+
+# Reference recordings and model source directories are versioned.
+# Binary weights remain excluded by model-whisper-ru/weights/.gitignore.
+!*.wav
+!models/
