@@ -1,0 +1,12 @@
+FormKey: 000800:SpeechBrokerDemo.esp
+EditorID: SpeechBrokerDemoObserverQuest
+VirtualMachineAdapter:
+  Scripts:
+  - Name: SpeechBrokerDemoObserver
+  FileName: ''
+Name:
+  TargetLanguage: English
+  Value: SpeechBrokerDemoObserver
+Flags:
+- StartGameEnabled
+Priority: 50

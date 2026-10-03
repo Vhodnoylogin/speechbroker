@@ -1,0 +1,66 @@
+# Speech Broker - Demo Subscriber
+
+*In Russian: [README.ru.md](README.ru.md). English is the source language; the other is a translation.*
+
+The Speech Broker test listener: three Papyrus quests showing how a mod takes part in making sense of
+speech and how the bridge settles an argument between participants.
+
+This is a **module of its own**. The sources of the bridge and of the adapter are not here: the
+declarations of the bridge are taken at compile time out of the `Speech Broker - SDK` package.
+This module has its own repository and its own build. This module is not wanted in the working profiles of the build -
+it exists for checking.
+
+## Three participants
+
+| Script | Topics | Vocabulary | How it bids |
+|---|---|---|---|
+| `SpeechBrokerDemoObserver` | all, through `SpeechBroker_Speech_Any` | none | takes no part, only shows |
+| `SpeechBrokerDemoGreedy` | `world` | the door phrase, the radio-check phrase | greedily: mine alone or not at all |
+| `SpeechBrokerDemoShared` | `world`, `dialogue` | the look-around phrase, the radio-check phrase | shares with other non-greedy ones |
+
+The vocabularies deliberately overlap on the **radio-check phrase** - on it the whole rule shows at
+once:
+
+- the door phrase is known only to the greedy one, and it takes the utterance for itself;
+- the look-around phrase is known only to the sharing one, and it takes it unopposed;
+- the radio-check phrase is known to both. If the greedy one won, the sharing one is left with
+  nothing; if the sharing one won, the greedy one drops out entirely, because it demanded
+  exclusivity itself.
+
+The observer exists precisely so that it shows when an utterance reached **nobody**: a subscriber of
+a topic never learns about the utterances of others, while the observer learns about them all.
+
+## The phrases are a translation, not code
+
+The vocabulary is not written into the scripts. Every phrase comes from `SpeechBroker.Translate` by a key,
+and the lines behind the keys live in `localization/`, from where they are built into
+`Interface\Translations\SpeechBrokerDemo_<language>.txt`.
+
+That is not tidiness. A subscriber registers the phrases the player is going to **say**, and they
+have to be in the language of the installed model. English is the source language, Russian stands
+beside it, and both go inside this mod: a translation is a part of the module. Changing the
+language means changing the `language` key of the bridge or the language of the game, not editing
+a script.
+
+The Russian table holds exactly the three phrases the live recordings were made with, so that the
+scenarios in `bridge/tests` and this module say the same words.
+
+## Building
+
+```
+tools\build-papyrus.ps1
+tools\deploy.ps1 -Apply
+tools\package.ps1 -Apply
+```
+
+Compilation refuses to run until the bridge is laid out: `SpeechBroker.psc` is taken from the SDK package,
+and the path to it is set in `config/build.json`. The lay-out needs the SDK too - the script that
+builds the string tables is published there.
+
+## About the encoding
+
+The sources have to be UTF-8 **with a BOM**. Without it the Papyrus compiler reads a file as cp1251
+and silently ruins any non-ASCII text. `build-papyrus.ps1` puts the mark in itself before every
+build. The scripts themselves are pure ASCII now - everything that is not lives in the translation
+tables, which are a different format entirely - but the rule stays, because a comment or a literal
+in another language may appear at any time.

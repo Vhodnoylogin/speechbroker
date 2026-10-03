@@ -1,0 +1,46 @@
+{
+  "creationKit": "D:/SteamLibrary/steamapps/common/Skyrim Special Edition",
+  "papyrusFlags": "TESV_Papyrus_Flags.flg",
+  "imports": [
+    "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Skyrim Script Extender for VR (SKSEVR)/Scripts/Source",
+    "{creationKit}/Data/Source/Scripts",
+    "{sdk}",
+    "{root}/papyrus"
+  ],
+  "papyrusSource": "{root}/papyrus",
+  "papyrusOutput": "{root}/build/pex",
+  "esp": {
+    "file": "SpeechBrokerDemo.esp",
+    "source": "{root}/esp/source",
+    "gameRelease": "SkyrimSE",
+    "package": "Spriggit.Yaml.Skyrim",
+    "packageVersion": "0.41.0"
+  },
+  "optimize": true,
+  "deploy": {
+    "modsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods",
+    "modName": "Speech Broker - Demo Subscriber",
+    "bridgeMod": "Speech Broker",
+    "sdk": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Speech Broker - SDK/papyrus",
+    "sdkTools": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Speech Broker - SDK/tools",
+    "localization": {
+      "name": "SpeechBrokerDemo",
+      "base": "english",
+      "source": "{root}/localization"
+    },
+    "version": "0.1.0",
+    "indexScript": "D:/Skyrim VR Modding/Claude Skyrim VR/wt-claude-projects/claude-skyrim-vr/index/update-index.ps1",
+    "indexOwner": "chat-speechbroker-demo",
+    "downloadsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/downloads",
+    "sevenZip": "C:/Program Files/7-Zip/7z.exe",
+    "bridgeUrl": "http://127.0.0.1:8930",
+    "bridgeToken": "D:/Skyrim VR Modding/MO2/plugins/mo2aibridge/mo2aibridge-token.txt",
+    "scripts": [
+      "SpeechBrokerDemoObserver",
+      "SpeechBrokerDemoGreedy",
+      "SpeechBrokerDemoShared"
+    ],
+    "esp": "SpeechBrokerDemo.esp"
+  },
+  "spriggit": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/Skyrim-Claude Code Modder's Toolkit/tools/spriggit-cli.sh"
+}
