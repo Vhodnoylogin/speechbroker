@@ -1,0 +1,40 @@
+{
+  "_": "Where this module is laid out and what it is built from. Every path and name of the lay-out lives here and nowhere else, so that nothing in the sources or the scripts is true only on one machine. THE WEIGHTS ARE SPLIT IN TWO and the split is the point: `weights` is the RECIPE, versioned with the module - SOURCE says where each set comes from and SHA256SUMS says which bytes are right; `weightsStore` is where the BYTES actually lie, outside the repository, in the modding root beside MO2 and SSEEdit like every other thing somebody else wrote. The lay-out copies neither: it puts a junction on the store.",
+
+  "deploy": {
+    "modsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods",
+    "modName": "test_Speech Broker - Voice Model - Whisper RU",
+    "adapterMod": "test_Speech Broker - Voice Adapter",
+
+    "sdk": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/mods/test_Speech Broker - Voice Adapter SDK",
+
+    "version": "0.1.0",
+    "indexScript": "D:/Skyrim VR Modding/Claude Skyrim VR/wt-claude-projects/claude-skyrim-vr/index/update-index.ps1",
+    "indexOwner": "chat-speechbroker-model",
+    "downloadsRoot": "D:/Skyrim VR Modding/MO2/ModOrganizer/Skyrim VR/downloads",
+    "sevenZip": "C:/Program Files/7-Zip/7z.exe",
+    "bridgeUrl": "http://127.0.0.1:8930",
+    "bridgeToken": "D:/Skyrim VR Modding/MO2/plugins/mo2aibridge/mo2aibridge-token.txt",
+
+    "dll": "{root}/build/Release/SpeechBrokerModelWhisperRu.dll",
+    "child": "{root}/child/build/Release/SpeechBrokerWhisperChild.exe",
+
+    "ownRel": "SKSE/Plugins/speechbroker/models/whisper-ru",
+    "childRel": "child",
+    "localizationRel": "localization",
+    "weightsRel": "weights",
+
+    "_weightsStore": "Where the weight FILES lie, one folder per set, outside the repository. They are gigabytes of somebody else's unmodified releases, so they live in the modding root by the same rule as MO2 and SSEEdit rather than inside a mod. Split by format, because two engines read two formats and one folder for both is how a CTranslate2 conversion ends up signed as a GGML model: `ggml` is what whisper.cpp reads and what this module uses; `ctranslate2` is what faster-whisper reads and what tools/audiolab uses. Absent - everything falls back to the recipe folder, which is what it used to be.",
+    "weightsStore": "D:/Skyrim VR Modding/Speech Models/ggml",
+
+    "settings": "{root}/models",
+    "localization": "{root}/localization",
+    "_weights": "The RECIPE, versioned: SOURCE and SHA256SUMS per set, and the README pair. The bytes are in weightsStore.",
+    "weights": "{root}/weights",
+
+    "docs": [
+      "{root}/../LICENSE",
+      "{root}/../THIRD-PARTY-NOTICES.md"
+    ]
+  }
+}

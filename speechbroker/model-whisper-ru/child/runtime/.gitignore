@@ -1,0 +1,20 @@
+# THE RECOGNITION RUNTIME LIVES HERE AND IS NOT VERSIONED.
+#
+# whisper.dll, ggml.dll, ggml-base.dll and the ggml-cpu-*.dll files that do the
+# arithmetic are an unmodified public release of whisper.cpp, pinned to the build
+# the headers in ../vendor/whisper.cpp/ were taken from. They are somebody else
+# bytes, they weigh megabytes, and a download reproduces them exactly - so the
+# repository keeps the recipe and the modding root keeps the files, the same way
+# the weights are handled next door in ../../weights/.
+#
+# The full install is a folder of its own beside the other external tools:
+#
+#     D:\Skyrim VR Modding\whisper.cpp b5130\
+#
+# and only the files the child actually loads are copied in here, because the
+# lay-out copies everything in this folder next to the child and the archive also
+# carries thirty command line tools the mod has no use for.
+#
+# ../../README.md says which archive, from where, and what to do with it.
+*
+!.gitignore

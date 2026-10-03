@@ -1,0 +1,31 @@
+# THE WEIGHTS THEMSELVES ARE NOT VERSIONED, and this file is the rule.
+#
+# They were, for one afternoon, and the reason they are not is worth a line:
+# they are 2,08 GB, GitHub gives a gigabyte of LFS storage free, and - the part
+# that decides it - an LFS object once pushed STAYS in the remote's storage even
+# after the file is removed from every commit. Deleting it does not give the
+# space back; only deleting the repository does. So a mistake of this kind is
+# not one you correct, it is one you do not make twice.
+#
+# And they do not need versioning. These are unmodified public releases: the
+# same bytes for everybody, fetched by name, with a SHA256 that says so. That is
+# a recipe a file cannot improve on - unlike a plugin or a recorded take, which
+# exist nowhere else and are in LFS for exactly that reason.
+#
+# What IS versioned is beside this file: SHA256SUMS, which says which bytes are
+# the right ones, and README.md, which says where to get them.
+*.bin
+*.gguf
+*.ggml
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+*.npz
+*.onnx
+
+# but never the three that ARE the point: what the bytes should be, where they come
+# from, and the page that explains both
+!SHA256SUMS
+!SOURCE
+!README*.md
