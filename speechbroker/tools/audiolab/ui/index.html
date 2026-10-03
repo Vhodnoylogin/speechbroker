@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Студия звука</title>
+<style>
+  :root {
+    --bg: #14161a; --panel: #1c1f25; --line: #2b3038;
+    --ink: #e6e9ef; --dim: #8b94a3; --accent: #6ea8fe; --hot: #e5534b; --ok: #57a773;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 20px 60px; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: var(--dim); margin: 0 0 24px; font-size: 13px; }
+  .panel { background: var(--panel); border: 1px solid var(--line);
+           border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+  label { display: block; font-size: 12px; color: var(--dim); margin-bottom: 4px; }
+  select, input[type=text] {
+    background: #0f1115; color: var(--ink); border: 1px solid var(--line);
+    border-radius: 6px; padding: 8px 10px; font: inherit; font-size: 14px; }
+  select { min-width: 260px; } input[type=text] { min-width: 220px; }
+  button { background: #262b33; color: var(--ink); border: 1px solid var(--line);
+           border-radius: 6px; padding: 8px 14px; font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.rec { background: var(--ok); border-color: transparent; color: #08110b;
+               font-weight: 600; min-width: 190px; padding: 12px 18px; font-size: 16px; }
+  button.rec.on { background: var(--hot); color: #fff; }
+  button.small { padding: 5px 10px; font-size: 13px; }
+  canvas { width: 100%; height: 90px; display: block; background: #0f1115;
+           border: 1px solid var(--line); border-radius: 8px; }
+  .meter { height: 10px; background: #0f1115; border: 1px solid var(--line);
+           border-radius: 5px; overflow: hidden; margin-top: 10px; }
+  .meter i { display: block; height: 100%; width: 0; background: var(--ok); }
+  .meter i.hot { background: var(--hot); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 12px; color: var(--dim); font-weight: 500;
+       padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  td { padding: 7px 8px; border-bottom: 1px solid #22262d; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  .tag { font-size: 11px; padding: 2px 7px; border-radius: 20px; border: 1px solid var(--line);
+         color: var(--dim); }
+  .tag.live { color: #9ec7ff; border-color: #33507d; }
+  .tag.silent { color: #e0b050; border-color: #6b5420; }
+  .note { color: var(--dim); font-size: 13px; margin: 10px 0 0; }
+  .err { color: var(--hot); font-size: 13px; min-height: 18px; margin-top: 8px; }
+  .pending { display: none; margin-top: 14px; padding: 14px; border-radius: 8px;
+             background: #17202b; border: 1px solid #2d4460; }
+  .pending.on { display: block; }
+  .pending h3 { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #9ec7ff; }
+  button.keep { background: var(--accent); border-color: transparent; color: #08111b;
+                font-weight: 600; }
+  .check { display: flex; align-items: center; gap: 7px; color: var(--dim); font-size: 13px;
+           user-select: none; cursor: pointer; padding-bottom: 10px; }
+  .check input { width: 16px; height: 16px; accent-color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Студия звука</h1>
+  <p class="sub">Страница — снимаемая шкура. Всё, что она умеет, умеет и API:
+     <code>/api/devices</code>, <code>/api/start</code>, <code>/api/stop</code>, <code>/api/takes</code>.</p>
+
+  <section class="panel">
+    <div class="row">
+      <div>
+        <label for="in">Вход — микрофон <span id="hears" class="tag">проверяю…</span></label>
+        <select id="in"></select>
+      </div>
+      <div>
+        <label for="out">Выход — куда слушать</label>
+        <select id="out"></select>
+      </div>
+      <button class="small" id="refresh">обновить список</button>
+    </div>
+    <p class="note">Выбирайте вход явно. «Steam Streaming Microphone» существует всегда
+       и молчит, пока Steam VR не стримит — записи выходят пустыми, и понять почему неоткуда.</p>
+  </section>
+
+  <section class="panel">
+    <div class="row">
+      <div>
+        <label for="name">Имя записи</label>
+        <input type="text" id="name" placeholder="само подставится">
+      </div>
+      <div style="flex:1">
+        <label for="ref">Что произносится — эталонный текст</label>
+        <input type="text" id="ref" style="width:100%" placeholder="пусто = запись тишины">
+      </div>
+      <div>
+        <label class="check" for="auto"><input type="checkbox" id="auto" checked>
+          сохранять сразу</label>
+        <button class="rec" id="rec">● Начать запись</button>
+      </div>
+    </div>
+    <canvas id="wave" width="1400" height="180"></canvas>
+    <div class="meter"><i id="bar"></i></div>
+    <p class="note" id="state">микрофон не занят</p>
+    <p class="err" id="err"></p>
+
+    <div class="pending" id="pending">
+      <h3>Записано, но не сохранено — <span id="plen">0 с</span></h3>
+      <div class="row">
+        <div>
+          <label for="pname">Имя</label>
+          <input type="text" id="pname">
+        </div>
+        <div style="flex:1">
+          <label for="pref">Эталонный текст</label>
+          <input type="text" id="pref" style="width:100%" placeholder="пусто = запись тишины">
+        </div>
+        <button class="small" id="phear">▶ прослушать</button>
+        <button class="keep" id="pkeep">Сохранить</button>
+        <button class="small" id="pdrop">Выбросить</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="row" style="align-items:center">
+      <strong style="font-size:14px">Синтез тем же голосом</strong>
+      <input type="text" id="synth" style="flex:1" placeholder="Фраза. Ещё фраза. Точка делит предложения.">
+      <button class="small" id="dosynth">синтезировать</button>
+    </div>
+    <p class="note">Синтез отвечает на вопрос «работает ли алгоритм», живой голос — «верны ли пороги».
+       Обе записи ложатся в один список.</p>
+  </section>
+
+  <section class="panel">
+    <div class="row" style="align-items:center; margin-bottom:10px">
+      <strong style="font-size:14px; flex:1">Записи</strong>
+      <span class="note" id="count" style="margin:0"></span>
+      <button class="small" id="reload">обновить список</button>
+    </div>
+    <div class="row" style="align-items:center; margin-bottom:12px">
+      <span class="note" style="margin:0">Папка</span>
+      <input type="text" id="dir" style="flex:1" spellcheck="false">
+      <button class="small" id="dirset">применить</button>
+      <button class="small" id="dirpick">выбрать…</button>
+      <button class="small" id="diropen">в проводнике</button>
+    </div>
+    <table>
+      <thead><tr><th>Запись</th><th>Источник</th><th>Длина</th><th>Эталонный текст</th><th></th></tr></thead>
+      <tbody id="takes"></tbody>
+    </table>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const post = (path, body) => fetch(path, {method: "POST", headers: {"Content-Type": "application/json"},
+                                          body: JSON.stringify(body || {})}).then(r => r.json());
+const get = (path) => fetch(path).then(r => r.json());
+
+let recording = false;
+
+async function loadDevices() {
+  const d = await get("/api/devices");
+  for (const [sel, list, chosen] of [["in", d.input, d.chosen.input], ["out", d.output, d.chosen.output]]) {
+    const node = $(sel);
+    node.innerHTML = "";
+    for (const dev of list) {
+      const opt = document.createElement("option");
+      opt.value = dev.index === null ? "" : dev.index;
+      opt.textContent = dev.title + (dev.rate ? "  " + dev.rate + " Гц" : "");
+      if (dev.index === chosen) opt.selected = true;
+      node.appendChild(opt);
+    }
+  }
+}
+
+async function choose() {
+  await post("/api/choose", {input: $("in").value === "" ? null : +$("in").value,
+                             output: $("out").value === "" ? null : +$("out").value});
+}
+
+async function loadTakes() {
+  const {takes} = await get("/api/takes");
+  const body = $("takes");
+  body.innerHTML = "";
+  $("count").textContent = takes.length ? (takes.length + " шт.") : "";
+  if (!takes.length) {
+    body.innerHTML = '<tr><td colspan="5" style="color:var(--dim)">пока ничего не записано</td></tr>';
+    return;
+  }
+  for (const t of takes) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><strong>${t.name}</strong>${t.silent ? ' <span class="tag silent">тишина</span>' : ''}</td>
+      <td><span class="tag ${t.source === 'живой' ? 'live' : ''}">${t.source}</span></td>
+      <td>${t.seconds.toFixed(2)} с</td>
+      <td><input type="text" value="${(t.reference || '').replace(/"/g, '&quot;')}"
+                 data-name="${t.name}" class="ref" style="width:100%"></td>
+      <td style="white-space:nowrap">
+        <button class="small play" data-name="${t.name}">▶ слушать</button>
+        <button class="small del" data-name="${t.name}">удалить</button>
+      </td>`;
+    body.appendChild(tr);
+  }
+  body.querySelectorAll(".play").forEach(b => b.onclick = () => post("/api/play", {name: b.dataset.name}));
+  body.querySelectorAll(".del").forEach(b => b.onclick = async () => {
+    await post("/api/delete", {name: b.dataset.name}); loadTakes();
+  });
+  body.querySelectorAll(".ref").forEach(i => i.onchange = () =>
+    post("/api/reference", {name: i.dataset.name, reference: i.value}));
+}
+
+const canvas = $("wave"), ctx = canvas.getContext("2d");
+function drawLevels(levels) {
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = "#2b3038"; ctx.beginPath();
+  ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
+  if (!levels.length) return;
+  const step = w / Math.max(1, levels.length);
+  ctx.fillStyle = recording ? "#e5534b" : "#57a773";
+  levels.forEach((v, i) => {
+    const amp = Math.min(1, v * 6) * (h / 2 - 4);
+    ctx.fillRect(i * step + 1, h / 2 - amp, Math.max(1, step - 2), amp * 2);
+  });
+}
+
+let seenVersion = -1;
+
+async function tick() {
+  try {
+    const m = await get("/api/meter");
+    // Список перечитываем только когда он изменился: дёргать его двадцать раз
+    // в секунду незачем, а узнавать об изменении надо сразу.
+    if (m.version !== undefined && m.version !== seenVersion) {
+      seenVersion = m.version;
+      loadTakes();
+    }
+    recording = m.recording;
+    $("rec").textContent = recording ? "■ Остановить запись" : "● Начать запись";
+    $("rec").classList.toggle("on", recording);
+    drawLevels(m.levels || []);
+    const pct = Math.min(100, (m.peak || 0) * 300);
+    $("bar").style.width = pct + "%";
+    $("bar").classList.toggle("hot", pct > 90);
+    const hears = $("hears");
+    if (!m.listening) { hears.textContent = "вход не открыт"; hears.className = "tag"; }
+    else if (m.hears) { hears.textContent = "вход живой"; hears.className = "tag live"; }
+    else { hears.textContent = "ВХОД МЁРТВЫЙ — выберите другой"; hears.className = "tag silent"; }
+
+    $("state").textContent = recording
+      ? `идёт запись — ${m.seconds.toFixed(1)} с, пик ${(m.peak * 100).toFixed(0)}%`
+      : (m.playing ? `слушаем «${m.playing}»` : "микрофон не занят");
+    // Панель отложенной записи следует за сервером в ОБЕ стороны. Показывать
+    // её умели, а убирать - нет, и одного случайного совпадения хватало, чтобы
+    // «не сохранено» осталось висеть над уже сохранённой записью навсегда.
+    const shown = $("pending").classList.contains("on");
+    if (!recording && m.pending && !shown) {
+      showPending({seconds: m.pending.seconds, peak: m.pending.peak,
+                   name: $("name").value, reference: $("ref").value});
+    } else if (!m.pending && shown) {
+      showPending(null);
+    }
+    $("err").textContent = m.error || "";
+  } catch (e) { $("err").textContent = "нет связи со студией"; }
+  setTimeout(tick, 60);
+}
+
+$("rec").onclick = async () => {
+  if (!recording) {
+    await choose();
+    const r = await post("/api/start", {name: $("name").value, reference: $("ref").value});
+    if (!r.ok) $("err").textContent = r.error || "не удалось открыть вход";
+    showPending(null);
+  } else {
+    const auto = $("auto").checked;
+    const r = await post("/api/stop", {autosave: auto});
+    if (!r.ok) { $("err").textContent = r.error || ""; return; }
+    if (auto) {
+      $("name").value = "";
+      loadTakes();
+    } else {
+      showPending(r.pending);
+    }
+  }
+};
+
+function showPending(p) {
+  $("pending").classList.toggle("on", !!p);
+  if (!p) return;
+  $("plen").textContent = p.seconds.toFixed(2) + " с, пик " + (p.peak * 100).toFixed(0) + "%";
+  $("pname").value = p.name || "";
+  $("pref").value = p.reference || "";
+}
+
+$("phear").onclick = () => post("/api/preview");
+$("pkeep").onclick = async () => {
+  const r = await post("/api/save", {name: $("pname").value, reference: $("pref").value});
+  if (!r.ok) { $("err").textContent = r.error || ""; return; }
+  showPending(null);
+  $("name").value = "";
+  loadTakes();
+};
+$("pdrop").onclick = async () => { await post("/api/discard"); showPending(null); };
+$("reload").onclick = loadTakes;
+
+async function loadFolder() {
+  const f = await get("/api/folder");
+  $("dir").value = f.path || "";
+}
+async function applyFolder(r) {
+  if (!r.ok) { if (!r.cancelled) $("err").textContent = r.error || "папка не сменилась"; return; }
+  if (r.error) $("err").textContent = r.error;
+  $("dir").value = r.path || "";
+  loadTakes();
+}
+$("dirset").onclick = async () => applyFolder(await post("/api/folder", {path: $("dir").value}));
+$("dirpick").onclick = async () => applyFolder(await post("/api/pick-folder"));
+$("diropen").onclick = async () => {
+  const r = await post("/api/reveal");
+  if (!r.ok) $("err").textContent = r.error || "";
+};
+$("dosynth").onclick = async () => {
+  const text = $("synth").value.trim();
+  if (!text) return;
+  const sentences = text.split(/(?<=[.!?])\s+/).filter(s => s.trim());
+  const r = await post("/api/synthesize", {name: $("name").value, sentences,
+                                           gaps: sentences.slice(1).map(() => 350)});
+  if (!r.ok) $("err").textContent = r.error || "";
+  $("synth").value = ""; loadTakes();
+};
+$("refresh").onclick = loadDevices;
+$("in").onchange = choose; $("out").onchange = choose;
+
+loadDevices().then(() => post("/api/listen")); loadFolder(); loadTakes(); tick();
+</script>
+</body>
+</html>

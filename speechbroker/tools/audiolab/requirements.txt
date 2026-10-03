@@ -1,0 +1,26 @@
+# What the tooling imports - and nothing else. The rest of what pip drags in
+# (ctranslate2, tokenizers, huggingface_hub, av, onnxruntime) comes as a
+# dependency of these and is not listed: listing it would freeze somebody
+# else's choice.
+#
+# The versions are pinned because they are the ones every number in
+# docs/measurements.md was measured with. Nothing here reaches a player: the
+# model that runs in the game is the C++ of adapter-voice and model-whisper-ru.
+#
+#     python -m venv .venv
+#     .venv\Scripts\pip install -r requirements.txt
+
+numpy==2.5.2                    # sound as an array, everywhere
+sounddevice==0.5.6              # the inputs and the outputs, recording and playing back
+faster-whisper==1.2.1           # the python model driver, engine/models.py
+piper-tts==1.7.0                # the synthesis of the reference corpus, synth.py
+
+# CTranslate2 loads cublas and cudnn BY BARE NAME, and nobody registers their
+# folders any more - that used to happen as a side effect of importing torch.
+# engine/cuda.py looks for exactly these two under `site-packages/nvidia/*/bin`
+# and puts them on the search path of the loader; without them work on the GPU
+# fails on the very first recognition with "Library cublas64_12.dll is not
+# found". A machine that measures on the CPU (`device` in audio.json) does not
+# need them.
+nvidia-cublas-cu12==12.9.2.10
+nvidia-cudnn-cu12==9.25.1.1

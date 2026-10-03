@@ -1,0 +1,21 @@
+# SpeechBrokerVoiceAdapter - the dispatch half: the standings, the ledger and the
+# guards. A fragment, English.
+#
+# These lines are NOT in the main table yet: the integrator merges every fragment
+# into localization/speechbrokervoiceadapter.<language>.txt and regenerates
+# src/LocStrings.h. Until that happens a key here falls back to printing itself,
+# which is legible enough to diagnose with and is not a reason to write it into
+# the main table by hand.
+#
+# Placeholders are numbered, {0} and {1} rather than a bare {}, because another
+# language puts the words in another order.
+
+$SPEECHBROKERVOICE_LOG_REPUTATIONS_MISSING	standings: no calibration at '{0}' - every model starts uncalibrated, and a score is passed on raw until ten live ones exist
+$SPEECHBROKERVOICE_LOG_REPUTATIONS_SHAPE	standings: the calibration at '{0}' is not a table of models - ignoring it whole
+$SPEECHBROKERVOICE_LOG_REPUTATIONS_BROKEN	standings: the calibration at '{0}' did not parse: {1}
+$SPEECHBROKERVOICE_LOG_REPUTATIONS_CLASS_UNKNOWN	standings: model {0} is called '{1}' in the calibration, which is neither fast nor accurate - keeping what the model declared
+$SPEECHBROKERVOICE_LOG_REPUTATIONS_LOADED	standings: calibration read from '{0}' - {1} models, {2} of them measured against a corpus
+$SPEECHBROKERVOICE_LOG_LEDGER_BEHIND	turn {0}: pass {1} closed after pass {2} had been reconciled - abandoning it whole, because a correction may not point backwards in time
+$SPEECHBROKERVOICE_LOG_LEDGER_REFINED	turn {0} pass {1}: piece {2} is read again as: {3}
+$SPEECHBROKERVOICE_LOG_LEDGER_SLICE	turn {0} pass {1}: piece {2} [{3}..{4}] ms, complete {5:.2f}, swallowing {6} - {7}
+$SPEECHBROKERVOICE_LOG_STACK_GUARANTEE_REFUSED	thread: the stack guarantee of {0} bytes was refused, code {1} - a stack overflow inside a model will take the process with it instead of ejecting the model
