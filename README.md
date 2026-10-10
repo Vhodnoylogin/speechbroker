@@ -172,3 +172,7 @@ The complete system lives at the root of `Vhodnoylogin/speechbroker`, on `main`.
 | Audiolab | [tools/audiolab/](tools/audiolab/README.md) |
 
 The histories ofthe former component repositories and the original `Skyrim-Mods/speechbroker` branch are retained in `main`. Binary plugins and audio recordings use Git LFS (`git lfs install` before cloning). External model weights, runtime libraries, build output and credentials stay outside Git; follow the module recipes.
+
+## Development assistance
+
+Developed with assistance from [Codex (OpenAI)](https://github.com/codex).

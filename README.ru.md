@@ -165,3 +165,7 @@ cd model-whisper-ru                                       && tools\deploy.ps1 -A
 | Audiolab | [tools/audiolab/](tools/audiolab/README.ru.md) |
 
 Истории прежнихотдельных репозиториев компонентов и исходной ветки `Skyrim-Mods/speechbroker` сохранены в `main`. Двоичные плагины и записи звука хранятся через Git LFS (`git lfs install` перед клонированием). Веса моделей, внешние библиотеки, результаты сборки и ключи остаются вне Git; порядок подготовки описан в модулях.
+
+## Участие в разработке
+
+В разработке участвовал [Codex (OpenAI)](https://github.com/codex).
